@@ -3,6 +3,7 @@ package layout
 import (
     "testing"
     "strings"
+    "reflect"
 )
 
 func TestLayout(t *testing.T) {
@@ -55,7 +56,7 @@ func compareResult(t *testing.T, l *Layout, r *Layout) {
 		t.Fatal("layout does not match nil-result")
 	} else if l == nil && r != nil {
 		t.Fatal("nil-layout does not match result")
-	} else if !l.Equals(r) {
-		t.Fatal("layout does not match result")
+	} else if !reflect.DeepEqual(l,r) {
+		t.Fatalf("layout does not match result_\n%v\n\n%v\n",l,r)
 	}
 }

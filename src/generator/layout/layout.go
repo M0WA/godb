@@ -29,34 +29,3 @@ func NewLayout(r io.Reader)(*Layout,error) {
 	}
 	return l,nil
 }
-
-func checkEqualColumn(ld *Database,l *Table,rd *Database,r *Table)bool {
-	return false
-}
-
-func checkEqualTable(ld *Database,l *Table,rd *Database,r *Table)bool {
-	return false
-}
-
-func checkEqualDatabase(ll Layouter,l *Database,lr Layouter,r *Database)bool {
-	
-	//eq := l.Name == r.Name
-	
-	return false
-}
-
-func (l *Layout)Equals(r *Layout)bool {
-	for _,ldb := range l.Databases {
-		dbEq := false
-		for _,rdb := range l.Databases {
-			if ldb.Equals(&rdb) {
-				dbEq = true
-				continue
-			}
-		}
-		if !dbEq {
-			return false
-		}
-	}
-	return true
-}
