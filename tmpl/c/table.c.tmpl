@@ -1,0 +1,7 @@
+#include "table.h"
+
+{{ with .Databases }}{{ range . }}{{ with .Tables }}{{ range . }}
+void create_{{ .Name }}({{ .Name }}* tbl) { {{ with .Columns }}{{ range . }}
+	tbl->{{ .Name }} = 0;{{ end }}{{ end }}{{/* columns */}}	
+}
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

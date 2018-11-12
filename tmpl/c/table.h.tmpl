@@ -1,0 +1,26 @@
+#pragma once
+
+#define SetColumn(tbl, col, value) \
+	tbl.col = &tbl.impl.col; \
+	tbl.impl.col = value;
+{{ with .Databases }}{{ range . }}{{ with .Tables }}{{ range . }}
+typedef struct _{{ .Name }}Impl { {{ with .Columns }}{{ range . }}
+	{{ .Type }} {{ .Name }};{{ end }}{{ end }}{{/* columns */}}
+} {{ .Name }}Impl;
+
+typedef struct _{{ .Name }} { {{ with .Columns }}{{ range . }}
+	{{ .Type }}* {{ .Name }};{{ end }}{{ end }}{{/* columns */}}
+	{{ .Name }}Impl impl;
+} {{ .Name }};
+
+void create_{{ .Name }}({{ .Name }}* tbl);
+
+#define Create{{ .Name }}(var) \
+	{{ .Name }} var;\
+	create_{{ .Name }}(&var);
+	
+#define Alloc{{ .Name }}(var) \
+	{{ .Name }}* var = malloc(); \
+	create_{{ .Name }}(var);
+
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
