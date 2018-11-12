@@ -4,13 +4,13 @@ import (
 
 )
 
-type PostgreSQLDB struct {
+type PostgreDB struct {
 	
 }
 
-type PostgreSQLTable struct {
+type PostgreTable struct {
 	
 }
 
-type PostgreSQLColumn struct {
+type PostgreColumn struct {
 }

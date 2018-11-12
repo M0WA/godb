@@ -9,12 +9,13 @@ type PrimaryKey struct {
 }
 
 type UniqueKey struct {
-	Column []string
+	Columns []string
 }
 
 type ForeignKey struct {
 	Column string
 	RefColumn string
+	RefTable string
 	
 	MySQL MySQLForeignKey 
 }

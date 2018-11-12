@@ -3,22 +3,32 @@ package layout
 import (
     "testing"
     "strings"
-    "reflect"
 )
 
 func TestLayout(t *testing.T) {
 	for _,c := range tc {
 		l,err := NewLayout(strings.NewReader(c.Layout))
-		//t.Logf("%v => %v\n",err,l)
-		checkResult(t,l,err,c.Result)
+		if err != nil && l != nil {
+			t.Fatal("layout with errors is non-nil")
+		} else if c.Success && err != nil {
+			t.Fatal(err.Error())
+		} else if !c.Success && err == nil {
+			t.Fatalf("test did not fail as expected: %v",l)
+		}
+		compareResult(t,l,c.Result)
 	}
 }
 
 func TestLayouter(t *testing.T) {
 	for _,c := range tc {
-		l,err := NewLayouter(strings.NewReader(c.Layout))
-		//t.Logf("%v => %v\n",err,l.Layout())
-		checkResult(t,l.Layout(),err,c.Result)
+		if !c.Success {
+			continue
+		}
+		
+		l,err := NewLayouterFromReader(strings.NewReader(c.Layout))
+		if err != nil {
+			t.Fatal(err.Error())
+		}
 		
 		for _,db := range l.Layout().Databases {
 			if l.Database(db.Name) == nil {
@@ -38,21 +48,14 @@ func TestLayouter(t *testing.T) {
 	}
 }
 
-func checkResult(t *testing.T, l *Layout, err error, r *Layout) {
-	if l != nil && r == nil {
-		//invalid layout was created
-		t.Fatal("invalid layout created")
+func compareResult(t *testing.T, l *Layout, r *Layout) {
+	if l == nil && r == nil {
+		return
+	} else if l != nil && r == nil {
+		t.Fatal("layout does not match nil-result")
 	} else if l == nil && r != nil {
-		//check for errors while creating layout
-		if err != nil {
-			t.Fatal(err.Error())
-		} else {
-			t.Fatal("unknown error")
-		}
-	} else if l != nil && r != nil && len(r.Databases) > 0 && !reflect.DeepEqual(*l, *r)  {
-		//check if results are equal
-		t.Fatalf("layout does not match result \n%v\n!=\n%v",*l,*r)
+		t.Fatal("nil-layout does not match result")
+	} else if !l.Equals(r) {
+		t.Fatal("layout does not match result")
 	}
 }
-
-

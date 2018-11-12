@@ -96,9 +96,26 @@ func (g *mysqlGenerator)column(db *layout.Database, tbl *layout.Table, col *layo
 	return nil
 }
 
+func (*mysqlGenerator)uniquekeys(db *layout.Database, tbl *layout.Table, w io.Writer)error {
+	for _,k := range tbl.UniqueKeys {
+		s := ""
+		u := db.Name + "_" + tbl.Name
+		for i,c := range k.Columns {
+			if i > 0 {
+				s += ","
+			}
+			s += c
+			u += "_" + c
+		}
+		if _,err := io.WriteString(w,",\n    CONSTRAINT UK_" + u + " UNIQUE (" + s + ")"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (g *mysqlGenerator)Table(db *layout.Database, tbl *layout.Table, w io.Writer)error {
-	fqtbl := db.Name + "." + tbl.Name
-	if _,err := io.WriteString(w,"CREATE TABLE " + fqtbl + " (\n"); err != nil {
+	if _,err := io.WriteString(w,"CREATE TABLE " + db.Name + "." + tbl.Name + " (\n"); err != nil {
 		return err
 	}
 	for _,col := range tbl.Columns {
@@ -107,25 +124,33 @@ func (g *mysqlGenerator)Table(db *layout.Database, tbl *layout.Table, w io.Write
 		}
 	}
 	
-	if _,err := io.WriteString(w,"\n    PRIMARY KEY("+tbl.PrimaryKey.Column+")\n"); err != nil {
+	if _,err := io.WriteString(w,"\n    CONSTRAINT PK_" + db.Name + "_" + tbl.Name + " PRIMARY KEY(" + tbl.PrimaryKey.Column + ")"); err != nil {
+		return err
+	}
+	
+	if err := g.uniquekeys(db,tbl,w); err != nil {
 		return err
 	}
 	
 	engine := ""
 	if tbl.MySQL.Engine != "" {
-		engine = " ENGINE="+tbl.MySQL.Engine+" "
+		engine = " ENGINE=" + tbl.MySQL.Engine + " "
 	}
 	rowformat := ""
 	if tbl.MySQL.RowFormat != "" {
-		rowformat = " ROW_FORMAT="+tbl.MySQL.RowFormat+" "
+		rowformat = " ROW_FORMAT=" + tbl.MySQL.RowFormat + " "
 	}
 	
-	if _,err := io.WriteString(w,")"+rowformat+engine+";\n"); err != nil {
+	if _,err := io.WriteString(w,"\n)"+rowformat+engine+";\n"); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (*mysqlGenerator)ForeignKey(*layout.Database, *layout.Table, *layout.ForeignKey, io.Writer)error {
+func (*mysqlGenerator)ForeignKey(db *layout.Database, tbl *layout.Table, fk *layout.ForeignKey, w io.Writer)error {
+	fkname := "FK_" + db.Name + "_" + tbl.Name + "_" + fk.Column + "__REF__" + fk.MySQL.RefDatabase + "_" + fk.RefTable + "_" + fk.RefColumn
+	if _,err := io.WriteString(w,"\nALTER TABLE " + db.Name + "." + tbl.Name + " ADD CONSTRAINT " + fkname + " FOREIGN KEY (FK_ID) REFERENCES " + fk.MySQL.RefDatabase + "." + fk.RefTable + " (" + fk.RefColumn + ");\n"); err != nil {
+		return err
+	}
 	return nil
 }

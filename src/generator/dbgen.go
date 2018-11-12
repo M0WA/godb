@@ -32,7 +32,7 @@ func initLayouter()(layout.Layouter) {
     	return nil
     }
     
-    l,err := layout.NewLayouter(f)
+    l,err := layout.NewLayouterFromReader(f)
     if err != nil {
     	fmt.Errorf(err.Error())
     	return nil

@@ -84,16 +84,21 @@ func (l *layouterImpl)Column(db string, tbl string, col string)(*Column) {
 	return &(l.layout.Databases[dbidx].Tables[tblidx].Columns[colidx])
 }
 
-func NewLayouter(r io.Reader)(Layouter,error) {
-	l := new(layouterImpl)
+func NewLayouter(l *Layout)(Layouter,error) {
+	ll := new(layouterImpl)
+	ll.layout = l
+	if err := ll.init(); err != nil {
+		return nil, err
+	}
 	
+	return ll,nil
+}
+
+func NewLayouterFromReader(r io.Reader)(Layouter,error) {
 	var err error
-	if l.layout, err = NewLayout(r); err != nil {
+	var layout *Layout
+	if layout, err = NewLayout(r); err != nil {
 		return nil, err
 	}
-	if err = l.init(); err != nil {
-		return nil, err
-	}
-	
-	return l,nil
+	return NewLayouter(layout)
 }

@@ -7,6 +7,7 @@ import (
 type DataType int
 
 const (
+	INVALID  DataType = iota
 	STRING   DataType = iota
 	INT	     DataType = iota
 	FLOAT    DataType = iota
@@ -14,6 +15,7 @@ const (
 )
 
 var typeStrings = map[DataType]string {
+	INVALID: "invalid",
 	STRING: "string",
 	INT: "int",
 	FLOAT: "float",
@@ -24,7 +26,7 @@ func (d DataType)String()(string) {
 	if val, ok := typeStrings[d]; ok {
 	    return val
 	}
-	return "unknown"
+	return typeStrings[INVALID]
 }
 
 func ParseDataType(d string)(DataType,error) {
@@ -36,15 +38,26 @@ func ParseDataType(d string)(DataType,error) {
 	return STRING, errors.New("invalid datatype: " + d)
 }
 
+func (l *Column)Equals(r *Column)bool {
+	return (
+	  l.Name == r.Name && 
+	  l.DataType == r.DataType &&
+	  l.Size == r.Size &&
+	  l.NotNull == r.NotNull &&
+	  ( (l.DefaultValue == nil && r.DefaultValue == nil) || (*l.DefaultValue == *r.DefaultValue) ) &&
+	  l.AutoIncrement == r.AutoIncrement &&
+	  l.MySQL == r.MySQL &&
+	  l.Postgre == r.Postgre) 
+}
+
 type Column struct {
 	Name string
 	DataType string
-	Type DataType
 	Size uint
 	NotNull bool
 	DefaultValue *string
 	AutoIncrement bool
 	
 	MySQL MySQLColumn
-	PostgreSQL PostgreSQLColumn
+	Postgre PostgreColumn
 }

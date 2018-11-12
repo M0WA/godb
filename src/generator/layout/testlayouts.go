@@ -7,23 +7,24 @@ import (
 type TestCase struct {
 	Layout string
 	Result *Layout
+	Success bool
 }
 
 var tc = []TestCase{
-	TestCase{"", &Layout{} },
-	TestCase{ oneTableLayout(), &Layout{ Databases: oneTableDatabases() } },
+	TestCase{"", nil, false },
+	TestCase{ oneTableLayout("simpledb1"), &Layout{ Databases: oneTableDatabases("simpledb1") }, true },
+	TestCase{ complexLayout("complexdb1"), &Layout{ Databases: complexDatabases("complexdb1") }, true },
 }
 
 func TestCases()*[]TestCase {
 	return &tc
 }
 
-func oneTableLayout()(string) {
-	return `---
-databases:
-  - name: testdb
-    tables:
-      - name: testtable
+/* **************************** one table layout testcase ********************************* */
+
+func singleOneTableLayout(tbl string)string{
+	return `
+      - name: `+tbl+`
         mysql:
            engine: innodb
            rowformat: dynamic
@@ -46,8 +47,15 @@ databases:
             defaultvalue: -1
           - name: testdate
             datatype: datetime
-            notnull: true
-`
+            notnull: true`
+}
+
+func oneTableLayout(db string)(string) {
+	return `---
+databases:
+  - name: ` + db + `
+    tables:`+
+    singleOneTableLayout("simpletable1")
 }
 
 func oneTableFields()([]Column) {
@@ -84,12 +92,62 @@ func oneTableFields()([]Column) {
 
 func oneTableTables()([]Table) {
 	return []Table{
-		Table{ Name: "testtable", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } },		
+		Table{ Name: "simpletable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } },		
 	}
 }
 
-func oneTableDatabases()([]Database) {
+func oneTableDatabases(db string)([]Database) {
 	return []Database{
-		Database{ Name: "testdb", Tables: oneTableTables() },
+		Database{ Name: db, Tables: oneTableTables() },
 	}
+}
+
+/* **************************** complex table layout testcase ********************************* */
+
+func complexDatabases(db string)([]Database) {
+	return []Database{
+		Database{ Name: db, Tables: complexTables(db) },
+	}
+}
+
+func complexLayout(db string)(string) {
+	
+	t1 := singleOneTableLayout("complextable1")
+	t2 := singleOneTableLayout("complextable2")
+	t2 = t2 + `
+        foreignkeys:
+          - column: ID
+            refcolumn: ID
+            reftable: complextable1
+            mysql:
+              refdatabase: ` + db + `
+        uniquekeys:
+          - columns:
+              - ID
+              - testint
+`
+	
+	return `---
+databases:
+  - name: ` + db + `
+    tables:`+ t1 + t2
+}
+
+func complexTables(db string)([]Table) {
+	t1 := Table{ Name: "complextable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } }
+	
+	f := ForeignKey{
+		Column: "ID",
+		RefColumn: "ID",
+		RefTable: "complextable1",
+		MySQL: MySQLForeignKey{ RefDatabase: db },
+	} 
+	t2 := Table{ 
+		Name: "complextable2", 
+		Columns: oneTableFields(), 
+		PrimaryKey: PrimaryKey{ Column: "ID" },
+		ForeignKeys: []ForeignKey{ f },
+		MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" }, 
+	}
+	return []Table{ t1, t2 }
 }
