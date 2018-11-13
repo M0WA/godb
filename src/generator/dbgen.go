@@ -21,20 +21,20 @@ func initLayouter()(layout.Layouter) {
 	var f *os.File
 	var err error
 	if *inputFile == "-" {
-		fmt.Errorf("reading from stdin\n")
+		fmt.Fprintf(os.Stderr,"reading from stdin\n")
 		f = os.Stdin
 	} else {
 	    f, err = os.Open(*inputFile)
 	    defer f.Close()
 	}
     if err != nil {
-    	fmt.Errorf(err.Error())
+    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	return nil
     }
     
     l,err := layout.NewLayouterFromReader(f)
     if err != nil {
-    	fmt.Errorf(err.Error())
+    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	return nil
     }
     return l
@@ -43,7 +43,7 @@ func initLayouter()(layout.Layouter) {
 func openWriter(fn string)(*os.File) {
 	f, err := os.Create(fn)
 	if err != nil {
-    	fmt.Errorf(err.Error())
+    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	os.Exit(1)
 	}
 	return f
@@ -61,14 +61,15 @@ func main() {
     	os.Exit(1)
     }
     
-    wddl := openWriter(*outputDir + "/ddl.sql")
+    os.MkdirAll(*outputDir + "/sql/", 0700)
+    wddl := openWriter(*outputDir + "/sql/ddl.sql")
     defer wddl.Close()
     if err := ddl.Generate(l,wddl); err != nil {
-    	fmt.Errorf(err.Error())
+    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	os.Exit(1)
     }
-    if err := dml.Generate(l,*outputDir); err != nil {
-    	fmt.Errorf(err.Error())
+    if err := dml.Generate(l,*outputDir,*templateDir); err != nil {
+    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	os.Exit(1)
     }
 }

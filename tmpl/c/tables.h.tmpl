@@ -1,0 +1,36 @@
+#pragma once
+
+/* ********************** start of generic functions *********************** */
+
+#define SetColumn(tbl, col, value) \
+	tbl.col = &tbl.impl.col; \
+	tbl.impl.col = value;
+	
+/* ********************** end of generic functions ************************* */
+{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
+/* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
+
+typedef struct _{{ $tbl.Name }}Impl { {{ with $tbl }}{{ range $col := .Columns }}
+	{{ $td.DataType $col.DataType  }} {{ $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+} {{ .Name }}Impl;
+
+typedef struct _{{ $tbl.Name }} { {{ with $tbl }}{{ range $col := .Columns }}
+	{{ $td.DataType $col.DataType  }}* {{ $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+	{{ $tbl.Name }}Impl impl;
+} {{ $tbl.Name }};
+
+void _create_{{ $tbl.Name }}({{ $tbl.Name }}* tbl);
+
+#define create_{{ $tbl.Name }}(var) \
+	{{ $tbl.Name }} var;\
+	_create_{{ $tbl.Name }}(&var);
+	
+void destroy_{{ $tbl.Name }}({{ $tbl.Name }}* tbl);
+	
+#define alloc_{{ $tbl.Name }}(var) \
+	{{ $tbl.Name }}* var = malloc(); \
+	_create_{{ $tbl.Name }}(var);
+
+void release_{{ $tbl.Name }}({{ $tbl.Name }}** tbl);
+
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

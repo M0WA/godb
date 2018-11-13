@@ -1,0 +1,22 @@
+#include "table.h"
+{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
+/* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
+void _create_{{ $tbl.Name }}({{ $tbl.Name }}* tbl) { {{ with $tbl }}{{ range $col := .Columns }}
+	tbl->{{ $col.Name }} = 0;{{ end }}{{ end }}{{/* columns */}}	
+}
+
+void destroy_{{ $tbl.Name }}({{ $tbl.Name }}* tbl){ {{ with $tbl }}{{ range $col := .Columns }}{{ if eq $col.DataType "string" }}
+	if(tbl->impl.{{ $col.Name }}) {
+		free(tbl->impl.{{ $col.Name }});
+		tbl->impl.{{ $col.Name }} = 0;
+	} {{ end }}{{/* if */}}{{ end }}{{ end }}{{/* columns */}}
+}
+
+void release_{{ $tbl.Name }}({{ $tbl.Name }}** tbl){
+	if(!tbl || !*tbl) {
+		return; } 
+	destroy_{{ $tbl.Name }}(*tbl);
+	free(*tbl);
+	*tbl = 0
+}
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
