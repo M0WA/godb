@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int init_db_config(DBConfig* conf,char* __restrict host,unsigned short port,char* __restrict db,char* __restrict user, char* __restrict pass) {
+static int init_db_config(DBConfig* conf,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
 	if(!host || strlen(host) > (MAX_DB_HOST - 1) ) {
 		Log(LOG_ERROR,"hostname too long");
 		return 0;
@@ -35,16 +35,17 @@ static int init_db_config(DBConfig* conf,char* __restrict host,unsigned short po
 	}
 
 	conf->port = port;
-	strncpy( host, conf->host, MAX_DB_HOST );
-	strncpy( db  , conf->name, MAX_DB_NAME );
-	strncpy( user, conf->user, MAX_DB_USER );
-	strncpy( pass, conf->pass, MAX_DB_PASS );
+	strncpy( conf->host, host, MAX_DB_HOST );
+	strncpy( conf->name, db  ,  MAX_DB_NAME );
+	strncpy( conf->user, user, MAX_DB_USER );
+	strncpy( conf->pass, pass, MAX_DB_PASS );
 	return 0;
 }
 
 DBHandle* create_dbhandle(DBTypes type) {
 	DBHandle* dbh = malloc(sizeof(DBHandle));
 	if(!dbh) {
+		Log(LOG_ERROR,"could not malloc database handle");
 		return 0;
 	}
 	memset(dbh,0,sizeof(DBHandle));
@@ -76,8 +77,8 @@ DBHandle* create_dbhandle(DBTypes type) {
 	return dbh;
 }
 
-int connect_db(DBHandle* dbh,char* __restrict host,unsigned short port,char* __restrict db,char* __restrict user, char* __restrict pass) {
-	if( init_db_config(&dbh->config,host,port,db,user,pass) ) {
+int connect_db(DBHandle* dbh,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
+	if( init_db_config(&(dbh->config),host,port,db,user,pass) ) {
 		return 1;
 	}
 	if(!dbh->hooks.connect) {

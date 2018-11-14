@@ -1,0 +1,6 @@
+#pragma once
+{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}
+static const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := .Tables }}
+static const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}"; {{ with $tbl }}{{ range $col := .Columns }}
+static const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{ end }}{{/* columns */}}
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

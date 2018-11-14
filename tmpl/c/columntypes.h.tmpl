@@ -1,0 +1,6 @@
+#pragma once
+{{ $td := . }}
+typedef enum _DBColumnType { {{ with $td.L }}{{ range $ti,$ts := .TypeStrings }}
+	COL_TYPE_{{ $ts | ToUpper }} = {{ $ti }},{{ end }}{{ end }}
+	COL_TYPE_MAX
+} DBColumnType;

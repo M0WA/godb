@@ -1,17 +1,19 @@
 #pragma once
 
+#include <stddef.h>
+
 struct _DBColumn;
 
-typedef void* DBColumnValues
+typedef void* DBColumnValues;
 
 typedef struct _DBTableDef {
 	const char* name;
 	const char* database;
+	struct _DBColumnDef* cols;
+	size_t ncols;
 } DBTableDef;
 
 typedef struct _DBTable {
 	const struct _DBTableDef* def;
-	const struct _DBColumnDef* cols;
 	DBColumnValues vals;
-	size_t ncols;
 } DBTable;

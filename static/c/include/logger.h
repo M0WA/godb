@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 typedef enum _LogLevel {
 	LOG_DEBUG = 0,
 	LOG_INFO,
@@ -9,7 +11,7 @@ typedef enum _LogLevel {
 	MAX_LOGLEVEL
 } LogLevel;
 
-void SetLogFile(int fd);
+void SetLogFile(FILE* f);
 void SetLogLevel(LogLevel lvl);
 
 void Logf(LogLevel lvl,const char* __restrict fmt,...);

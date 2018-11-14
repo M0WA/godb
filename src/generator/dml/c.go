@@ -2,6 +2,7 @@ package dml
 
 import (
 	"os"
+	"strings"
 	"text/template"
 	"generator/layout"
 )
@@ -12,6 +13,7 @@ type cGenerator struct {
 type cTmplData struct {
 	L *layout.Layout
 	ll layout.Layouter
+	TypeStrings map[int]string;
 }
 
 func (t *cTmplData)DataType(datatype string)(string) {
@@ -36,6 +38,8 @@ func (t *cTmplData)DataType(datatype string)(string) {
 func (*cGenerator)processTemplate(t *cTmplData,out string,name string,tmpl string)error {
 	var err error
 	h := template.New(name + ".tmpl")
+    h.Funcs(template.FuncMap{"ToUpper": strings.ToUpper})
+    
 	if h,err = h.ParseFiles(tmpl + "/" + name + ".tmpl"); err != nil {
 		return err
 	}
@@ -60,6 +64,12 @@ func (g *cGenerator)Generate(l layout.Layouter,out string, tmpl string)error {
 	t.L = l.Layout()
 	t.ll = l
 	
+	if err := g.processTemplate(t,hd,"columntypes.h",tmpl + "/c"); err != nil {
+		return err
+	}
+	if err := g.processTemplate(t,hd,"names.h",tmpl + "/c"); err != nil {
+		return err
+	}
 	if err := g.processTemplate(t,hd,"tables.h",tmpl + "/c"); err != nil {
 		return err
 	}

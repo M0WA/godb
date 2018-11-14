@@ -7,8 +7,8 @@
 #include "mysqlhooks.h"
 
 int mysql_init_dbh(struct _DBHandle* dbh) {
-	REGISTER_HOOKS(dbh,mysql);
-	return 1;
+	REGISTER_HOOKS(dbh,mysql)
+	return 0;
 }
 
 #endif

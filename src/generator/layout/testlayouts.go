@@ -11,8 +11,8 @@ type TestCase struct {
 
 var tc = []TestCase{
 	TestCase{ Layout: "", Result: nil, Success: false },
-	TestCase{ Layout: oneTableLayout("simpledb1"), Result: &Layout{ Databases: oneTableDatabases("simpledb1") }, Success: true },
-	TestCase{ Layout: complexLayout("complexdb1"), Result: &Layout{ Databases: complexDatabases("complexdb1") }, Success: true },
+	TestCase{ Layout: OneTableLayout("simpledb1"), Result: &Layout{ Databases: oneTableDatabases("simpledb1") }, Success: true },
+	TestCase{ Layout: ComplexLayout("complexdb1"), Result: &Layout{ Databases: complexDatabases("complexdb1") }, Success: true },
 }
 
 func TestCases()*[]TestCase {
@@ -49,7 +49,7 @@ func singleOneTableLayout(tbl string)string{
             notnull: true`
 }
 
-func oneTableLayout(db string)(string) {
+func OneTableLayout(db string)(string) {
 	return `---
 databases:
   - name: ` + db + `
@@ -109,7 +109,7 @@ func complexDatabases(db string)([]Database) {
 	}
 }
 
-func complexLayout(db string)(string) {
+func ComplexLayout(db string)(string) {
 	t1 := singleOneTableLayout("complextable1")
 	t2 := singleOneTableLayout("complextable2") + `
         foreignkeys:

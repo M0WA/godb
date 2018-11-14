@@ -11,6 +11,10 @@ type Layout struct {
 	Databases []Database
 }
 
+func (*Layout)TypeStrings()map[int]string {
+	return typeStrings;
+}
+
 func NewLayout(r io.Reader)(*Layout,error) {
 	l := new(Layout)
 	l.Databases = make([]Database,0)

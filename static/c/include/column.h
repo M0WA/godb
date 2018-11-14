@@ -1,11 +1,6 @@
 #pragma once
 
-typedef enum _DBColumnType {
-	COL_TYPE_STRING,
-	COL_TYPE_INT,
-	COL_TYPE_FLOAT,
-	COL_TYPE_DATETIME
-} DBColumnType;
+#include "columntypes.h"
 
 typedef struct _DBColumnDef {
 	DBColumnType type;

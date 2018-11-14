@@ -7,7 +7,7 @@
 #include "postgreshooks.h"
 
 int postgres_init_dbh(struct _DBHandle* dbh) {
-	REGISTER_HOOKS(dbh,postgres);
+	REGISTER_HOOKS(dbh,postgres)
 	return 1;
 }
 

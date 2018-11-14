@@ -2,5 +2,6 @@ bin
 pkg
 .project
 .settings
+libs
 generator
 generated

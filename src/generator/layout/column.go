@@ -14,25 +14,25 @@ const (
 	DATETIME DataType = iota
 )
 
-var typeStrings = map[DataType]string {
-	INVALID: "invalid",
-	STRING: "string",
-	INT: "int",
-	FLOAT: "float",
-	DATETIME: "datetime",
+var typeStrings = map[int]string {
+	int(INVALID): "invalid",
+	int(STRING): "string",
+	int(INT): "int",
+	int(FLOAT): "float",
+	int(DATETIME): "datetime",
 }
 
 func (d DataType)String()(string) {
-	if val, ok := typeStrings[d]; ok {
+	if val, ok := typeStrings[int(d)]; ok {
 	    return val
 	}
-	return typeStrings[INVALID]
+	return typeStrings[int(INVALID)]
 }
 
 func ParseDataType(d string)(DataType,error) {
 	for k,v := range typeStrings {
 		if v == d {
-			return k,nil
+			return DataType(k),nil
 		}
 	}
 	return STRING, errors.New("invalid datatype: " + d)

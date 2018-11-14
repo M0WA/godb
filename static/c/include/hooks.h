@@ -8,7 +8,7 @@
 	dbhandle->hooks.upsert = &dbtype##_upsert_hook; \
 	dbhandle->hooks.delete = &dbtype##_delete_hook; \
 	dbhandle->hooks.select = &dbtype##_select_hook; \
-})
+});
 
 struct _DBHandle;
 

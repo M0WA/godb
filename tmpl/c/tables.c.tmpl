@@ -1,22 +1,53 @@
+#include "tables.h"
+
+#include <string.h>
+#include <stdlib.h>
+
+#include "column.h"
 #include "table.h"
+#include "names.h"
+
 {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
-void _create_{{ $tbl.Name }}({{ $tbl.Name }}* tbl) { {{ with $tbl }}{{ range $col := .Columns }}
-	tbl->{{ $col.Name }} = 0;{{ end }}{{ end }}{{/* columns */}}	
+
+struct _DBTableDef i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
+static const struct _DBTableDef* p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }} = 0;
+
+static void tbldef_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTableDef** const __restrict def) {
+	if(!def) {
+		return; }
+	
+	if(p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}){
+		*def = p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
+		return;
+	}
+
+	memset(&i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }},0,sizeof(struct _DBTableDef));
+
+	size_t colsize = sizeof(struct _DBColumnDef) * {{ len $tbl.Columns }};
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols = malloc(colsize);
+	if(!i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols) {
+		return;	}
+	
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.name = c_{{ $db.Name }}_{{ $tbl.Name }};
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.database = c_{{ $db.Name }};
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.ncols = {{ len $tbl.Columns }};
+	{{ with $tbl }}{{ range $i,$col := .Columns }}
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].type = COL_TYPE_{{ $col.DataType | ToUpper }};
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }};
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].table = i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.name;
+	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].database = i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.database;
+	{{ end }}{{ end }}{{/* columns */}}	
+	*def = p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }} = &i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
 }
 
-void destroy_{{ $tbl.Name }}({{ $tbl.Name }}* tbl){ {{ with $tbl }}{{ range $col := .Columns }}{{ if eq $col.DataType "string" }}
-	if(tbl->impl.{{ $col.Name }}) {
-		free(tbl->impl.{{ $col.Name }});
-		tbl->impl.{{ $col.Name }} = 0;
-	} {{ end }}{{/* if */}}{{ end }}{{ end }}{{/* columns */}}
+void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) {
+	tbldef_{{ $db.Name }}_{{ $tbl.Name }}(&tbl->def);
+{{ with $tbl }}{{ range $col := .Columns }}
+	memset(&(tbl->{{ $col.Name }}_impl),0,sizeof({{ $td.DataType $col.DataType  }}));
+{{ end }}{{ end }}{{/* columns */}}{{ with $tbl }}{{ range $col := .Columns }}
+	tbl->{{ $col.Name }} = 0;
+{{ end }}{{ end }}{{/* columns */}}	
 }
 
-void release_{{ $tbl.Name }}({{ $tbl.Name }}** tbl){
-	if(!tbl || !*tbl) {
-		return; } 
-	destroy_{{ $tbl.Name }}(*tbl);
-	free(*tbl);
-	*tbl = 0
-}
 {{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

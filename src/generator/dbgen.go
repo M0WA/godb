@@ -16,6 +16,7 @@ var versionFlag *bool = flag.Bool("v", false, "Print the version number.")
 var inputFile *string = flag.String("f", "-", "yaml containing database descriptions")
 var outputDir *string = flag.String("o", "generated", "output directory for generated sources")
 var templateDir *string = flag.String("t", "tmpl", "template directory")
+var testLayout *bool = flag.Bool("l", false, "print testlayout and exit")
 
 func initLayouter()(layout.Layouter) {
 	var f *os.File
@@ -54,6 +55,10 @@ func main() {
 
     if *versionFlag {
         fmt.Println("Version:", APP_VERSION)
+    }
+    if *testLayout {
+        fmt.Print(layout.ComplexLayout("complexdb1"))
+        os.Exit(0)
     }
     
     l := initLayouter()
