@@ -7,16 +7,18 @@
 /* *********** MySQL **************** */
 
 #ifndef _DISABLE_MYSQL
+#include <mysql/mysql.h>
 struct _MySQLHandle {
-
+	MYSQL* conn;
 } MySQLHandle;
 #endif
 
 /* *********** Postgres **************** */
 
 #ifndef _DISABLE_POSTGRES
+#include <postgresql/libpq-fe.h>
 struct _PostgresHandle {
-
+	PGconn* conn;
 } PostgresHandle;
 #endif
 

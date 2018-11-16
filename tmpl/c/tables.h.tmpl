@@ -3,21 +3,36 @@
 #include <time.h>
 
 struct _DBTableDef;
+struct _DBTable;
+struct _DBHandle;
 
 {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
+#pragma pack(push, 1)
+typedef struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $col := .Columns }}
+	{{ $td.DataVar $col $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+} valbuf_{{ $db.Name }}_{{ $tbl.Name }};
+#pragma pack(pop)
+
+enum IDX_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $i,$col := .Columns }}
+	IDX_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} = {{ $i }},{{ end }}{{ end }}{{/* columns */}}	
+	IDX_{{ $db.Name }}_{{ $tbl.Name }}_MAX,
+};
+
 typedef struct _{{ $db.Name }}_{{ $tbl.Name }} {
-	const struct _DBTableDef* def;{{ with $tbl }}{{ range $col := .Columns }}
-	{{ $td.DataType $col.DataType  }}* {{ $col.Name }};
-	{{ $td.DataType $col.DataType  }} {{ $col.Name }}_impl;{{ end }}{{ end }}{{/* columns */}}
+	const struct _DBTableDef* def;{{ with $tbl }}{{ range $col := .Columns }}	
+	{{ $td.PtrVar $col $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+	struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} valbuf;
+	const size_t (*bytepos)[];
 } {{ $db.Name }}_{{ $tbl.Name }};
 
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
-
-#define create_{{ $db.Name }}_{{ $tbl.Name }}(var) \
-	{{ $tbl.Name }} var;\
-	_create_{{ $tbl.Name }}(&var);
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl);
+
+int from_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTable*,struct _{{ $db.Name }}_{{ $tbl.Name }}*);
+int to_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _{{ $db.Name }}_{{ $tbl.Name }}*,struct _DBTable*);
+
+int insert_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh,const struct _{{ $db.Name }}_{{ $tbl.Name }}**,size_t nrows);
 
 {{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

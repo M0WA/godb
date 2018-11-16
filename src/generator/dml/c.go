@@ -2,6 +2,7 @@ package dml
 
 import (
 	"os"
+	"fmt"
 	"strings"
 	"text/template"
 	"generator/layout"
@@ -16,23 +17,64 @@ type cTmplData struct {
 	TypeStrings map[int]string;
 }
 
-func (t *cTmplData)DataType(datatype string)(string) {
-	d, err := layout.ParseDataType(datatype)
+func (*cTmplData)DataVar(c *layout.Column, varname string)(string) {
+	d, err := layout.ParseDataType(c.DataType)
 	if err != nil {
 		return "invalid"
 	}
 	switch d {
 		case layout.DATETIME:
-			return "struct tm"
+			return "struct tm " + varname 
 		case layout.INT:
-			return "long long"
+			return "long long " + varname
 		case layout.FLOAT:
-			return "double"
+			return "double " + varname
 		case layout.STRING:
-			return "char*"
+			return fmt.Sprintf("char %s[%d]",varname, c.Size + 1);
 		default:
 			return "invalid"
 	}
+}
+
+func (*cTmplData)PtrVar(c *layout.Column, varname string)(string) {
+	d, err := layout.ParseDataType(c.DataType)
+	if err != nil {
+		return "invalid"
+	}
+	switch d {
+		case layout.DATETIME:
+			return "struct tm* " + varname 
+		case layout.INT:
+			return "long long* " + varname
+		case layout.FLOAT:
+			return "double* " + varname
+		case layout.STRING:
+			return "const char* " + varname;
+		default:
+			return "invalid"
+	}
+}
+
+func (*cTmplData)SizeOf(c *layout.Column)(string) {
+	d, err := layout.ParseDataType(c.DataType)
+	if err != nil {
+		return "invalid"
+	}
+	s := ""
+	switch d {
+		case layout.DATETIME:
+			s = "struct tm"
+		case layout.INT:
+			s = "long long"
+		case layout.FLOAT:
+			s = "double"
+		case layout.STRING:
+			return fmt.Sprintf("(sizeof(char) * %d)", c.Size + 1);
+		default:
+			s = "invalid"
+	}
+	
+	return fmt.Sprintf("sizeof(%s)",s)
 }
 
 func (*cGenerator)processTemplate(t *cTmplData,out string,name string,tmpl string)error {
@@ -74,6 +116,12 @@ func (g *cGenerator)Generate(l layout.Layouter,out string, tmpl string)error {
 		return err
 	}
 	if err := g.processTemplate(t,cd,"tables.c",tmpl + "/c"); err != nil {
+		return err
+	}
+	if err := g.processTemplate(t,hd,"tests.h",tmpl + "/c"); err != nil {
+		return err
+	}
+	if err := g.processTemplate(t,cd,"tests.c",tmpl + "/c"); err != nil {
 		return err
 	}
 	return nil

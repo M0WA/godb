@@ -9,6 +9,26 @@ ifdef TEST
 TESTCFLAGS:=$(CFLAGS) -D_DB_TEST_VERSION
 endif
 
+MYSQLCFLAGS=
+MYSQLLDFLAGS=-lmysqlclient
+ifdef DISABLE_MYSQL
+MYSQLCFLAGS=-D_DISABLE_MYSQL
+MYSQLLDFLAGS=
+endif
+
+POSTGRESCFLAGS=
+POSTGRESLDFLAGS=-lpq
+ifdef DISABLE_POSTGRES
+POSTGRESCFLAGS=-D_DISABLE_POSTGRES
+POSTGRESLDFLAGS=
+endif
+
+ifdef DISABLE_POSTGRES 
+ifdef DISABLE_MYSQL
+$(error no database type selected)
+endif
+endif
+
 HDRS = $(wildcard */*.h)
 SRCS = $(wildcard */*.c)
 OBJS = $(SRCS:.c=.o)
@@ -22,7 +42,8 @@ else
 BUILDTYPEFLAGS=-g -O2
 endif
 
-CFLAGS =-Wall -fPIC -D_REENTRANT -pthread -rdynamic $(BUILDTYPEFLAGS) $(INCLUDES) $(TESTCFLAGS)
+CFLAGS =-Wall -Werror -fPIC -D_REENTRANT -pthread $(BUILDTYPEFLAGS) $(INCLUDES) $(TESTCFLAGS) $(MYSQLCFLAGS) $(POSTGRESCFLAGS)
+LDFLAGS=$(MYSQLLDFLAGS) $(POSTGRESLDFLAGS)
 
 .PHONY: all clean test
 
@@ -36,14 +57,13 @@ clean:
 	@find . -name "*.so" -delete
 	
 test:
-	$(MAKE) TEST=1 testrun
-	
-testrun:
 	$(MAKE) clean
 	$(MAKE) TEST=1 all
 	$(CC) $(CFLAGS) -D_DB_TEST_VERSION -o test $(OBJS) $(LDFLAGS)
-	$(GDB) ./test
+	$(MAKE) TEST=1 testrun
 	
+testrun:
+	$(GDB) ./test
 
 $(LIBNAME).so: $(patsubst %.c, %.o, $(OBJS))
 	$(CC) $(CFLAGS) -shared -o $(LIBNAME).so $(OBJS) $(LDFLAGS)

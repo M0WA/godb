@@ -3,51 +3,95 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "db.h"
 #include "column.h"
 #include "table.h"
 #include "names.h"
+#include "statements.h"
+
+struct _DBHandle;
 
 {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
-struct _DBTableDef i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
-static const struct _DBTableDef* p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }} = 0;
+static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ with $tbl }}{{ range $i,$col := .Columns }}
+	(struct _DBColumnDef){ 
+		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
+		.name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }},
+		.table = c_{{ $db.Name }}_{{ $tbl.Name }},
+		.database = c_{{ $db.Name }}
+	}, {{ end }}{{ end }}{{/* columns */}}
+};
 
-static void tbldef_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTableDef** const __restrict def) {
-	if(!def) {
-		return; }
-	
-	if(p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}){
-		*def = p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
-		return;
-	}
+static const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
+	.name = c_{{ $db.Name }}_{{ $tbl.Name }},
+	.database = c_{{ $db.Name }},
+	.cols = (const struct _DBColumnDef*)&coldefs_{{ $db.Name }}_{{ $tbl.Name }},
+	.ncols = {{ len $tbl.Columns }},
+};
 
-	memset(&i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }},0,sizeof(struct _DBTableDef));
-
-	size_t colsize = sizeof(struct _DBColumnDef) * {{ len $tbl.Columns }};
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols = malloc(colsize);
-	if(!i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols) {
-		return;	}
-	
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.name = c_{{ $db.Name }}_{{ $tbl.Name }};
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.database = c_{{ $db.Name }};
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.ncols = {{ len $tbl.Columns }};
-	{{ with $tbl }}{{ range $i,$col := .Columns }}
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].type = COL_TYPE_{{ $col.DataType | ToUpper }};
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }};
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].table = i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.name;
-	i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.cols[{{ $i }}].database = i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }}.database;
-	{{ end }}{{ end }}{{/* columns */}}	
-	*def = p_tbl_def_{{ $db.Name }}_{{ $tbl.Name }} = &i_tbl_def_{{ $db.Name }}_{{ $tbl.Name }};
-}
+static const size_t bytepos_{{ $db.Name }}_{{ $tbl.Name }}[] = (size_t[]){ {{ with $tbl }}{{ range $i,$col := .Columns }}
+	0{{ if gt $i 0 }}{{ range $ii,$col2 := $tbl.Columns }}{{ if lt $ii $i }} + {{ $td.SizeOf $col2  }}{{ end }}{{ end }}{{ end }},{{ end }}{{ end }}
+};
 
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) {
-	tbldef_{{ $db.Name }}_{{ $tbl.Name }}(&tbl->def);
-{{ with $tbl }}{{ range $col := .Columns }}
-	memset(&(tbl->{{ $col.Name }}_impl),0,sizeof({{ $td.DataType $col.DataType  }}));
-{{ end }}{{ end }}{{/* columns */}}{{ with $tbl }}{{ range $col := .Columns }}
-	tbl->{{ $col.Name }} = 0;
-{{ end }}{{ end }}{{/* columns */}}	
+	tbl->def = &def_{{ $db.Name }}_{{ $tbl.Name }};
+	tbl->bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
+	memset(&(tbl->valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
+{{ with $tbl }}{{ range $i,$col := .Columns }}
+	tbl->{{ $col.Name }} = 0;{{ end }}{{ end }}
+}
+
+int from_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTable* dbtbl,struct _{{ $db.Name }}_{{ $tbl.Name }}* tbl) {
+	if(!tbl||!tbl->def||!dbtbl||!dbtbl->def||tbl->def->ncols != dbtbl->def->ncols) {
+		return 1; }
+	memcpy(&tbl->valbuf,dbtbl->valbuf,sizeof(tbl->valbuf));
+	{{ with $tbl }}{{ range $i,$col := .Columns }}{{ if eq $col.DataType "string" }}
+	tbl->{{ $col.Name }} = (char*)&(tbl->valbuf.{{ $col.Name }});{{ else }}
+	tbl->{{ $col.Name }} = &(tbl->valbuf.{{ $col.Name }});{{ end }}{{ end }}{{ end }}
+	
+	return 0;
+}
+
+int to_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _{{ $db.Name }}_{{ $tbl.Name }}* tbl,struct _DBTable* dbtbl) {
+	if(!tbl||!dbtbl) {
+		return 1; }
+	
+	dbtbl->valbuf = malloc(sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));
+	if(!dbtbl->valbuf) {
+		return 1; }
+	memcpy(dbtbl->valbuf,&tbl->valbuf,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));
+	
+	dbtbl->def = tbl->def;
+	dbtbl->bytepos = (const size_t*)&bytepos_{{ $db.Name }}_{{ $tbl.Name }};
+	return 0;
+}
+
+int insert_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh,const struct _{{ $db.Name }}_{{ $tbl.Name }}** tbl,size_t nrows) {
+	if(!nrows) {
+		return 0; }
+	if(!tbl || !tbl[0] || !(tbl[0])->def || !(tbl[0])->def->cols) {
+		return 1; }
+
+	struct _InsertStmt stmt = (struct _InsertStmt){
+		.defs = (tbl[0])->def->cols,
+		.ncols = (tbl[0])->def->ncols,
+		.nrows = nrows,
+	};	
+	
+	stmt.valbuf = malloc(sizeof(unsigned char*) * nrows);	 
+	if(!stmt.valbuf) {
+		return 1; }
+
+	for(size_t i = 0; i < nrows; i++) {
+		stmt.valbuf[i] = (const unsigned char*)&((tbl[i])->valbuf); }
+
+	if( insert_db(dbh,&stmt) ) {
+		free(stmt.valbuf);
+		return 1; }
+
+	free(stmt.valbuf);
+	return 0;
 }
 
 {{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

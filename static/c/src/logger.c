@@ -13,18 +13,18 @@ typedef struct _Logger {
 Logger* logger = 0;
 int closed_logger = 0;
 
-char debugLogLvl[] = "DEBUG";
-char infoLogLvl[]  = "INFO";
-char warnLogLvl[]  = "WARN";
-char errorLogLvl[] = "ERROR";
-char invalidLogLvl[] = "N/A";
+char debugLogLvl[]   = "DEBUG";
+char infoLogLvl[]    = "INFO ";
+char warnLogLvl[]    = "WARN ";
+char errorLogLvl[]   = "ERROR";
+char invalidLogLvl[] = "N/A  ";
 
 static const char* loglevelToString(LogLevel lvl) {
 	switch(lvl) {
 	case LOG_DEBUG:
 		return debugLogLvl;
 	case LOG_INFO:
-		return debugLogLvl;
+		return infoLogLvl;
 	case LOG_WARN:
 		return warnLogLvl;
 	case LOG_ERROR:

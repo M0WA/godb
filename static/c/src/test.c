@@ -4,37 +4,38 @@
 #include <stdio.h>
 
 #include "db.h"
-#include "table.h"
 #include "tables.h"
 #include "logger.h"
+#include "tests.h"
 
-static void test(DBTypes type) {
-	/*
-	complexdb1_complextable1 tbl;
-	TABLE_STRUCT(complexdb1,complextable1,tbl)
-	printf("%s\n",tbl.def->name);
-	*/
-
-	Log(LOG_DEBUG,"checking create_dbhandle()\n");
+static DBHandle* test_create_connection(DBTypes type) {
+	Log(LOG_DEBUG,"checking create_dbhandle()");
 	DBHandle* dbh = create_dbhandle(type);
 	if ( !dbh ) {
-		Log(LOG_ERROR,"create_dbhandle() failed");
-		exit(1); }
+		LOG_FATAL(1,"create_dbhandle() failed"); }
 
-	Log(LOG_DEBUG,"checking connect_db()\n");
+	Log(LOG_DEBUG,"checking connect_db()");
 	if( connect_db(dbh,"localhost",3306,"mydb","myuser","mypass") ) {
-		Log(LOG_ERROR,"connect_db() failed\n");
-		exit(1); }
+		LOG_FATAL(1,"connect_db() failed"); }
 
-	Log(LOG_DEBUG,"checking disconnect_db()\n");
-	if ( disconnect_db(dbh) ) {
-		Log(LOG_ERROR,"disconnect_db() failed\n");
-		exit(1); }
+	return dbh;
+}
 
-	Log(LOG_DEBUG,"checking destroy_dbhandle()\n");
-	if( destroy_dbhandle(&dbh) ) {
-		Log(LOG_ERROR,"destroy_dbhandle() failed\n");
-		exit(1); }
+static void test_destroy_connection(DBHandle** dbh) {
+	Log(LOG_DEBUG,"checking disconnect_db()");
+	if ( disconnect_db(*dbh) ) {
+		LOG_FATAL(1,"disconnect_db() failed"); }
+
+	Log(LOG_DEBUG,"checking destroy_dbhandle()");
+	if( destroy_dbhandle(dbh) ) {
+		LOG_FATAL(1,"destroy_dbhandle() failed"); }
+}
+
+static void test(DBTypes type) {
+	test_tables();
+
+	DBHandle* dbh = test_create_connection(type);
+	test_destroy_connection(&dbh);
 }
 
 int main(int argc,char** argv) {

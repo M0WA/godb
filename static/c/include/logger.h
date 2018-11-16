@@ -11,6 +11,14 @@ typedef enum _LogLevel {
 	MAX_LOGLEVEL
 } LogLevel;
 
+#define LOGF_FATAL(exitcode,fmt, ...) \
+	Logf(LOG_ERROR,fmt,__VA_ARGS__); \
+	exit(exitcode);
+
+#define LOG_FATAL(exitcode,msg) \
+	Log(LOG_ERROR,msg); \
+	exit(exitcode);
+
 void SetLogFile(FILE* f);
 void SetLogLevel(LogLevel lvl);
 

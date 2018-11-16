@@ -47,6 +47,7 @@ CREATE TABLE simpledb1.simpletable1 (
     teststr VARCHAR(255) DEFAULT '',
     testint INT NOT NULL DEFAULT -1,
     testdate TIMESTAMP NOT NULL,
+    testfloat DOUBLE NOT NULL DEFAULT 0.0,
 
     CONSTRAINT PK_simpledb1_simpletable1 PRIMARY KEY(ID)
 ) ROW_FORMAT=dynamic  ENGINE=innodb ;
@@ -58,6 +59,7 @@ CREATE TABLE complexdb1.complextable1 (
     teststr VARCHAR(255) DEFAULT '',
     testint INT NOT NULL DEFAULT -1,
     testdate TIMESTAMP NOT NULL,
+    testfloat DOUBLE NOT NULL DEFAULT 0.0,
 
     CONSTRAINT PK_complexdb1_complextable1 PRIMARY KEY(ID)
 ) ROW_FORMAT=dynamic  ENGINE=innodb ;
@@ -66,6 +68,7 @@ CREATE TABLE complexdb1.complextable2 (
     teststr VARCHAR(255) DEFAULT '',
     testint INT NOT NULL DEFAULT -1,
     testdate TIMESTAMP NOT NULL,
+    testfloat DOUBLE NOT NULL DEFAULT 0.0,
 
     CONSTRAINT PK_complexdb1_complextable2 PRIMARY KEY(ID),
     CONSTRAINT UK_complexdb1_complextable2_ID_testint UNIQUE (ID,testint)

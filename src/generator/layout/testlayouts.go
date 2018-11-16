@@ -46,7 +46,11 @@ func singleOneTableLayout(tbl string)string{
             defaultvalue: -1
           - name: testdate
             datatype: datetime
-            notnull: true`
+            notnull: true
+          - name: testfloat
+            datatype: float
+            notnull: true
+            defaultvalue: 0.0 `
 }
 
 func OneTableLayout(db string)(string) {
@@ -60,6 +64,7 @@ databases:
 func oneTableFields()([]Column) {
 	default1 := "-1"
 	default2 := ""
+	default3 := "0.0"
 	return []Column{
 		Column{
 			Name: "ID",
@@ -85,6 +90,12 @@ func oneTableFields()([]Column) {
 			Name: "testdate",
 			DataType: DATETIME.String(),
 			NotNull: true,
+		},
+		Column{
+			Name: "testfloat",
+			DataType: FLOAT.String(),
+			NotNull: true,
+			DefaultValue: &default3,
 		},
 	}
 }
