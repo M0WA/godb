@@ -3,6 +3,8 @@
 GoDB's main goal is to abstract code from your database manufacturer while giving a strong binding to the actual database structure.
 It is written with a strong consideration of limited resources like memory and cpu power to be "big-data ready".
 
+For more information visit the [GoDB Homepage](https://go-db.net).
+
 ## Table of contents
 1. [When to use](#When to use)
 2. [Usage](#Usage)
