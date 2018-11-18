@@ -11,9 +11,9 @@
 #include "tables.h"
 #include "logger.h"
 
-{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
+{{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 
-static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ with $tbl }}{{ range $i,$col := .Columns }}	
+static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}	
 	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.DataType "string" }};
 	sprintf(t{{ $col.Name }},"test");
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
@@ -23,10 +23,10 @@ static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }
 	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
 	{{ else if eq $col.DataType "int" }} = 10;
 	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
-	{{ end }}{{/* end if */}} {{ end }}{{ end }}{{/* columns */}}
+	{{ end }}{{/* end if */}} {{ end }}{{/* columns */}}
 }
 
-static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ with $tbl }}{{ range $i,$col := .Columns }}
+static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	if( !tbl->tbl.colptr.{{ $col.Name }} ) {
 	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }
 	{{ if eq $col.DataType "datetime" }}{{ else if eq $col.DataType "string" }}
@@ -40,7 +40,7 @@ static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.N
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %f",*tbl->tbl.{{ $col.Name }}); } {{ end }}{{/* end if */}}
 	if( tbl->tbl.colptr.{{ $col.Name }} != tbl->dbtbl.valbuf[{{ $i }}] ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid dbtable ptr: %p != %p",tbl->tbl.colptr.{{ $col.Name }},tbl->dbtbl.valbuf[{{ $i }}]); }
-	{{ end }}{{ end }}{{/* columns */}}
+	{{ end }}{{/* columns */}}
 }
 
 static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {
@@ -69,75 +69,43 @@ static void test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTableD
 
 static void test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}() {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} buffer size");
-	const size_t bufsize = 0{{ with $tbl }}{{ range $i,$col := .Columns }} + {{ $td.SizeOf $col  }}{{ end }}{{ end }};
+	const size_t bufsize = 0{{ range $i,$col := $tbl.Columns }} + {{ $td.SizeOf $col  }}{{ end }};
 	const size_t ssize = sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }});
 	if( bufsize != ssize ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: tbl.valbuf: invalid size %d != %d",bufsize,ssize); }
 }
 
-static void test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) {	{{ with $tbl }}{{ range $i,$col := .Columns }}
+static void test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} indexes");
 	if( !tbl->tbl.def->cols[{{ $i }}].name 
 	 || strcmp(tbl->tbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0 ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column for index"); } {{ end }}{{ end }}{{/* columns */}}
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column for index"); } {{ end }}{{/* columns */}}
 }
 
-static void test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ with $tbl }}{{ range $i,$col := .Columns }}
+static void test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} definitions");
 	if( !tbl->tbl.def->cols[{{ $i }}].name || strcmp(tbl->tbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column name"); }
 	if( !tbl->tbl.def->cols[{{ $i }}].table || strcmp(tbl->tbl.def->cols[{{ $i }}].table,"{{ $tbl.Name }}") != 0) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid table name"); }
 	if( !tbl->tbl.def->cols[{{ $i }}].database || strcmp(tbl->tbl.def->cols[{{ $i }}].database,"{{ $db.Name }}") != 0) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid database name"); } {{ end }}{{ end }}{{/* columns */}}
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid database name"); } {{ end }}{{/* columns */}}
 }
 
 static void test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}() {
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	{{ with $tbl }}{{ range $i,$col := .Columns }}	
+	{{ range $i,$col := $tbl.Columns }}	
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} getter/setter");
 	if( tbl.tbl.colptr.{{ $col.Name }} ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.tbl.colptr.{{ $col.Name }}: not initialized to null"); }	{{ end }}{{ end }}{{/* columns */}}
-	{{ with $tbl }}{{ range $i,$col := .Columns }}	
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.tbl.colptr.{{ $col.Name }}: not initialized to null"); } {{ end }}{{/* columns */}}
+	{{ range $i,$col := .Columns }}	
 	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 
 	SET_COLUMN_NULL(tbl,{{ $col.Name }});
 	if( tbl.tbl.colptr.{{ $col.Name }} ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: SET_COLUMN_NULL: not null"); }	{{ end }}{{ end }}{{/* columns */}}
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: SET_COLUMN_NULL: not null"); }	{{ end }}{{/* columns */}}
 }
-
-/*
-static void test_table_convert_{{ $db.Name }}_{{ $tbl.Name }}() {
-	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} to DBTable conversion");
-
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
-	
-	DBTable dbtbl;
-	if( to_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,&dbtbl) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: could not convert to dbtable"); }
-	
-	size_t idx = 0; const void* buf = 0; 
-	{{ with $tbl }}{{ range $i,$col := .Columns }}
-	if( get_colidx_by_name("{{ $col.Name }}",dbtbl.def,&idx) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: could not get colidx from dbtable"); }
-	if( idx != {{ $i }} ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: incorrect colidx from dbtable"); }
-	if( !(buf = get_colbuf_by_idx_dbtable(idx,&dbtbl)) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: null buffer from dbtable"); }
-	{{ end }}{{ end }}{{/* columns */}}	
-			
-	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} from DBTable conversion");
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl2);
-	if( from_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(&dbtbl,&tbl2) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: could not convert from dbtable"); }
-	test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl2);
-
-	DBTable* pdbtbl = &dbtbl;
-	destroy_dbtable(&(pdbtbl));
-}
-*/
 
 static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}();
@@ -150,17 +118,17 @@ static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}();
 }
-{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
+{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 
-void test_tables_static() { {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}
-	LOG_DEBUG("checking database {{ $db.Name }}");{{ with $db }}{{ range $tbl := .Tables }}
-	test_table_{{ $db.Name }}_{{ $tbl.Name }}();{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
+void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
+	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
+	test_table_{{ $db.Name }}_{{ $tbl.Name }}();{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 	LOG_INFO("all static checks on generated tables: SUCCESS");
 }
 
-void test_tables_db(struct _DBHandle* dbh) { {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}
-	LOG_DEBUG("checking database {{ $db.Name }}");{{ with $db }}{{ range $tbl := .Tables }}
-	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
+void test_tables_db(struct _DBHandle* dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
+	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
+	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }
 

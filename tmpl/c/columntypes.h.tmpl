@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-typedef enum _DBColumnType { {{ with .L }}{{ range $ti,$ts := .TypeStrings }}
-	COL_TYPE_{{ $ts | ToUpper }} = {{ $ti }},{{ end }}{{ end }}
+typedef enum _DBColumnType { {{ range $ti,$ts := .L.TypeStrings }}
+	COL_TYPE_{{ $ts | ToUpper }} = {{ $ti }},{{ end }}
 	COL_TYPE_MAX
 } DBColumnType;

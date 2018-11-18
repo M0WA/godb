@@ -20,7 +20,7 @@ func TestDDL(t *testing.T) {
 		}
 
 		dbtypes := []string{ "mysql", "postgre" }
-		dbconf := &DDLTmplConfig{OutDir: "generated/sql", TmplDir: "../../../tmpl/sql", Recreate: true}
+		dbconf := &DDLTmplConfig{OutDir: "../../../generated/sql", TmplDir: "../../../tmpl/sql", Recreate: true}
 		for _,dbt := range dbtypes {
 			var tmpl DDLTmpl = nil
 			switch dbt {

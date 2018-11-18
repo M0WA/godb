@@ -6,15 +6,15 @@
 #include "db.h"
 #include "column.h"
 #include "table.h"
-{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}
-const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := .Tables }}
+{{ $td := . }}{{ range $db := .L.Databases }}
+const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := $db.Tables }}
 
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
-const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}";{{ with $tbl }}{{ range $col := .Columns }}
-const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{ end }}{{/* columns */}}
+const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}";{{ range $col := $tbl.Columns }}
+const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{/* columns */}}
 
-static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ with $tbl }}{{ range $i,$col := .Columns }}
+static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $col := $tbl.Columns }}
 	(struct _DBColumnDef){ 
 		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
 		.name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }},
@@ -23,7 +23,7 @@ static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{
 		.size = {{ $td.SizeOf $col }},
 		.autoincrement = {{ if $col.AutoIncrement }}1{{ else }}0{{ end }},
 		.notnull = {{ if $col.NotNull }}1{{ else }}0{{ end }},
-	}, {{ end }}{{ end }}{{/* columns */}}
+	}, {{ end }}{{/* columns */}}
 };
 
 static const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
@@ -37,10 +37,10 @@ void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl)
 	tbl->tbl.def = &def_{{ $db.Name }}_{{ $tbl.Name }};
 	//tbl->tbl.bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
 	memset(&(tbl->tbl.valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
-{{ with $tbl }}{{ range $i,$col := .Columns }}
+{{ range $col := $tbl.Columns }}
 	tbl->tbl.colptr.{{ $col.Name }} = 0;
-{{ end }}{{ end }}
+{{ end }}{{/* columns */}}
 	tbl->tbl.p_colptr = &(tbl->tbl.colptr);
 }
 
-{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
+{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

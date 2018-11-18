@@ -3,18 +3,18 @@
 #include <time.h>
 
 #include "table.h"
-{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
+{{ $td := . }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
 #pragma pack(push, 1)
-typedef struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $col := .Columns }}
-	{{ $td.DataVar $col $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+typedef struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} { {{ range $col := $tbl.Columns }}
+	{{ $td.DataVar $col $col.Name }};{{ end }}{{/* columns */}}
 } valbuf_{{ $db.Name }}_{{ $tbl.Name }};
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $col := .Columns }}
-	{{ $td.PtrVar $col $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+typedef struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} { {{ range $col := $tbl.Columns }}
+	{{ $td.PtrVar $col $col.Name }};{{ end }}{{/* columns */}}
 } colptr_{{ $db.Name }}_{{ $tbl.Name }};
 #pragma pack(pop)
 
@@ -36,5 +36,4 @@ typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
 
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl);
-
-{{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}
+{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
