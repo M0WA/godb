@@ -11,6 +11,11 @@
 struct _MySQLHandle {
 	MYSQL* conn;
 } MySQLHandle;
+
+struct _MySQLConfig {
+	int autoreconnect;
+	int compression;
+} MySQLConfig;
 #endif
 
 /* *********** Postgres **************** */
@@ -30,6 +35,10 @@ typedef struct _DBConfig {
 	char name[MAX_DB_NAME];
 	char user[MAX_DB_USER];
 	char pass[MAX_DB_PASS];
+
+#ifndef _DISABLE_MYSQL
+	struct _MySQLConfig mysql;
+#endif
 } DBConfig;
 
 /* *********** DBHandle **************** */

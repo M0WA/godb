@@ -42,6 +42,11 @@ static int init_db_config(DBConfig* conf,const char* __restrict host,unsigned sh
 	strncpy( conf->name, db  ,  MAX_DB_NAME );
 	strncpy( conf->user, user, MAX_DB_USER );
 	strncpy( conf->pass, pass, MAX_DB_PASS );
+
+#ifndef _DISABLE_MYSQL
+	conf->mysql.autoreconnect = 1;
+	conf->mysql.compression = 1;
+#endif
 	return 0;
 }
 

@@ -26,7 +26,15 @@ func (*cTmplData)DataVar(c *layout.Column, varname string)(string) {
 		case layout.DATETIME:
 			return "struct tm " + varname 
 		case layout.INT:
-			return "long long " + varname
+			if c.Size == 16 {
+				return "short " + varname
+			} else if c.Size == 32 || c.Size == 0 {
+				return "long " + varname
+			} else if c.Size == 64 {
+				return "long long " + varname
+			} else {
+				return "invalid"
+			}
 		case layout.FLOAT:
 			return "double " + varname
 		case layout.STRING:
@@ -45,7 +53,15 @@ func (*cTmplData)PtrVar(c *layout.Column, varname string)(string) {
 		case layout.DATETIME:
 			return "struct tm* " + varname 
 		case layout.INT:
-			return "long long* " + varname
+			if c.Size == 16 {
+				return "short *" + varname
+			} else if c.Size == 32 || c.Size == 0 {
+				return "long *" + varname
+			} else if c.Size == 64 {
+				return "long long *" + varname
+			} else {
+				return "invalid"
+			}
 		case layout.FLOAT:
 			return "double* " + varname
 		case layout.STRING:
@@ -65,7 +81,15 @@ func (td *cTmplData)SizeOf(c *layout.Column)(string) {
 		case layout.DATETIME:
 			s = "struct tm"
 		case layout.INT:
-			s = "long long"
+			if c.Size == 16 {
+				s = "short"
+			} else if c.Size == 32 || c.Size == 0 {
+				s = "long"
+			} else if c.Size == 64 {
+				s = "long long"
+			} else {
+				return "invalid"
+			}
 		case layout.FLOAT:
 			s = "double"
 		case layout.STRING:

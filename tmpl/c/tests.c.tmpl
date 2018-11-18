@@ -13,7 +13,7 @@
 
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 
-static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}	
+static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}	
 	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.DataType "string" }};
 	sprintf(t{{ $col.Name }},"test");
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
@@ -23,10 +23,10 @@ static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }
 	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
 	{{ else if eq $col.DataType "int" }} = 10;
 	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
-	{{ end }}{{/* end if */}} {{ end }}{{/* columns */}}
+	{{ end }}{{/* end if */}}{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
 }
 
-static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
+static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
 	if( !tbl->tbl.colptr.{{ $col.Name }} ) {
 	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }
 	{{ if eq $col.DataType "datetime" }}{{ else if eq $col.DataType "string" }}
@@ -40,7 +40,7 @@ static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.N
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %f",*tbl->tbl.{{ $col.Name }}); } {{ end }}{{/* end if */}}
 	if( tbl->tbl.colptr.{{ $col.Name }} != tbl->dbtbl.valbuf[{{ $i }}] ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid dbtable ptr: %p != %p",tbl->tbl.colptr.{{ $col.Name }},tbl->dbtbl.valbuf[{{ $i }}]); }
-	{{ end }}{{/* columns */}}
+	{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
 }
 
 static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {

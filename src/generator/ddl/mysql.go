@@ -75,7 +75,7 @@ func mysqlTableOpts(l layout.Layouter, db string, tbl string)(out string) {
 	if t.MySQL.RowFormat != "" {
 		out += " ROW_FORMAT=" + t.MySQL.RowFormat
 	}
-	if t.MySQL.RowFormat != "" {
+	if t.MySQL.DefaultCharset != "" {
 		out += " CHARSET=" + t.MySQL.DefaultCharset
 	}
 	return
