@@ -12,6 +12,12 @@ typedef struct _InsertStmt {
 	size_t nrows;
 } InsertStmt;
 
+typedef struct _SelectStmt {
+	const struct _DBColumnDef * defs;
+	size_t ncols;
+	struct _WhereClause where;
+} SelectStmt;
+
 typedef struct _UpdateStmt {
 	struct _WhereClause where;
 } UpdateStmt;
@@ -22,7 +28,3 @@ typedef struct _UpsertStmt {
 typedef struct _DeleteStmt {
 	struct _WhereClause where;
 } DeleteStmt;
-
-typedef struct _SelectStmt {
-	struct _WhereClause where;
-} SelectStmt;

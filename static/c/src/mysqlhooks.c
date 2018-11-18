@@ -18,6 +18,10 @@ typedef struct _MySQLBindWrapper {
 	MYSQL_TIME* times;
 } MySQLBindWrapper;
 
+static char* mysql_where(const struct _WhereClause* clause,MySQLBindWrapper* wrapper) {
+	return 0;
+}
+
 static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types* ft,unsigned long* buffer_length) {
 	*buffer_length = 0;
 	switch(col->type) {
@@ -293,6 +297,79 @@ int mysql_delete_hook(struct _DBHandle* dbh,const struct _DeleteStmt *const s) {
 }
 
 struct _SelectResult* mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s) {
+	static const char fmt[] = "SELECT %s FROM `%s`.`%s` %s";
+	char* colnames = 0;
+	char* where = 0;
+	char* stmtbuf = 0;
+	int rc = 0;
+	MYSQL_STMT *mystmt = 0;
+	MySQLBindWrapper bind;
+	memset(&bind,0,sizeof(MySQLBindWrapper));
+
+	colnames = comma_concat_colnames(s->defs,s->ncols);
+	if(!colnames) {
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;
+	}
+
+	where = mysql_where(&s->where,&bind);
+	if(!where) {
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;
+	}
+
+	size_t sqlsize = strlen(fmt) + strlen(where) + strlen(colnames);
+	stmtbuf = malloc(sqlsize);
+	if(!stmtbuf) {
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;
+	}
+	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,where);
+
+	mystmt = mysql_stmt_init(dbh->mysql.conn);
+	if(!mystmt) {
+		rc = 1;
+		LOG_WARN("mysql_stmt_init: is null");
+		goto MYSQL_SELECT_EXIT; }
+
+	if( mysql_stmt_prepare(mystmt, stmtbuf, strlen(stmtbuf)) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;	}
+
+	if( bind.bind && mysql_stmt_bind_param(mystmt,bind.bind) ) {
+		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;	}
+
+	if( mysql_stmt_execute(mystmt) ) {
+		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;	}
+
+	//TODO: read result
+
+MYSQL_SELECT_EXIT:
+	if(colnames) {
+		free(colnames); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+	if(mystmt) {
+		mysql_stmt_close(mystmt); }
+	if(where) {
+		free(where); }
+	if(bind.bind) {
+		free(bind.bind); }
+	if(bind.is_null) {
+		free(bind.is_null); }
+	if(bind.str_length) {
+		free(bind.str_length); }
+	if(bind.times) {
+		free(bind.times); }
+
+	if(rc == 1) {
+		return 0;}
 	return 0;
 }
 
