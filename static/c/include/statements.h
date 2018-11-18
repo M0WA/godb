@@ -3,14 +3,7 @@
 #include <stdint.h>
 
 #include "table.h"
-
-typedef struct _WhereClausePart {
-} WhereClausePart;
-
-typedef struct _WhereClause {
-	struct _WhereClausePart* parts;
-	size_t cnt;
-} WhereClause;
+#include "where.h"
 
 typedef struct _InsertStmt {
 	const struct _DBColumnDef * defs;
