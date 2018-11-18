@@ -9,12 +9,12 @@
 #include "tests.h"
 
 static DBHandle* test_create_connection(DBTypes type) {
-	Log(LOG_DEBUG,"checking create_dbhandle()");
+	LOG_DEBUG("checking create_dbhandle()");
 	DBHandle* dbh = create_dbhandle(type);
 	if ( !dbh ) {
 		LOG_FATAL(1,"create_dbhandle() failed"); }
 
-	Log(LOG_DEBUG,"checking connect_db()");
+	LOG_DEBUG("checking connect_db()");
 	if( connect_db(dbh,"localhost",3306,"mydb","myuser","mypass") ) {
 		LOG_FATAL(1,"connect_db() failed"); }
 
@@ -22,34 +22,37 @@ static DBHandle* test_create_connection(DBTypes type) {
 }
 
 static void test_destroy_connection(DBHandle** dbh) {
-	Log(LOG_DEBUG,"checking disconnect_db()");
+	LOG_DEBUG("checking disconnect_db()");
 	if ( disconnect_db(*dbh) ) {
 		LOG_FATAL(1,"disconnect_db() failed"); }
 
-	Log(LOG_DEBUG,"checking destroy_dbhandle()");
+	LOG_DEBUG("checking destroy_dbhandle()");
 	if( destroy_dbhandle(dbh) ) {
 		LOG_FATAL(1,"destroy_dbhandle() failed"); }
 }
 
 static void test(DBTypes type) {
-	test_tables();
-
 	DBHandle* dbh = test_create_connection(type);
+	test_tables_db(dbh);
 	test_destroy_connection(&dbh);
 }
 
 int main(int argc,char** argv) {
 
-	SetLogLevel(LOG_DEBUG);
+	SetLogLevel(LOGLVL_DEBUG);
+
+	LOG_DEBUG("checking generated tables");
+	test_tables_static();
 
 #ifndef _DISABLE_MYSQL
+	LOG_DEBUG("checking db type mysql");
 	test(DB_TYPE_MYSQL);
 #endif
 #ifndef _DISABLE_POSTGRES
+	LOG_DEBUG("checking db type postgres");
 	test(DB_TYPE_POSTGRES);
 #endif
 
 	return 0;
 }
-
 #endif

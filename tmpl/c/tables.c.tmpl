@@ -6,20 +6,23 @@
 #include "db.h"
 #include "column.h"
 #include "table.h"
-#include "names.h"
-#include "statements.h"
+{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}
+const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := .Tables }}
 
-struct _DBHandle;
-
-{{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
+
+const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}";{{ with $tbl }}{{ range $col := .Columns }}
+const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{ end }}{{/* columns */}}
 
 static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ with $tbl }}{{ range $i,$col := .Columns }}
 	(struct _DBColumnDef){ 
 		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
 		.name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }},
 		.table = c_{{ $db.Name }}_{{ $tbl.Name }},
-		.database = c_{{ $db.Name }}
+		.database = c_{{ $db.Name }},
+		.size = {{ $td.SizeOf $col }},
+		.autoincrement = {{ if $col.AutoIncrement }}1{{ else }}0{{ end }},
+		.notnull = {{ if $col.NotNull }}1{{ else }}0{{ end }},
 	}, {{ end }}{{ end }}{{/* columns */}}
 };
 
@@ -30,68 +33,14 @@ static const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DB
 	.ncols = {{ len $tbl.Columns }},
 };
 
-static const size_t bytepos_{{ $db.Name }}_{{ $tbl.Name }}[] = (size_t[]){ {{ with $tbl }}{{ range $i,$col := .Columns }}
-	0{{ if gt $i 0 }}{{ range $ii,$col2 := $tbl.Columns }}{{ if lt $ii $i }} + {{ $td.SizeOf $col2  }}{{ end }}{{ end }}{{ end }},{{ end }}{{ end }}
-};
-
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) {
-	tbl->def = &def_{{ $db.Name }}_{{ $tbl.Name }};
-	tbl->bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
-	memset(&(tbl->valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
+	tbl->tbl.def = &def_{{ $db.Name }}_{{ $tbl.Name }};
+	//tbl->tbl.bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
+	memset(&(tbl->tbl.valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
 {{ with $tbl }}{{ range $i,$col := .Columns }}
-	tbl->{{ $col.Name }} = 0;{{ end }}{{ end }}
-}
-
-int from_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTable* dbtbl,struct _{{ $db.Name }}_{{ $tbl.Name }}* tbl) {
-	if(!tbl||!tbl->def||!dbtbl||!dbtbl->def||tbl->def->ncols != dbtbl->def->ncols) {
-		return 1; }
-	memcpy(&tbl->valbuf,dbtbl->valbuf,sizeof(tbl->valbuf));
-	{{ with $tbl }}{{ range $i,$col := .Columns }}{{ if eq $col.DataType "string" }}
-	tbl->{{ $col.Name }} = (char*)&(tbl->valbuf.{{ $col.Name }});{{ else }}
-	tbl->{{ $col.Name }} = &(tbl->valbuf.{{ $col.Name }});{{ end }}{{ end }}{{ end }}
-	
-	return 0;
-}
-
-int to_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _{{ $db.Name }}_{{ $tbl.Name }}* tbl,struct _DBTable* dbtbl) {
-	if(!tbl||!dbtbl) {
-		return 1; }
-	
-	dbtbl->valbuf = malloc(sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));
-	if(!dbtbl->valbuf) {
-		return 1; }
-	memcpy(dbtbl->valbuf,&tbl->valbuf,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));
-	
-	dbtbl->def = tbl->def;
-	dbtbl->bytepos = (const size_t*)&bytepos_{{ $db.Name }}_{{ $tbl.Name }};
-	return 0;
-}
-
-int insert_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh,const struct _{{ $db.Name }}_{{ $tbl.Name }}** tbl,size_t nrows) {
-	if(!nrows) {
-		return 0; }
-	if(!tbl || !tbl[0] || !(tbl[0])->def || !(tbl[0])->def->cols) {
-		return 1; }
-
-	struct _InsertStmt stmt = (struct _InsertStmt){
-		.defs = (tbl[0])->def->cols,
-		.ncols = (tbl[0])->def->ncols,
-		.nrows = nrows,
-	};	
-	
-	stmt.valbuf = malloc(sizeof(unsigned char*) * nrows);	 
-	if(!stmt.valbuf) {
-		return 1; }
-
-	for(size_t i = 0; i < nrows; i++) {
-		stmt.valbuf[i] = (const unsigned char*)&((tbl[i])->valbuf); }
-
-	if( insert_db(dbh,&stmt) ) {
-		free(stmt.valbuf);
-		return 1; }
-
-	free(stmt.valbuf);
-	return 0;
+	tbl->tbl.colptr.{{ $col.Name }} = 0;
+{{ end }}{{ end }}
+	tbl->tbl.p_colptr = &(tbl->tbl.colptr);
 }
 
 {{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

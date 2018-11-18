@@ -2,10 +2,7 @@
 
 #include <time.h>
 
-struct _DBTableDef;
-struct _DBTable;
-struct _DBHandle;
-
+#include "table.h"
 {{ $td := . }}{{ with .L }}{{ range $db := .Databases }}{{ with $db }}{{ range $tbl := .Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
@@ -15,24 +12,29 @@ typedef struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range 
 } valbuf_{{ $db.Name }}_{{ $tbl.Name }};
 #pragma pack(pop)
 
-enum IDX_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $i,$col := .Columns }}
-	IDX_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} = {{ $i }},{{ end }}{{ end }}{{/* columns */}}	
-	IDX_{{ $db.Name }}_{{ $tbl.Name }}_MAX,
-};
-
-typedef struct _{{ $db.Name }}_{{ $tbl.Name }} {
-	const struct _DBTableDef* def;{{ with $tbl }}{{ range $col := .Columns }}	
+#pragma pack(push, 1)
+typedef struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} { {{ with $tbl }}{{ range $col := .Columns }}
 	{{ $td.PtrVar $col $col.Name }};{{ end }}{{ end }}{{/* columns */}}
+} colptr_{{ $db.Name }}_{{ $tbl.Name }};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _{{ $db.Name }}_{{ $tbl.Name }}_impl {
+	const struct _DBTableDef* def;
+	const struct _colptr_{{ $db.Name }}_{{ $tbl.Name }}* p_colptr;
+	struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} colptr;
 	struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} valbuf;
-	const size_t (*bytepos)[];
+} {{ $db.Name }}_{{ $tbl.Name }}_impl;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
+	struct _DBTable dbtbl;
+	struct _{{ $db.Name }}_{{ $tbl.Name }}_impl tbl;
 } {{ $db.Name }}_{{ $tbl.Name }};
+#pragma pack(pop)
 
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl);
-
-int from_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTable*,struct _{{ $db.Name }}_{{ $tbl.Name }}*);
-int to_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(const struct _{{ $db.Name }}_{{ $tbl.Name }}*,struct _DBTable*);
-
-int insert_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh,const struct _{{ $db.Name }}_{{ $tbl.Name }}**,size_t nrows);
 
 {{ end }}{{ end }}{{/* tables */}}{{ end }}{{ end }}{{/* databases */}}

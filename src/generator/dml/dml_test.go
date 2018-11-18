@@ -14,7 +14,7 @@ func TestDML(t *testing.T) {
 			continue
 		}
 		
-		if err = Generate(l,"/home/user/repos/GoDB/generated/","/home/user/repos/GoDB/tmpl/"); err != nil {
+		if err = Generate(l,"../../../generated","../../../tmpl"); err != nil {
 			t.Fatal(err.Error())
 		}
 	}

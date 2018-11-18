@@ -1,45 +1,56 @@
 package ddl
 
 import (
-	"io"
+	"os"
+	"text/template"
 	"generator/layout"
 )
 
-type generator interface {
-	Database(*layout.Database, io.Writer)error
-	Table(*layout.Database, *layout.Table, io.Writer)error
-	ForeignKey(*layout.Database, *layout.Table, *layout.ForeignKey, io.Writer)error
+type DDLTmplConfig struct {
+	OutDir string 
+	TmplDir string
+	Recreate bool
 }
 
-func generate(g generator,l layout.Layouter,w io.Writer)error {
-	for _,db := range l.Layout().Databases {
-		if err := g.Database(&db, w); err != nil {
+type DDLTmplData struct {
+	Layouter layout.Layouter
+	Recreate bool
+}
+
+type DDLTmpl interface {
+	Funcs()template.FuncMap
+	Type()string
+}
+
+func Generate(l layout.Layouter,tmpl DDLTmpl,conf *DDLTmplConfig)error {
+	tmpls := []string{ "01_databases.sql", "02_tables.sql", "03_indexes.sql", "04_foreignkeys.sql" }
+	ddl := new(DDLTmplData)
+	ddl.Layouter = l
+	ddl.Recreate = conf.Recreate
+	for _,name := range tmpls {
+		if err := ProcessTemplate(name,ddl,tmpl,conf); err != nil {
 			return err
-		}
-		for _,t := range db.Tables {
-			if err := g.Table(&db, &t, w); err != nil {
-				return err
-			}
-		}
-	}
-	
-	for _,db := range l.Layout().Databases {
-		for _,t := range db.Tables {
-			for _,k := range t.ForeignKeys {
-				if err := g.ForeignKey(&db, &t, &k, w); err != nil {
-					return err
-				}
-			}	
 		}
 	}
 	return nil
 }
 
-func Generate(l layout.Layouter,w io.Writer)error {
-	if err := generate(new(mysqlGenerator),l,w); err != nil {
+func ProcessTemplate(name string,t *DDLTmplData,tmpl DDLTmpl,conf *DDLTmplConfig)error {
+	os.MkdirAll(conf.OutDir + "/" + tmpl.Type(), 0700)
+	
+	var err error
+	h := template.New(name + ".tmpl")
+    h.Funcs(tmpl.Funcs())
+    
+	if h,err = h.ParseFiles(conf.TmplDir + "/" + name + ".tmpl"); err != nil {
 		return err
 	}
-	if err := generate(new(postgreGenerator),l,w); err != nil {
+	
+	w, err := os.Create(conf.OutDir + "/" + tmpl.Type() + "/" + name)
+	if err != nil {
+		return err
+	}
+	if err = h.Execute(w,t); err != nil {
 		return err
 	}
 	return nil

@@ -17,6 +17,8 @@ var inputFile *string = flag.String("f", "-", "yaml containing database descript
 var outputDir *string = flag.String("o", "generated", "output directory for generated sources")
 var templateDir *string = flag.String("t", "tmpl", "template directory")
 var testLayout *bool = flag.Bool("l", false, "print testlayout and exit")
+var disableMySQL *bool = flag.Bool("m", false, "do not generate mysql ddl")
+var disablePostgre *bool = flag.Bool("p", false, "do not generate postgre ddl")
 
 func initLayouter()(layout.Layouter) {
 	var f *os.File
@@ -41,13 +43,28 @@ func initLayouter()(layout.Layouter) {
     return l
 }
 
-func openWriter(fn string)(*os.File) {
-	f, err := os.Create(fn)
-	if err != nil {
+func createDDL(l layout.Layouter) {
+    dbconf := &ddl.DDLTmplConfig{OutDir: *outputDir + "/sql", TmplDir: *templateDir + "/sql", Recreate: true}
+    ddltmpls := make([]ddl.DDLTmpl,0)
+    if ! *disableMySQL {
+    	ddltmpls = append(ddltmpls,new(ddl.MySQLTmpl))
+    }
+    if ! *disablePostgre {
+    	ddltmpls = append(ddltmpls,new(ddl.PostgreTmpl))
+    }
+    for _,dd := range ddltmpls {
+    	if err := ddl.Generate(l,dd,dbconf); err != nil {
+	    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
+	    	os.Exit(1)
+	    }
+    }
+}
+
+func createDML(l layout.Layouter) {
+    if err := dml.Generate(l,*outputDir,*templateDir); err != nil {
     	fmt.Fprintf(os.Stderr,err.Error()+"\n")
     	os.Exit(1)
-	}
-	return f
+    }
 }
 
 func main() {
@@ -66,16 +83,7 @@ func main() {
     	os.Exit(1)
     }
     
-    os.MkdirAll(*outputDir + "/sql/", 0700)
-    wddl := openWriter(*outputDir + "/sql/ddl.sql")
-    defer wddl.Close()
-    if err := ddl.Generate(l,wddl); err != nil {
-    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
-    	os.Exit(1)
-    }
-    if err := dml.Generate(l,*outputDir,*templateDir); err != nil {
-    	fmt.Fprintf(os.Stderr,err.Error()+"\n")
-    	os.Exit(1)
-    }
+    createDDL(l);
+    createDML(l);
 }
 

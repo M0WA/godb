@@ -3,7 +3,7 @@ package ddl
 import (
     "testing"
     "strings"
-    "bytes"
+    "errors"
     "generator/layout"
 )
 
@@ -18,29 +18,26 @@ func TestDDL(t *testing.T) {
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-		
-		var s string
-		buf := bytes.NewBufferString(s)
-		if err = Generate(l,buf); err != nil {
-			t.Fatal(err.Error())
-		}
-		s = buf.String()
-		
-		switch {
-			case l.Database("simpledb1") != nil:
-				if s != simpleDB {
-					t.Fatalf("invalid sql:\n%s\n\n%s",s,simpleDB)
-				}
-			case l.Database("complexdb1") != nil:
-				if s != complexDB {
-					t.Fatalf("invalid sql:\n%s\n\n%s",s,complexDB)
-				}
+
+		dbtypes := []string{ "mysql", "postgre" }
+		dbconf := &DDLTmplConfig{OutDir: "generated/sql", TmplDir: "../../../tmpl/sql", Recreate: true}
+		for _,dbt := range dbtypes {
+			var tmpl DDLTmpl = nil
+			switch dbt {
+			case "mysql":
+				tmpl = new(MySQLTmpl)
+			case "postgre":
+				tmpl = new(PostgreTmpl)
 			default:
-				t.Fatal("unknown test layout");
+				t.Fatal(errors.New("invalid database type"))
+			}
+			if err = Generate(l,tmpl,dbconf); err != nil {
+				t.Fatal(err.Error())
+			}
 		}
 	}
 }
-
+/*
 var simpleDB string = `CREATE DATABASE simpledb1;
 CREATE TABLE simpledb1.simpletable1 (
     ID BIGINT NOT NULL AUTO_INCREMENT,
@@ -76,6 +73,6 @@ CREATE TABLE complexdb1.complextable2 (
 
 ALTER TABLE complexdb1.complextable2 ADD CONSTRAINT FK_complexdb1_complextable2_ID__REF__complexdb1_complextable1_ID FOREIGN KEY (FK_ID) REFERENCES complexdb1.complextable1 (ID);
 `
-
+*/
 
 

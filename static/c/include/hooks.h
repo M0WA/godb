@@ -22,14 +22,14 @@ struct _DeleteStmt;
 struct _SelectStmt;
 struct _SelectResult;
 
-typedef int (*DBInsertHook)(struct _DBHandle*,struct _InsertStmt*);
-typedef int (*DBUpdateHook)(struct _DBHandle*,struct _UpdateStmt*);
-typedef int (*DBUpsertHook)(struct _DBHandle*,struct _UpsertStmt*);
-typedef int (*DBDeleteHook)(struct _DBHandle*,struct _DeleteStmt*);
-typedef struct _SelectResult* (*DBSelectHook)(struct _DBHandle*,struct _SelectStmt*);
+typedef int (*DBInsertHook)(struct _DBHandle*,const struct _InsertStmt *const);
+typedef int (*DBUpdateHook)(struct _DBHandle*,const struct _UpdateStmt *const);
+typedef int (*DBUpsertHook)(struct _DBHandle*,const struct _UpsertStmt *const);
+typedef int (*DBDeleteHook)(struct _DBHandle*,const struct _DeleteStmt *const);
+typedef struct _SelectResult* (*DBSelectHook)(struct _DBHandle*,const struct _SelectStmt *const);
 
 typedef struct _DBHooks {
-	DBConnectHook connect;
+	DBConnectHook    connect;
 	DBDisconnectHook disconnect;
 
 	DBInsertHook insert;

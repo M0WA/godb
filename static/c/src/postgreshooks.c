@@ -7,11 +7,11 @@
 
 int postgres_connect_hook(struct _DBHandle* dbh) {
 	if(!dbh) {
-		Log(LOG_WARN,"handle is null");
+		LOG_WARN("handle is null");
 		return 1;
 	}
 	if(dbh->postgres.conn) {
-		Log(LOG_WARN,"postgres handle is already initalized");
+		LOG_WARN("postgres handle is already initalized");
 		return 1;
 	}
 
@@ -22,53 +22,55 @@ int postgres_connect_hook(struct _DBHandle* dbh) {
 			port,
 			"", //options
 			"", //tty
-			"", //dbname
+			dbh->config.name,
 			dbh->config.user,
 			dbh->config.pass );
 	if(!dbh->postgres.conn) {
-		Log(LOG_WARN,"postgres handle failed to initalize");
+		LOG_WARN("postgres handle failed to initalize");
 		return 1;
 	}
 	if (PQstatus(dbh->postgres.conn) != CONNECTION_OK) {
-		Logf(LOG_WARN,"Connection to database failed: %s",PQerrorMessage(dbh->postgres.conn));
-		postgres_disconnect_hook(dbh);
+		LOGF_WARN("Connection to database failed: %s",PQerrorMessage(dbh->postgres.conn));
+		if(dbh->postgres.conn) {
+			postgres_disconnect_hook(dbh); }
+		return 1;
 	}
 	return 0;
 }
 
 int postgres_disconnect_hook(struct _DBHandle* dbh) {
 	if(!dbh) {
-		Log(LOG_WARN,"handle is null");
+		LOG_WARN("handle is null");
 		return 1;
 	}
 	if(!dbh->postgres.conn) {
-		Log(LOG_WARN,"postgres handle is not initalized");
+		LOG_WARN("postgres handle is not initalized");
 		return 1;
 	}
 	PQfinish(dbh->postgres.conn);
 	dbh->postgres.conn = 0;
 
-	Log(LOG_DEBUG,"disconnected from postgres-database");
+	LOG_DEBUG("disconnected from postgres-database");
 	return 0;
 }
 
-int postgres_insert_hook(struct _DBHandle* dbh,struct _InsertStmt* s) {
+int postgres_insert_hook(struct _DBHandle* dbh,struct _InsertStmt const*const s) {
 	return 1;
 }
 
-int postgres_update_hook(struct _DBHandle* dbh,struct _UpdateStmt* s) {
+int postgres_update_hook(struct _DBHandle* dbh,struct _UpdateStmt const*const s) {
 	return 1;
 }
 
-int postgres_upsert_hook(struct _DBHandle* dbh,struct _UpsertStmt* s) {
+int postgres_upsert_hook(struct _DBHandle* dbh,struct _UpsertStmt const*const s) {
 	return 1;
 }
 
-int postgres_delete_hook(struct _DBHandle* dbh,struct _DeleteStmt* s) {
+int postgres_delete_hook(struct _DBHandle* dbh,struct _DeleteStmt const*const s) {
 	return 1;
 }
 
-struct _SelectResult* postgres_select_hook(struct _DBHandle* dbh,struct _SelectStmt* s) {
+struct _SelectResult* postgres_select_hook(struct _DBHandle* dbh,struct _SelectStmt const*const s) {
 	return 0;
 }
 

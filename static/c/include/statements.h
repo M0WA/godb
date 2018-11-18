@@ -13,9 +13,9 @@ typedef struct _WhereClause {
 } WhereClause;
 
 typedef struct _InsertStmt {
-	const struct _DBColumnDef* defs;
+	const struct _DBColumnDef * defs;
 	size_t ncols;
-	const unsigned char** valbuf;
+	const void *const*const* valbuf;
 	size_t nrows;
 } InsertStmt;
 

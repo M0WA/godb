@@ -1,0 +1,8 @@
+{{ $td := . }}{{ range $db := $td.Layouter.Layout.Databases }}{{ UseDB $db.Name }}
+{{ range $tbl := $db.Tables }}
+CREATE TABLE {{ $tbl.Name }} ( {{ range $i,$col := $tbl.Columns }}
+  {{ ColSpec $td.Layouter $db.Name $tbl.Name $col.Name }},{{ end }}{{ range $i,$uk := $tbl.UniqueKeys }}
+  {{ UKSpec $td.Layouter $db.Name $tbl.Name $uk }},{{ end }}
+  {{ PKSpec $td.Layouter $db.Name $tbl.Name }}
+){{ TableOpts $td.Layouter $db.Name $tbl.Name }};
+{{ end }}{{ end }}

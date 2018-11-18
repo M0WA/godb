@@ -11,11 +11,9 @@ typedef struct _DBTableDef {
 	size_t ncols;
 } DBTableDef;
 
+#pragma pack(push, 1)
 typedef struct _DBTable {
 	const struct _DBTableDef* def;
-	const size_t* bytepos;
-	unsigned char* valbuf;
+	void** valbuf;
 } DBTable;
-
-int get_colidx_by_name(const char* colname,const struct _DBTableDef* def,size_t* idx);
-const void* get_colbuf_by_idx(size_t idx,const struct _DBTable* tbl);
+#pragma pack(pop)

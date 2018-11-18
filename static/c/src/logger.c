@@ -21,13 +21,13 @@ char invalidLogLvl[] = "N/A  ";
 
 static const char* loglevelToString(LogLevel lvl) {
 	switch(lvl) {
-	case LOG_DEBUG:
+	case LOGLVL_DEBUG:
 		return debugLogLvl;
-	case LOG_INFO:
+	case LOGLVL_INFO:
 		return infoLogLvl;
-	case LOG_WARN:
+	case LOGLVL_WARN:
 		return warnLogLvl;
-	case LOG_ERROR:
+	case LOGLVL_ERROR:
 		return errorLogLvl;
 	default:
 		return invalidLogLvl;
@@ -50,7 +50,7 @@ static int initLogger() {
 			logger = 0;
 			return 1;
 		}
-		logger->lvl = LOG_INFO;
+		logger->lvl = LOGLVL_INFO;
 	}
 	return 0;
 }
@@ -80,7 +80,7 @@ void SetLogLevel(LogLevel lvl) {
 	logger->lvl = lvl;
 }
 
-void Logf(LogLevel lvl,const char* __restrict fmt,...) {
+void _logf(LogLevel lvl,const char* __restrict fmt,...) {
 	if(initLogger()) {
 		return;	}
 	if(lvl < logger->lvl) {
@@ -97,6 +97,6 @@ void Logf(LogLevel lvl,const char* __restrict fmt,...) {
 	fflush(logger->fp);
 }
 
-void Log(LogLevel lvl,const char* __restrict msg) {
-	Logf(lvl,msg);
+void _log(LogLevel lvl,const char* __restrict msg) {
+	_logf(lvl,msg);
 }

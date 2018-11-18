@@ -7,8 +7,9 @@ type Table struct {
 	Name string
 	Columns []Column
 	PrimaryKey PrimaryKey
-	ForeignKeys []ForeignKey
+	IndexKeys []IndexKey
 	UniqueKeys []UniqueKey
+	ForeignKeys []ForeignKey
 	
 	MySQL MySQLTable
 	Postgre PostgreTable

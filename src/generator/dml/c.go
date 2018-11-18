@@ -55,7 +55,7 @@ func (*cTmplData)PtrVar(c *layout.Column, varname string)(string) {
 	}
 }
 
-func (*cTmplData)SizeOf(c *layout.Column)(string) {
+func (td *cTmplData)SizeOf(c *layout.Column)(string) {
 	d, err := layout.ParseDataType(c.DataType)
 	if err != nil {
 		return "invalid"
@@ -74,7 +74,7 @@ func (*cTmplData)SizeOf(c *layout.Column)(string) {
 			s = "invalid"
 	}
 	
-	return fmt.Sprintf("sizeof(%s)",s)
+	return fmt.Sprintf("sizeof(%s)",s)	
 }
 
 func (*cGenerator)processTemplate(t *cTmplData,out string,name string,tmpl string)error {
@@ -107,9 +107,6 @@ func (g *cGenerator)Generate(l layout.Layouter,out string, tmpl string)error {
 	t.ll = l
 	
 	if err := g.processTemplate(t,hd,"columntypes.h",tmpl + "/c"); err != nil {
-		return err
-	}
-	if err := g.processTemplate(t,hd,"names.h",tmpl + "/c"); err != nil {
 		return err
 	}
 	if err := g.processTemplate(t,hd,"tables.h",tmpl + "/c"); err != nil {

@@ -17,7 +17,7 @@ int mysql_init_dbh(struct _DBHandle* dbh) {
 	if (!mysql_thread_safe()) {
 		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}
 	if(dbh->mysql.conn) {
-		Log(LOG_WARN,"mysql handle is already initalized");	}
+		LOG_WARN("mysql handle is already initalized");	}
 	REGISTER_HOOKS(dbh,mysql)
 	return 0;
 }

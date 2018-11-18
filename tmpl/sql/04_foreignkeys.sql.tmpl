@@ -1,0 +1,3 @@
+{{ $td := . }}{{ range $db := $td.Layouter.Layout.Databases }}{{ UseDB $db.Name }}{{ range $tbl := $db.Tables }}{{ range $fk := $tbl.ForeignKeys }}
+ALTER TABLE ADD CONSTRAINT FK_{{ $db.Name }}_{{ $tbl.Name }}_{{ $fk.Column }} FOREIGN KEY ({{ $fk.Column }}) REFERENCES {{ FKSpec $td.Layouter $db.Name $tbl.Name $fk }};{{ end }}
+{{ end }}{{ end }}
