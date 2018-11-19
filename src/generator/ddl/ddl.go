@@ -2,12 +2,13 @@ package ddl
 
 import (
 	"os"
+  "strings"
 	"text/template"
 	"generator/layout"
 )
 
 type DDLTmplConfig struct {
-	OutDir string 
+	OutDir string
 	TmplDir string
 	Recreate bool
 }
@@ -37,15 +38,15 @@ func Generate(l layout.Layouter,tmpl DDLTmpl,conf *DDLTmplConfig)error {
 
 func ProcessTemplate(name string,t *DDLTmplData,tmpl DDLTmpl,conf *DDLTmplConfig)error {
 	os.MkdirAll(conf.OutDir + "/" + tmpl.Type(), 0700)
-	
+
 	var err error
 	h := template.New(name + ".tmpl")
     h.Funcs(tmpl.Funcs())
-    
+
 	if h,err = h.ParseFiles(conf.TmplDir + "/" + name + ".tmpl"); err != nil {
 		return err
 	}
-	
+
 	w, err := os.Create(conf.OutDir + "/" + tmpl.Type() + "/" + name)
 	if err != nil {
 		return err
@@ -54,4 +55,22 @@ func ProcessTemplate(name string,t *DDLTmplData,tmpl DDLTmpl,conf *DDLTmplConfig
 		return err
 	}
 	return nil
+}
+
+func UKSpec(l layout.Layouter, db string, table string, uk layout.UniqueKey)string {
+  cols := ""
+  name := ""
+  for i,k := range uk.Columns {
+    if i != 0 {
+      cols += ","
+      name += "_"
+    }
+    cols += k
+    name += strings.ToUpper(k)
+  }
+  return "CONSTRAINT UK_" + strings.ToUpper(db) + "_" + strings.ToUpper(table) + "_" + name + " UNIQUE KEY(" + cols + ")"
+}
+
+func PKSpec(l layout.Layouter, db string, table string, pk layout.PrimaryKey)string {
+  return "CONSTRAINT PK_" + strings.ToUpper(db) + "_" + strings.ToUpper(table) + " PRIMARY KEY(" + pk.Column + ")"
 }
