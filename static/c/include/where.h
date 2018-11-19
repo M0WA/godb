@@ -25,16 +25,14 @@ typedef enum _WhereEntryType {
 typedef struct _WhereCondition {
 	WhereEntryType type;
 	WhereCompOperator comp;
-	WhereCondOperator op;
+	WhereCondOperator cond;
 	const struct _DBColumnDef* def;
-	size_t colcnt;
-	const void* values;
-	size_t valcnt;
+	const void** values;
+	size_t cnt;
 } WhereCondition;
 
 typedef struct _WhereComposite {
 	WhereEntryType type;
-	WhereCompOperator op;
 	struct _WhereClause** where;
 	size_t cnt;
 } WhereComposite;
@@ -45,6 +43,7 @@ typedef union _WhereStmt {
 } WhereStmt;
 
 typedef struct _WhereClause {
+	WhereCompOperator comp;
 	WhereStmt** stmts;
 	size_t cnt;
 } WhereClause;

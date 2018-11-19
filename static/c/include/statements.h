@@ -5,6 +5,9 @@
 #include "table.h"
 #include "where.h"
 
+typedef struct _OrderBy {
+} OrderBy;
+
 typedef struct _InsertStmt {
 	const struct _DBColumnDef * defs;
 	size_t ncols;
@@ -13,18 +16,19 @@ typedef struct _InsertStmt {
 } InsertStmt;
 
 typedef struct _SelectStmt {
-	const struct _DBColumnDef * defs;
+	const struct _DBColumnDef* defs;
 	size_t ncols;
 	struct _WhereClause where;
+	const struct _DBColumnDef* groupby;
+	size_t ngroups;
+	size_t limit;
 } SelectStmt;
 
 typedef struct _UpdateStmt {
-	struct _WhereClause where;
 } UpdateStmt;
+
+typedef struct _DeleteStmt {
+} DeleteStmt;
 
 typedef struct _UpsertStmt {
 } UpsertStmt;
-
-typedef struct _DeleteStmt {
-	struct _WhereClause where;
-} DeleteStmt;
