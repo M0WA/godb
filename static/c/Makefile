@@ -70,7 +70,7 @@ testrun:
 
 valgrind:
 	DEBUG=1 $(MAKE) testbin
-	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./test
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all -v ./test
 
 $(LIBNAME).so: $(patsubst %.c, %.o, $(OBJS))
 	$(CC) $(CFLAGS) -shared -o $(LIBNAME).so $(OBJS) $(LDFLAGS)

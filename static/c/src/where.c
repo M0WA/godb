@@ -17,38 +17,33 @@ static void where_comp_destroy(struct _WhereComposite* comp) {
 	if(comp->where) {
 		for(size_t i = 0; i < comp->cnt; i++) {
 			where_destroy(comp->where[i]);
-			free(comp->where[i]);
 		}
 		free(comp->where);
+		comp->where = 0;
 	}
-	//free(comp);
 }
 
-static void where_stmt_destroy(union _WhereStmt** s) {
-	if(!s||!*s) {
+static void where_stmt_destroy(union _WhereStmt* s) {
+	if(!s) {
 		return;	}
 
-	union _WhereStmt* stmt = *s;
-	switch(stmt->cond.type) {
+	switch(s->cond.type) {
 	case WHERE_COND:
-		where_cond_destroy(&stmt->cond);
+		where_cond_destroy(&s->cond);
 		break;
 	case WHERE_COMP:
-		where_comp_destroy(&stmt->comp);
+		where_comp_destroy(&s->comp);
 		break;
 	default:
 		return;
 	}
-
-	//free(stmt);
-	*s = 0;
 }
 
 void where_destroy(struct _WhereClause* clause) {
 	if(!clause||!clause->cnt||!clause->stmts) {
 		return;	}
 	for(size_t i = 0; i < clause->cnt; i++) {
-		where_stmt_destroy(&clause->stmts[i]);
+		where_stmt_destroy(clause->stmts[i]);
 	}
 	free(clause->stmts);
 	clause->stmts = 0;
