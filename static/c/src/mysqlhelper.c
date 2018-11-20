@@ -13,6 +13,53 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types* ft,unsigned long* buffer_length) {
+	*buffer_length = 0;
+	switch(col->type) {
+	case COL_TYPE_STRING:
+		*ft = MYSQL_TYPE_STRING;
+		*buffer_length = (col->size + 1);
+		break;
+	case COL_TYPE_INT:
+		if(col->size != 0 && col->size <= 16) {
+			*ft = MYSQL_TYPE_SHORT;
+			*buffer_length = sizeof(short);
+		} else if(col->size <= 32 || col->size == 0) {
+			*ft = MYSQL_TYPE_LONG;
+			*buffer_length = sizeof(long);
+		} else if (col->size <= 64) {
+			*ft = MYSQL_TYPE_LONGLONG;
+			*buffer_length = sizeof(long long);
+		} else {
+			LOGF_WARN("invalid int size for mysql: %lu",col->size);
+			return 1;
+		}
+		break;
+	case COL_TYPE_FLOAT:
+		*ft = MYSQL_TYPE_DOUBLE;
+		*buffer_length = sizeof(double);
+		break;
+	case COL_TYPE_DATETIME:
+		*ft = MYSQL_TYPE_TIMESTAMP;
+		*buffer_length = sizeof(MYSQL_TIME);
+		break;
+	default:
+		LOG_WARN("invalid datatype for mysql");
+		return 1;
+	}
+	return 0;
+}
+
+static int mysql_time(const struct tm *const t,MYSQL_TIME* mt) {
+	mt->year=t->tm_year + 1900;
+	mt->month=t->tm_mon;
+	mt->day=t->tm_mday;
+	mt->hour=t->tm_hour;
+	mt->minute=t->tm_min;
+	mt->second=t->tm_sec;
+	return 0;
+}
+
 static int mysql_comp_op(WhereCompOperator op,char** sql) {
 	if(sql || (*sql) == 0) {
 		return 1; }
@@ -138,52 +185,6 @@ int mysql_where(const struct _WhereClause* clause,MySQLBindWrapper* wrapper,char
 	return 0;
 }
 
-int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types* ft,unsigned long* buffer_length) {
-	*buffer_length = 0;
-	switch(col->type) {
-	case COL_TYPE_STRING:
-		*ft = MYSQL_TYPE_STRING;
-		*buffer_length = (col->size + 1);
-		break;
-	case COL_TYPE_INT:
-		if(col->size != 0 && col->size <= 16) {
-			*ft = MYSQL_TYPE_SHORT;
-			*buffer_length = sizeof(short);
-		} else if(col->size <= 32 || col->size == 0) {
-			*ft = MYSQL_TYPE_LONG;
-			*buffer_length = sizeof(long);
-		} else if (col->size <= 64) {
-			*ft = MYSQL_TYPE_LONGLONG;
-			*buffer_length = sizeof(long long);
-		} else {
-			LOGF_WARN("invalid int size for mysql: %lu",col->size);
-			return 1;
-		}
-		break;
-	case COL_TYPE_FLOAT:
-		*ft = MYSQL_TYPE_DOUBLE;
-		*buffer_length = sizeof(double);
-		break;
-	case COL_TYPE_DATETIME:
-		*ft = MYSQL_TYPE_TIMESTAMP;
-		*buffer_length = sizeof(MYSQL_TIME);
-		break;
-	default:
-		LOG_WARN("invalid datatype for mysql");
-		return 1;
-	}
-	return 0;
-}
-
-int mysql_time(const struct tm *const t,MYSQL_TIME* mt) {
-	mt->year=t->tm_year + 1900;
-	mt->month=t->tm_mon;
-	mt->day=t->tm_mday;
-	mt->hour=t->tm_hour;
-	mt->minute=t->tm_min;
-	mt->second=t->tm_sec;
-	return 0;
-}
 
 int mysql_bind_append(const DBColumnDef* def,const void* val,MySQLBindWrapper* wrapper) {
 	if(wrapper->bind_idx >= MAX_MYSQL_BIND_COLS) {

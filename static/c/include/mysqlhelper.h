@@ -21,10 +21,9 @@ typedef struct _MySQLBindWrapper {
 	size_t times_idx;
 } MySQLBindWrapper;
 
+
 int mysql_bind_append(const struct _DBColumnDef* def,const void* val,MySQLBindWrapper* wrapper);
-int mysql_time(const struct tm *const t,MYSQL_TIME* mt);
-int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types* ft,unsigned long* buffer_length);
-int mysql_where(const struct _WhereClause* clause,MySQLBindWrapper* wrapper,char** sql);
+int mysql_where(const struct _WhereClause* clause,struct _MySQLBindWrapper* wrapper,char** sql);
 int mysql_selectresult_from_stmt(const struct _DBColumnDef *cols,size_t ncols,struct _SelectResult** res,MYSQL_STMT *stmt);
 
 #endif

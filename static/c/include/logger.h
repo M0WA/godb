@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef enum _LogLevel {
 	LOGLVL_DEBUG = 0,
