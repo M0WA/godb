@@ -131,12 +131,11 @@ int disconnect_db(DBHandle* dbh) {
 	return dbh->hooks.disconnect(dbh);
 }
 
-int destroy_dbhandle(struct _DBHandle** dbh) {
-	if(!dbh || !*dbh) {
+int destroy_dbhandle(struct _DBHandle* dbh) {
+	if(!dbh) {
 		return 1;
 	}
-	free(*dbh);
-	*dbh = 0;
+	free(dbh);
 	return 0;
 }
 

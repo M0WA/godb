@@ -23,9 +23,9 @@ static DBHandle* test_create_connection(DBTypes type) {
 	return dbh;
 }
 
-static void test_destroy_connection(DBHandle** dbh) {
+static void test_destroy_connection(DBHandle* dbh) {
 	LOG_DEBUG("checking disconnect_db()");
-	if ( disconnect_db(*dbh) ) {
+	if ( disconnect_db(dbh) ) {
 		LOG_FATAL(1,"disconnect_db() failed"); }
 
 	LOG_DEBUG("checking destroy_dbhandle()");
@@ -117,7 +117,7 @@ static void test_where() {
 static void test(DBTypes type) {
 	DBHandle* dbh = test_create_connection(type);
 	test_tables_db(dbh);
-	test_destroy_connection(&dbh);
+	test_destroy_connection(dbh);
 }
 
 int main(int argc,char** argv) {

@@ -37,22 +37,68 @@ Supported languages:<br><br>
 <tr><td>Python</td><td>TBD</td></tr>
 </table>
 
-## Usage <a name="Usage"></a>
-get and build the library:<br><br>
-<code>
-git clone https://github.com/M0WA/GoDB<br>
-cd GoDB<br>
-cp db.yaml.example db.yaml<br>
-DATABASE_YAML=db.yaml make
-</code>
-<br><br>
-initialize the database (i.e. MySQL):<br><br>
-<code>
-cd generated/sql/mysql/<br>
-cat * | mysql<br>
-</code>
+* Prepared Statements
+* Maximum Brand Independance
+* Full Language Flexibility
+* Extensive Test Framework
+* Minimal Memory + CPU Footprint
+* Open Source
 
-### API <a name="API"></a>
+## Usage <a name="Usage"></a>
+get and build the library:
+
+	git clone https://github.com/M0WA/GoDB
+	cd GoDB
+	cp db.yaml.example db.yaml
+	DATABASE_YAML=db.yaml make
+
+initialize the database (i.e. MySQL):
+
+	cd generated/sql/mysql/
+	cat * | mysql
+
+## API <a name="API"></a>
+
+### C
+
+connect to mysql database:
+
+	init_dblib();
+	
+	DBHandle *dbh = create_dbhandle(DBTYPE_MYSQL);
+	if ( !dbh ) {
+		LOG_FATAL(1,"create_dbhandle() failed"); }
+	
+	if( connect_db(dbh,"localhost",3306,"mydb","myuser","mypass") ) {
+		LOG_FATAL(1,"connect_db() failed"); }
+	
+	// -> do some work here <-
+		
+	if ( disconnect_db(dbh) ) {
+		LOG_FATAL(1,"disconnect_db() failed"); }
+	
+	if( destroy_dbhandle(dbh) ) {
+		LOG_FATAL(1,"destroy_dbhandle() failed"); }
+		
+	exit_dblib();
+
+insert rows into exampledb.exampletable:
+
+	TABLE_STRUCT(exampledb,exampletable,tbl);
+	set_example_values(&tbl);
+	
+	// single row insert
+	if( INSERT_ONE_DBTABLE(dbh,&tbl.dbtbl) ) {
+		LOG_FATAL(1,"insert failed"); }
+	
+	// bulk insert (multiple rows)
+	TABLE_STRUCT(exampledb,exampletable,tbl2);
+	set_example_values(&tbl2);
+	
+	DBTable* rows[2] = { &(tbl.dbtbl), &(tbl2.dbtbl) };
+	const DBTable *const*const rowp = (const DBTable *const*const)&rows;
+	if( insert_dbtable(dbh,rowp,2) ) {
+		LOG_FATAL(1,"bulk insert failed"); }
 
 ## Components <a name="Components"></a>
 
