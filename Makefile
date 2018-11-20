@@ -4,7 +4,7 @@ TMPL_DIR=tmpl
 GENERATED_DIR=generated
 LIBS_DIR=libs
 
-.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean test
+.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean test valgrind
 
 default_target: all
 
@@ -61,5 +61,15 @@ test:
 	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
 	$(MAKE) copylib
 	( cd $(LIBS_DIR)/c && $(MAKE) test )
+	$(MAKE) clean
+	
+valgrind:
+	$(MAKE) clean
+	$(MAKE) generator
+	$(MAKE) testgenerator
+	$(MAKE) cleanlibs
+	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
+	$(MAKE) copylib
+	( cd $(LIBS_DIR)/c && $(MAKE) valgrind )
 	$(MAKE) clean
 	

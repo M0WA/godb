@@ -39,7 +39,8 @@ static void test(DBTypes type) {
 
 int main(int argc,char** argv) {
 
-	SetLogLevel(LOGLVL_DEBUG);
+	set_loglevel(LOGLVL_DEBUG);
+	init_dblib();
 
 	LOG_DEBUG("checking generated tables");
 	test_tables_static();
@@ -53,6 +54,7 @@ int main(int argc,char** argv) {
 	test(DB_TYPE_POSTGRES);
 #endif
 
+	exit_dblib();
 	return 0;
 }
 #endif

@@ -10,3 +10,5 @@ typedef struct _SelectResult {
 	void** rows;
 	size_t nrows;
 } SelectResult;
+
+int destroy_selectresult();

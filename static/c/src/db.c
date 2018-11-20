@@ -50,6 +50,29 @@ static int init_db_config(DBConfig* conf,const char* __restrict host,unsigned sh
 	return 0;
 }
 
+int init_dblib() {
+	LOG_DEBUG("initialize database library");
+#ifndef _DISABLE_MYSQL
+	mysql_init_dblib();
+#endif
+#ifndef _DISABLE_POSTGRES
+	postgres_init_dblib();
+#endif
+	return 0;
+}
+
+int exit_dblib() {
+	LOG_DEBUG("release database library");
+#ifndef _DISABLE_MYSQL
+	mysql_exit_dblib();
+#endif
+#ifndef _DISABLE_POSTGRES
+	postgres_exit_dblib();
+#endif
+	logger_end();
+	return 0;
+}
+
 DBHandle* create_dbhandle(DBTypes type) {
 	DBHandle* dbh = malloc(sizeof(DBHandle));
 	if(!dbh) {

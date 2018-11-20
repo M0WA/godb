@@ -13,6 +13,15 @@
 #include "mysqlhooks.h"
 #include "logger.h"
 
+int mysql_init_dblib() {
+	return mysql_library_init(0, NULL, NULL);
+}
+
+int mysql_exit_dblib() {
+	mysql_library_end();
+	return 0;
+}
+
 int mysql_init_dbh(struct _DBHandle* dbh) {
 	if (!mysql_thread_safe()) {
 		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}

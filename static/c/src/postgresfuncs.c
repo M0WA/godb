@@ -16,4 +16,12 @@ int postgres_init_dbh(struct _DBHandle* dbh) {
 	return 0;
 }
 
+int postgres_init_dblib() {
+	return 0;
+}
+
+int postgres_exit_dblib() {
+	return 0;
+}
+
 #endif

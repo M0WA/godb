@@ -12,8 +12,9 @@ typedef enum _LogLevel {
 	MAX_LOGLEVEL
 } LogLevel;
 
-void SetLogFile(FILE* f);
-void SetLogLevel(LogLevel lvl);
+void logger_end();
+void set_logfile(FILE* f);
+void set_loglevel(LogLevel lvl);
 
 #define LOG_DEBUG(msg)       _log (LOGLVL_DEBUG,msg);
 #define LOG_INFO(msg)        _log (LOGLVL_INFO,msg);

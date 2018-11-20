@@ -22,8 +22,8 @@ typedef struct _MySQLBindWrapper {
 } MySQLBindWrapper;
 
 
-int mysql_bind_append(const struct _DBColumnDef* def,const void* val,MySQLBindWrapper* wrapper);
-int mysql_where(const struct _WhereClause* clause,struct _MySQLBindWrapper* wrapper,char** sql);
+int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWrapper *wrapper);
+int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrapper,char** sql);
 int mysql_selectresult_from_stmt(const struct _DBColumnDef *cols,size_t ncols,struct _SelectResult** res,MYSQL_STMT *stmt);
 
 #endif

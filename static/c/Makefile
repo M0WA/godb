@@ -45,7 +45,7 @@ endif
 CFLAGS =-Wall -fPIC -D_REENTRANT -pthread $(BUILDTYPEFLAGS) $(INCLUDES) $(TESTCFLAGS) $(MYSQLCFLAGS) $(POSTGRESCFLAGS)
 LDFLAGS=$(MYSQLLDFLAGS) $(POSTGRESLDFLAGS)
 
-.PHONY: all clean test
+.PHONY: all clean test testbin
 
 default_target: all
 all: $(LIBNAME).so
@@ -57,13 +57,20 @@ clean:
 	@find . -name "*.so" -delete
 	
 test:
+	$(MAKE) testbin
+	$(MAKE) TEST=1 testrun
+
+testbin:
 	$(MAKE) clean
 	$(MAKE) TEST=1 all
 	$(CC) $(CFLAGS) -D_DB_TEST_VERSION -o test $(OBJS) $(LDFLAGS)
-	$(MAKE) TEST=1 testrun
 	
 testrun:
 	$(GDB) ./test
+
+valgrind:
+	DEBUG=1 $(MAKE) testbin
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./test
 
 $(LIBNAME).so: $(patsubst %.c, %.o, $(OBJS))
 	$(CC) $(CFLAGS) -shared -o $(LIBNAME).so $(OBJS) $(LDFLAGS)

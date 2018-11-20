@@ -3,9 +3,11 @@
 #include <stdlib.h>
 
 static void where_cond_destroy(struct _WhereCondition* c) {
+	/*
 	if(c) {
 		free(c);
 	}
+	*/
 }
 
 static void where_comp_destroy(struct _WhereComposite* comp) {
@@ -19,7 +21,7 @@ static void where_comp_destroy(struct _WhereComposite* comp) {
 		}
 		free(comp->where);
 	}
-	free(comp);
+	//free(comp);
 }
 
 static void where_stmt_destroy(union _WhereStmt** s) {
@@ -38,7 +40,7 @@ static void where_stmt_destroy(union _WhereStmt** s) {
 		return;
 	}
 
-	free(stmt);
+	//free(stmt);
 	*s = 0;
 }
 
@@ -48,6 +50,8 @@ void where_destroy(struct _WhereClause* clause) {
 	for(size_t i = 0; i < clause->cnt; i++) {
 		where_stmt_destroy(&clause->stmts[i]);
 	}
+	free(clause->stmts);
+	clause->stmts = 0;
 }
 
 int where_comp_append(struct _WhereComposite* comp,struct _WhereClause* clause) {

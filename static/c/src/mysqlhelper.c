@@ -13,7 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types* ft,unsigned long* buffer_length) {
+static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *ftype,unsigned long *buffer_length) {
+	enum enum_field_types ftmp;
+	enum enum_field_types *ft = ftype ? ftype : &ftmp;
 	*buffer_length = 0;
 	switch(col->type) {
 	case COL_TYPE_STRING:
@@ -140,8 +142,11 @@ static int mysql_where_cond(const struct _WhereCondition* cond, MySQLBindWrapper
 		}
 	}
 
-	for(size_t i = 0; i < cond->cnt; i++) {
-		if( mysql_bind_append(cond->def,cond->values[i],wrapper) ) {
+	unsigned long buffer_length;
+	if( mysql_datatype(cond->def,0,&buffer_length) ) {
+		return 1; }
+	for(size_t i = 0,pos = 0; i < cond->cnt; i++, pos += buffer_length) {
+		if( mysql_bind_append(cond->def,(cond->values+pos),wrapper) ) {
 			return 1; }
 		if(cond->cnt > 1) {
 			if(i && append_string(", ", sql)) {
@@ -150,14 +155,14 @@ static int mysql_where_cond(const struct _WhereCondition* cond, MySQLBindWrapper
 				return 1; }
 		}
 	}
-	if(cond->cnt && append_string(")", sql)) {
+	if(cond->cnt > 1 && append_string(")", sql)) {
 		return 1; }
 	if(append_string(")", sql)) {
 		return 1;}
 	return 0;
 }
 
-int mysql_where(const struct _WhereClause* clause,MySQLBindWrapper* wrapper,char** sql) {
+int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrapper,char** sql) {
 	if(clause->cnt == 0) {
 		return 0; }
 	if(append_string("(", sql)) {
@@ -185,8 +190,7 @@ int mysql_where(const struct _WhereClause* clause,MySQLBindWrapper* wrapper,char
 	return 0;
 }
 
-
-int mysql_bind_append(const DBColumnDef* def,const void* val,MySQLBindWrapper* wrapper) {
+int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWrapper *wrapper) {
 	if(wrapper->bind_idx >= MAX_MYSQL_BIND_COLS) {
 		LOGF_WARN("mysql allows only %d values in statements, change MAX_MYSQL_BIND_COLS to a higher value if you need more",MAX_MYSQL_BIND_COLS);
 		return 1;

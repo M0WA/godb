@@ -67,14 +67,14 @@ static void printPrefix(LogLevel lvl) {
 	fprintf(logger->fp,"[%s][%s] ",pszTimeString,ll);
 }
 
-void SetLogFile(FILE* f) {
+void set_logfile(FILE* f) {
 	if(initLogger()) {
 		return;	}
 	if( f ) {
 		logger->fp = f; }
 }
 
-void SetLogLevel(LogLevel lvl) {
+void set_loglevel(LogLevel lvl) {
 	if(initLogger()) {
 		return;	}
 	logger->lvl = lvl;
@@ -99,4 +99,11 @@ void _logf(LogLevel lvl,const char* __restrict fmt,...) {
 
 void _log(LogLevel lvl,const char* __restrict msg) {
 	_logf(lvl,msg);
+}
+
+void logger_end() {
+	if(logger) {
+		free(logger);
+		logger =0;
+	}
 }

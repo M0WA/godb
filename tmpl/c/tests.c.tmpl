@@ -24,12 +24,14 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* d
 	stmt.defs = tbl.dbtbl.def->cols;
 	stmt.ncols = tbl.dbtbl.def->ncols;
 
+	char test[] = "test";
+
 	struct _WhereCondition cond;
 	memset(&cond,0,sizeof(struct _WhereCondition));
-	cond.op = WHERE_EQUAL;
+	cond.cond = WHERE_EQUAL;
 	cond.type = WHERE_COND;
-	cond.def = 0;
-	cond.values = 0;
+	cond.def = &(tbl.dbtbl.def->cols[1]);
+	cond.values = (const void**)&test;
 	cond.cnt = 1;
 
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
@@ -40,6 +42,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* d
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
 	DESTROY_STMT( (&stmt) );
+	destroy_selectresult(res);
 }
 
 static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
