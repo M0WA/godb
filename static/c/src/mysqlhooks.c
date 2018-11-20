@@ -154,23 +154,12 @@ MYSQL_INSERT_EXIT:
 	return rc;
 }
 
-int mysql_update_hook(struct _DBHandle* dbh,const struct _UpdateStmt *const s) {
-	return 1;
-}
-
-int mysql_upsert_hook(struct _DBHandle* dbh,const struct _UpsertStmt *const s) {
-	return 1;
-}
-
-int mysql_delete_hook(struct _DBHandle* dbh,const struct _DeleteStmt *const s) {
-	return 1;
-}
-
 int mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s,struct _SelectResult** res) {
-	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s";
+	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s %s %s";
 	char* colnames = 0;
 	char* where = 0;
 	char* stmtbuf = 0;
+	char limit[32] = {0};
 	int rc = 0;
 	MYSQL_STMT *mystmt = 0;
 
@@ -186,12 +175,17 @@ int mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s,st
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
 
-	size_t sqlsize = strlen(fmt) + (where ? strlen(where) : 0) + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
+	if(s->limit[0] > 0) {
+		snprintf(limit,32,"LIMIT %lu %s",s->limit[0],(s->limit[1] ? limit : ""));	}
+
+	size_t wheresize = where ? strlen(where) : 0;
+	size_t limitsize = strlen(limit);
+	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
 	stmtbuf = malloc(sqlsize);
 	if(!stmtbuf) {
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
-	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? where : ""));
+	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? " WHERE " : ""),(where ? where : ""),limit);
 
 	mystmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!mystmt) {
@@ -226,6 +220,18 @@ MYSQL_SELECT_EXIT:
 	if(where) {
 		free(where); }
 	return rc;
+}
+
+int mysql_update_hook(struct _DBHandle* dbh,const struct _UpdateStmt *const s) {
+	return 1;
+}
+
+int mysql_upsert_hook(struct _DBHandle* dbh,const struct _UpsertStmt *const s) {
+	return 1;
+}
+
+int mysql_delete_hook(struct _DBHandle* dbh,const struct _DeleteStmt *const s) {
+	return 1;
 }
 
 #endif

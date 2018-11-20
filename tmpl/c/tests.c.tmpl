@@ -12,23 +12,37 @@
 #include "statements.h"
 #include "selectresult.h"
 #include "logger.h"
+
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} select");
-	
+
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	
+
 	SelectStmt stmt;
-	memset(&stmt,0,sizeof(SelectStmt));	
+	memset(&stmt,0,sizeof(SelectStmt));
 	stmt.defs = tbl.dbtbl.def->cols;
 	stmt.ncols = tbl.dbtbl.def->ncols;
-	
+
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.op = WHERE_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = 0;
+	cond.values = 0;
+	cond.cnt = 1;
+
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
+
 	SelectResult* res = 0;
 	if( select_db(dbh,&stmt,&res) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }	
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
+
+	DESTROY_STMT( (&stmt) );
 }
 
-static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}	
+static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
 	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.DataType "string" }};
 	sprintf(t{{ $col.Name }},"test");
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
@@ -46,17 +60,17 @@ static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }
 
 static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
 	if( !tbl->tbl.colptr.{{ $col.Name }} ) {
-	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }	
+	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }
 	{{ if eq $col.DataType "datetime" }}
 	if (tbl->tbl.colptr.{{ $col.Name }}->tm_year < 100 || tbl->tbl.colptr.{{ $col.Name }}->tm_year > 1000) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid datetime value: %lu-%lu-%lu",tbl->tbl.colptr.{{ $col.Name }}->tm_year,tbl->tbl.colptr.{{ $col.Name }}->tm_mon,tbl->tbl.colptr.{{ $col.Name }}->m_day); } 	
+		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid datetime value: %lu-%lu-%lu",tbl->tbl.colptr.{{ $col.Name }}->tm_year,tbl->tbl.colptr.{{ $col.Name }}->tm_mon,tbl->tbl.colptr.{{ $col.Name }}->m_day); }
 	{{ else if eq $col.DataType "string" }}
 	if( strcmp(tbl->tbl.colptr.{{ $col.Name }},"test") != 0 ){
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %s",tbl->tbl.{{ $col.Name }}); }
 	{{ else if eq $col.DataType "int" }}
 	if( *(tbl->tbl.colptr.{{ $col.Name }}) != 10 ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %d",*tbl->tbl.{{ $col.Name }}); }
-	{{ else if eq $col.DataType "float" }} 
+	{{ else if eq $col.DataType "float" }}
 	if( *(tbl->tbl.colptr.{{ $col.Name }}) != 10.10 ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %f",*tbl->tbl.{{ $col.Name }}); } {{ end }}{{/* end if */}}
 	if( tbl->tbl.colptr.{{ $col.Name }} != tbl->dbtbl.valbuf[{{ $i }}] ) {
@@ -76,7 +90,7 @@ static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* db
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} multi row insert");
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl2);
 	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl2);
-	
+
 	DBTable* rows[2] = { &(tbl.dbtbl), &(tbl2.dbtbl) };
 	const struct _DBTable *const*const rowp = (const struct _DBTable *const*const)&rows;
 	if( insert_dbtable(dbh,rowp,2) ) {
@@ -107,7 +121,7 @@ static void test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}() {
 
 static void test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} indexes");
-	if( !tbl->tbl.def->cols[{{ $i }}].name 
+	if( !tbl->tbl.def->cols[{{ $i }}].name
 	 || strcmp(tbl->tbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0 ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column for index"); } {{ end }}{{/* columns */}}
 }
@@ -124,11 +138,11 @@ static void test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }
 
 static void test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}() {
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	{{ range $i,$col := $tbl.Columns }}	
+	{{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} getter/setter");
 	if( tbl.tbl.colptr.{{ $col.Name }} ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.tbl.colptr.{{ $col.Name }}: not initialized to null"); } {{ end }}{{/* columns */}}
-	{{ range $i,$col := .Columns }}	
+	{{ range $i,$col := .Columns }}
 	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 
@@ -139,10 +153,10 @@ static void test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}() {
 
 static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}();
-	
+
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} instanciation");
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	
+
 	test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(tbl.tbl.def);
 	test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);

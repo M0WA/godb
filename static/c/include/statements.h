@@ -5,6 +5,8 @@
 #include "table.h"
 #include "where.h"
 
+#define DESTROY_STMT(somestmt) where_destroy(&(somestmt->where));
+
 typedef struct _OrderBy {
 } OrderBy;
 
@@ -21,7 +23,7 @@ typedef struct _SelectStmt {
 	struct _WhereClause where;
 	const struct _DBColumnDef* groupby;
 	size_t ngroups;
-	size_t limit;
+	size_t limit[2];
 } SelectStmt;
 
 typedef struct _UpdateStmt {
