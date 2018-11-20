@@ -9,9 +9,24 @@
 #include "table.h"
 #include "column.h"
 #include "tables.h"
+#include "statements.h"
+#include "selectresult.h"
 #include "logger.h"
-
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
+static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} select");
+	
+	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	
+	SelectStmt stmt;
+	memset(&stmt,0,sizeof(SelectStmt));	
+	stmt.defs = tbl.dbtbl.def->cols;
+	stmt.ncols = tbl.dbtbl.def->ncols;
+	
+	SelectResult* res = 0;
+	if( select_db(dbh,&stmt,&res) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }	
+}
 
 static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}	
 	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.DataType "string" }};
@@ -143,7 +158,8 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 
 void test_tables_db(struct _DBHandle* dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
-	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+		test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+		test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }
 

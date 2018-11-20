@@ -26,7 +26,7 @@ typedef int (*DBInsertHook)(struct _DBHandle*,const struct _InsertStmt *const);
 typedef int (*DBUpdateHook)(struct _DBHandle*,const struct _UpdateStmt *const);
 typedef int (*DBUpsertHook)(struct _DBHandle*,const struct _UpsertStmt *const);
 typedef int (*DBDeleteHook)(struct _DBHandle*,const struct _DeleteStmt *const);
-typedef struct _SelectResult* (*DBSelectHook)(struct _DBHandle*,const struct _SelectStmt *const);
+typedef int (*DBSelectHook)(struct _DBHandle*,const struct _SelectStmt *const,struct _SelectResult** res);
 
 typedef struct _DBHooks {
 	DBConnectHook    connect;

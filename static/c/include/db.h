@@ -34,7 +34,7 @@ int insert_stmt(struct _DBHandle* dbh,const struct _InsertStmt *const stmt);
 int update_db(struct _DBHandle* dbh,const struct _UpdateStmt *const stmt);
 int upsert_db(struct _DBHandle* dbh,const struct _UpsertStmt *const stmt);
 int delete_db(struct _DBHandle* dbh,const struct _DeleteStmt *const stmt);
-int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt,const struct _SelectResult**const res);
+int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt, struct _SelectResult** res);
 
 #define INSERT_ONE_DBTABLE(_handle,_dbtbl) ({ \
 	const struct _DBTable *const t = _dbtbl; \

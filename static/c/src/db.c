@@ -200,7 +200,7 @@ int delete_db(struct _DBHandle* dbh,const struct _DeleteStmt *const stmt) {
 	return dbh->hooks.delete(dbh,stmt);
 }
 
-int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt,const struct _SelectResult**const res) {
+int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt, struct _SelectResult** res) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;
@@ -209,6 +209,5 @@ int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt,const s
 		LOG_ERROR("invalid database handle");
 		return 1;
 	}
-	*res = dbh->hooks.select(dbh,stmt);
-	return 0;
+	return dbh->hooks.select(dbh,stmt,res);
 }

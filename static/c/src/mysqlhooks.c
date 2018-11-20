@@ -73,52 +73,42 @@ int mysql_disconnect_hook(struct _DBHandle* dbh) {
 int mysql_insert_hook(struct _DBHandle* dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
 	char* colnames = 0;
-	char stmtbuf[4096] = {0};
-	MYSQL_STMT *mystmt = 0;
+	char* stmtbuf = 0;
 	char* values = 0;
-	size_t time_cols = 0, str_cols = 0;
+	MYSQL_STMT *mystmt = 0;
 
-	struct _MySQLBindWrapper bind;
-	bind.bind = 0;
-	bind.is_null = 0;
-	bind.str_length = 0;
-	bind.times = 0;
+	MySQLBindWrapper bind;
+	memset(&bind,0,sizeof(MySQLBindWrapper));
 
 	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
 		goto MYSQL_INSERT_EXIT;	}
 
-	size_t valsize = (s->ncols * 2) + 3 + 1;
-	values = malloc(valsize);
-	if(!values) {
-		rc = 1;
-		goto MYSQL_INSERT_EXIT;	}
-	values[0] = 0;
-	strcat(values,"(");
-
 	for(size_t i = 0; i < s->nrows; i++) {
+		if(i) {
+			append_string(",",&values);	}
+		append_string("(",&values);
 		for(size_t j = 0; j < s->ncols; j++) {
-			if(s->defs[j].type == COL_TYPE_DATETIME) {
-				time_cols++;
-			} else if (s->defs[j].type == COL_TYPE_STRING) {
-				str_cols++;
+			if( mysql_bind_append(&(s->defs[j]),s->valbuf[i][j], &bind ) ) {
+				rc = 1;
+				LOG_WARN("mysql_bind_append: error");
+				goto MYSQL_INSERT_EXIT;
 			}
-
 			if(j) {
-				strcat(values,",");
+				append_string(",",&values);
 			}
-			strcat(values,"?");
+			append_string("?",&values);
 		}
-		strcat(values,")");
-
-		if(s->nrows > 1 && i < (s->nrows-1)) {
-			strcat(values,",(");
-		}
+		append_string(")",&values);
 	}
 
 	char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES %s";
-	sprintf(stmtbuf,fmt,s->defs->database,s->defs->table,colnames,values);
+	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->database) + strlen(s->defs->table);
+	stmtbuf = malloc(lenStmt);
+	if(!stmtbuf) {
+		return 1; }
+	snprintf(stmtbuf,lenStmt,fmt,s->defs->database,s->defs->table,colnames,values);
 
 	mystmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!mystmt) {
@@ -126,104 +116,41 @@ int mysql_insert_hook(struct _DBHandle* dbh,const struct _InsertStmt *const s) {
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_INSERT_EXIT; }
 
-	int err = mysql_stmt_prepare(mystmt, stmtbuf, strlen(stmtbuf));
-	if(err) {
+	if( mysql_stmt_prepare(mystmt, stmtbuf, strlen(stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(mystmt));
 		rc = 1;
-		goto MYSQL_INSERT_EXIT;	}
-
+		goto MYSQL_INSERT_EXIT;
+	}
 	if( mysql_stmt_param_count(mystmt) != (s->ncols * s->nrows) ) {
+		LOGF_DEBUG("%s",stmtbuf);
 		LOG_WARN("mysql_stmt_param_count: invalid column count in prepared statement");
 		rc = 1;
-		goto MYSQL_INSERT_EXIT;	}
-
-	bind.bind = malloc(sizeof(MYSQL_BIND) * s->ncols * s->nrows);
-	if(!bind.bind) {
-		rc = 1;
-		goto MYSQL_INSERT_EXIT; }
-	memset(bind.bind,0,sizeof(MYSQL_BIND) * s->ncols * s->nrows);
-
-	bind.is_null = malloc(sizeof(my_bool) * s->ncols * s->nrows);
-	if(!bind.is_null) {
-		rc = 1;
-		goto MYSQL_INSERT_EXIT; }
-	memset(bind.is_null,0,sizeof(my_bool) * s->ncols * s->nrows);
-
-	if(str_cols) {
-		bind.str_length = malloc(sizeof(unsigned long) * str_cols);
-		if(!bind.str_length) {
-			rc = 1;
-			goto MYSQL_INSERT_EXIT; }
-		memset(bind.str_length,0,sizeof(unsigned long) * str_cols);
-	}
-	if(time_cols) {
-		bind.times = malloc(sizeof(MYSQL_TIME) * time_cols);
-		if(!bind.times) {
-			rc = 1;
-			goto MYSQL_INSERT_EXIT; }
-		memset(bind.times,0,sizeof(MYSQL_TIME) * time_cols);
-	}
-
-	for(size_t i = 0; i < s->nrows; i++) {
-		for(size_t j = 0,timeidx = 0,stridx = 0; j < s->ncols; j++) {
-			size_t idxbind = (i * s->ncols) + j;
-			if( mysql_datatype(&s->defs[j],&bind.bind[idxbind].buffer_type,&bind.bind[idxbind].buffer_length) ) {
-				rc = 1;
-				goto MYSQL_INSERT_EXIT;
-			}
-			if(!s->valbuf[i][j]) {
-				bind.is_null[idxbind] = 1;
-
-				bind.bind[idxbind].is_null = &bind.is_null[idxbind];
-				bind.bind[idxbind].buffer = 0;
-				bind.bind[idxbind].length = 0;
-			} else if(s->defs[j].type == COL_TYPE_DATETIME) {
-				if( mysql_time((const struct tm *const)(s->valbuf[i][j]),&bind.times[timeidx]) ) {
-					rc = 1;
-					goto MYSQL_INSERT_EXIT;
-				}
-				bind.bind[idxbind].buffer = &bind.times[timeidx];
-				bind.bind[idxbind].length = 0;
-				timeidx++;
-			} else {
-				bind.bind[idxbind].is_null = 0;
-				bind.bind[idxbind].buffer = (void *)(s->valbuf[i][j]);
-				bind.bind[idxbind].length = 0;
-
-				if(s->defs[j].type == COL_TYPE_STRING) {
-					bind.str_length[stridx] = strlen((char *)(s->valbuf[i][j])) + 1;
-					bind.bind[idxbind].length = &bind.str_length[stridx];
-					stridx++;
-				}
-			}
-		}
+		goto MYSQL_INSERT_EXIT;
 	}
 	if( mysql_stmt_bind_param(mystmt,bind.bind) ) {
+		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(mystmt));
 		rc = 1;
-		goto MYSQL_INSERT_EXIT;	}
+		goto MYSQL_INSERT_EXIT;
+	}
 	if( mysql_stmt_execute(mystmt) ) {
+		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(mystmt));
 		rc = 1;
 		goto MYSQL_INSERT_EXIT;
 	}
 
 MYSQL_INSERT_EXIT:
-	if(colnames) {
-		free(colnames);	}
-	if(bind.bind) {
-		free(bind.bind); }
-	if(bind.is_null) {
-		free(bind.is_null); }
-	if(bind.str_length) {
-		free(bind.str_length); }
-	if(bind.times) {
-		free(bind.times); }
-	if(values) {
-		free(values); }
 	if(mystmt) {
 		mysql_stmt_close(mystmt); }
+	if(colnames) {
+		free(colnames);	}
+	if(values) {
+		free(values); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+
 	return rc;
 }
 
@@ -239,80 +166,66 @@ int mysql_delete_hook(struct _DBHandle* dbh,const struct _DeleteStmt *const s) {
 	return 1;
 }
 
-struct _SelectResult* mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s) {
-	static const char fmt[] = "SELECT %s FROM `%s`.`%s` %s";
+int mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s,struct _SelectResult** res) {
+	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s";
 	char* colnames = 0;
 	char* where = 0;
 	char* stmtbuf = 0;
 	int rc = 0;
 	MYSQL_STMT *mystmt = 0;
+
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
 	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
-		goto MYSQL_SELECT_EXIT;
-	}
+		goto MYSQL_SELECT_EXIT;	}
 
 	if( mysql_where(&s->where,&bind,&where) ) {
 		rc = 1;
-		goto MYSQL_SELECT_EXIT;
-	}
+		goto MYSQL_SELECT_EXIT; }
 
-	size_t sqlsize = strlen(fmt) + strlen(where) + strlen(colnames);
+	size_t sqlsize = strlen(fmt) + (where ? strlen(where) : 0) + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
 	stmtbuf = malloc(sqlsize);
 	if(!stmtbuf) {
 		rc = 1;
-		goto MYSQL_SELECT_EXIT;
-	}
-	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,where);
+		goto MYSQL_SELECT_EXIT; }
+	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? where : ""));
 
 	mystmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!mystmt) {
 		rc = 1;
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_SELECT_EXIT; }
-
 	if( mysql_stmt_prepare(mystmt, stmtbuf, strlen(stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(mystmt));
 		rc = 1;
 		goto MYSQL_SELECT_EXIT;	}
-
-	if( bind.bind && mysql_stmt_bind_param(mystmt,bind.bind) ) {
+	if( bind.bind_idx && mysql_stmt_bind_param(mystmt,bind.bind) ) {
 		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(mystmt));
 		rc = 1;
 		goto MYSQL_SELECT_EXIT;	}
-
 	if( mysql_stmt_execute(mystmt) ) {
 		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(mystmt));
 		rc = 1;
 		goto MYSQL_SELECT_EXIT;	}
 
-	//TODO: read result
+	if( mysql_selectresult_from_stmt(s->defs,s->ncols,res,mystmt) ) {
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;}
 
 MYSQL_SELECT_EXIT:
+	if(mystmt) {
+		mysql_stmt_close(mystmt); }
 	if(colnames) {
 		free(colnames); }
 	if(stmtbuf) {
 		free(stmtbuf); }
-	if(mystmt) {
-		mysql_stmt_close(mystmt); }
 	if(where) {
 		free(where); }
-	if(bind.bind) {
-		free(bind.bind); }
-	if(bind.is_null) {
-		free(bind.is_null); }
-	if(bind.str_length) {
-		free(bind.str_length); }
-	if(bind.times) {
-		free(bind.times); }
-
-	if(rc == 1) {
-		return 0;}
-	return 0;
+	return rc;
 }
 
 #endif

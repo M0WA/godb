@@ -10,6 +10,8 @@ typedef enum _WhereCondOp {
 	WHERE_NOT_EQUAL,
 	WHERE_LIKE,
 	WHERE_NOT_LIKE,
+	WHERE_IS_NULL,
+	WHERE_IS_NOT_NULL,
 } WhereCondOperator;
 
 typedef enum _WhereCompOp {
@@ -24,7 +26,6 @@ typedef enum _WhereEntryType {
 
 typedef struct _WhereCondition {
 	WhereEntryType type;
-	WhereCompOperator comp;
 	WhereCondOperator cond;
 	const struct _DBColumnDef* def;
 	const void** values;

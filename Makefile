@@ -14,6 +14,7 @@ all:
 	
 generator:
 	-mkdir bin
+	go get gopkg.in/yaml.v1
 	go build generator/layout
 	go build generator/dml
 	go build generator/ddl

@@ -26,3 +26,26 @@ char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols )
 	}
 	return buf;
 }
+
+int append_string(const char* src, char** dest) {
+	if(!src || !dest) {
+		return 1; }
+
+	size_t newsize = 1;
+	if(!*dest) {
+		newsize += strlen(src);
+		*dest = malloc(sizeof(newsize));
+		if(!*dest) {
+			return 1; }
+		*(dest[0]) = 0;
+	} else {
+		char* tmp = 0;
+		newsize += strlen(src) + strlen(*dest);
+		tmp = realloc((*dest),newsize);
+		if(!tmp) {
+			return 1; }
+		*dest = tmp;
+	}
+	strcat(*dest,src);
+	return 0;
+}

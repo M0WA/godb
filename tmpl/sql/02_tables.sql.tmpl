@@ -3,6 +3,6 @@
 CREATE TABLE {{ $tbl.Name }} ( {{ range $i,$col := $tbl.Columns }}
   {{ ColSpec $td.Layouter $db.Name $tbl.Name $col.Name }},{{ end }}{{ range $i,$uk := $tbl.UniqueKeys }}
   {{ UKSpec $td.Layouter $db.Name $tbl.Name $uk }},{{ end }}
-  {{ PKSpec $td.Layouter $db.Name $tbl.Name }}
+  {{ PKSpec $td.Layouter $db.Name $tbl.Name $tbl.PrimaryKey }}
 ){{ TableOpts $td.Layouter $db.Name $tbl.Name }};
 {{ end }}{{ end }}
