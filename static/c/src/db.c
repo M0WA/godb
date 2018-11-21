@@ -11,6 +11,9 @@
 #ifndef _DISABLE_POSTGRES
 	#include "postgresfuncs.h"
 #endif
+#ifndef _DISABLE_DBI
+	#include "dbifuncs.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +61,9 @@ int init_dblib() {
 #ifndef _DISABLE_POSTGRES
 	postgres_init_dblib();
 #endif
+#ifndef _DISABLE_DBI
+	dbi_init_dblib();
+#endif
 	return 0;
 }
 
@@ -68,6 +74,9 @@ int exit_dblib() {
 #endif
 #ifndef _DISABLE_POSTGRES
 	postgres_exit_dblib();
+#endif
+#ifndef _DISABLE_DBI
+	dbi_exit_dblib();
 #endif
 	logger_end();
 	return 0;
@@ -94,6 +103,15 @@ DBHandle* create_dbhandle(DBTypes type) {
 #ifndef _DISABLE_POSTGRES
 	case DB_TYPE_POSTGRES:
 		if( postgres_init_dbh(dbh) ) {
+			free(dbh);
+			LOG_ERROR("could not init postgres database handle");
+			return 0;
+		}
+		break;
+#endif
+#ifndef _DISABLE_DBI
+	case DB_TYPE_DBI:
+		if( dbi_init_dbh(dbh) ) {
 			free(dbh);
 			LOG_ERROR("could not init postgres database handle");
 			return 0;

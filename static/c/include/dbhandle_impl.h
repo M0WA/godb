@@ -27,6 +27,22 @@ struct _PostgresHandle {
 } PostgresHandle;
 #endif
 
+#ifndef _DISABLE_DBI
+#include <dbi/dbi.h>
+typedef enum _DBIType {
+	DBI_TYPE_MYSQL,
+} DBIType;
+
+typedef struct _DBIHandle {
+	dbi_inst inst;
+	dbi_conn conn;
+} DBIHandle;
+
+typedef struct _DBIConfig {
+	DBIType type;
+} DBIConfig;
+#endif
+
 /* *********** DBConfig **************** */
 
 typedef struct _DBConfig {
@@ -38,6 +54,9 @@ typedef struct _DBConfig {
 
 #ifndef _DISABLE_MYSQL
 	struct _MySQLConfig mysql;
+#endif
+#ifndef _DISABLE_DBI
+		struct _DBIConfig dbi;
 #endif
 } DBConfig;
 
@@ -55,6 +74,8 @@ typedef struct _DBHandle {
 #ifndef _DISABLE_POSTGRES
 		struct _PostgresHandle postgres;
 #endif
+#ifndef _DISABLE_DBI
+		struct _DBIHandle dbi;
+#endif
 	};
-
 } DBHandle;

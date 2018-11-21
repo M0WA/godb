@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(_DISABLE_MYSQL) && defined(_DISABLE_POSTGRES)
+#if defined(_DISABLE_MYSQL) && defined(_DISABLE_POSTGRES) && defined(_DISABLE_DBI)
 	#error enable at least one database type
 #endif
 
@@ -13,6 +13,10 @@ typedef enum _DBTypes {
 
 #ifndef _DISABLE_POSTGRES
 	DB_TYPE_POSTGRES,
+#endif
+
+#ifndef _DISABLE_DBI
+	DB_TYPE_DBI,
 #endif
 
 	DB_TYPE_MAX,

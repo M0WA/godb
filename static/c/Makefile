@@ -23,9 +23,18 @@ POSTGRESCFLAGS=-D_DISABLE_POSTGRES
 POSTGRESLDFLAGS=
 endif
 
-ifdef DISABLE_POSTGRES 
+DBICFLAGS=
+DBILDFLAGS=-ldbi
+ifdef DISABLE_DBI
+DBICFLAGS=-D_DISABLE_DBI
+DBILDFLAGS=
+endif
+
+ifdef DISABLE_POSTGRES
 ifdef DISABLE_MYSQL
+ifdef DISABLE_DBI
 $(error no database type selected)
+endif
 endif
 endif
 
@@ -42,8 +51,8 @@ else
 BUILDTYPEFLAGS=-g -O2 -Werror
 endif
 
-CFLAGS =-Wall -fPIC -D_REENTRANT -pthread $(BUILDTYPEFLAGS) $(INCLUDES) $(TESTCFLAGS) $(MYSQLCFLAGS) $(POSTGRESCFLAGS)
-LDFLAGS=$(MYSQLLDFLAGS) $(POSTGRESLDFLAGS)
+CFLAGS =-Wall -fPIC -D_REENTRANT -pthread $(BUILDTYPEFLAGS) $(INCLUDES) $(TESTCFLAGS) $(MYSQLCFLAGS) $(POSTGRESCFLAGS) $(DBICFLAGS)
+LDFLAGS=$(MYSQLLDFLAGS) $(POSTGRESLDFLAGS) $(DBILDFLAGS)
 
 .PHONY: all clean test testbin
 
@@ -55,7 +64,7 @@ clean:
 	@find . -name "*.d"  -delete
 	@find . -name "*.a"  -delete
 	@find . -name "*.so" -delete
-	
+
 test:
 	$(MAKE) testbin
 	$(MAKE) TEST=1 testrun
@@ -64,7 +73,7 @@ testbin:
 	$(MAKE) clean
 	$(MAKE) TEST=1 all
 	$(CC) $(CFLAGS) -D_DB_TEST_VERSION -o test $(OBJS) $(LDFLAGS)
-	
+
 testrun:
 	$(GDB) ./test
 
@@ -82,4 +91,4 @@ $(LIBNAME).a: $(patsubst %.c, %.o, $(OBJS))
 
 .c.o:
 	$(CC) $(CFLAGS) -MP -MMD -c $^ -o $@
-	
+
