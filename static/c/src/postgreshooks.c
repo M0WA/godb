@@ -5,7 +5,7 @@
 #include "dbhandle_impl.h"
 #include "logger.h"
 
-int postgres_connect_hook(struct _DBHandle* dbh) {
+int postgres_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
 		return 1;
@@ -38,7 +38,7 @@ int postgres_connect_hook(struct _DBHandle* dbh) {
 	return 0;
 }
 
-int postgres_disconnect_hook(struct _DBHandle* dbh) {
+int postgres_disconnect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
 		return 1;
@@ -54,23 +54,23 @@ int postgres_disconnect_hook(struct _DBHandle* dbh) {
 	return 0;
 }
 
-int postgres_insert_hook(struct _DBHandle* dbh,struct _InsertStmt const*const s) {
+int postgres_insert_hook(struct _DBHandle *dbh,struct _InsertStmt const*const s) {
 	return 1;
 }
 
-int postgres_update_hook(struct _DBHandle* dbh,struct _UpdateStmt const*const s) {
+int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
 	return 1;
 }
 
-int postgres_upsert_hook(struct _DBHandle* dbh,struct _UpsertStmt const*const s) {
+int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
 	return 1;
 }
 
-int postgres_delete_hook(struct _DBHandle* dbh,struct _DeleteStmt const*const s) {
+int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
 	return 1;
 }
 
-int postgres_select_hook(struct _DBHandle* dbh,struct _SelectStmt const*const s,struct _SelectResult** res) {
+int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult** res) {
 	return 1;
 }
 

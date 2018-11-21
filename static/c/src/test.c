@@ -8,6 +8,7 @@
 #include "column.h"
 #include "where.h"
 #include "logger.h"
+#include "statements.h"
 #include "tests.h"
 
 static DBHandle* test_create_connection(DBTypes type) {
@@ -114,6 +115,41 @@ static void test_where() {
 	where_destroy(&clause);
 }
 
+static void test_delete() {
+	struct _values_str {
+		char c1[255];
+	};
+	struct _values_str strs;
+	sprintf(strs.c1,"test1");
+
+	DBColumnDef col = (DBColumnDef){
+		.type = COL_TYPE_STRING,
+		.name = "testcol",
+		.table = "testtable",
+		.database = "testdb",
+		.autoincrement = 0,
+		.notnull = 1,
+		.size = 255,
+	};
+
+	WhereCondition cond = (WhereCondition) {
+		.type = WHERE_COND,
+		.cond = WHERE_EQUAL,
+		.def = &col,
+		.values = (const void**)(&strs),
+		.cnt = 1,
+	};
+
+	DeleteStmt stmt;
+	memset(&stmt,0,sizeof(DeleteStmt));
+	stmt.def = &col;
+	stmt.limit[0] = 1;
+	if( where_append(&stmt.where,(WhereStmt*)&cond) ) {
+		LOG_FATAL(1,"where_append() failed"); }
+
+	DESTROY_STMT(&stmt);
+}
+
 static void test(DBTypes type) {
 	DBHandle* dbh = test_create_connection(type);
 	test_tables_db(dbh);
@@ -130,6 +166,9 @@ int main(int argc,char** argv) {
 
 	LOG_DEBUG("checking where statements");
 	test_where();
+
+	LOG_DEBUG("checking delete statements");
+	test_delete();
 
 #ifndef _DISABLE_MYSQL
 	LOG_DEBUG("checking db type mysql");

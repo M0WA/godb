@@ -2,6 +2,7 @@
 
 #include "column.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -27,7 +28,7 @@ char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols )
 	return buf;
 }
 
-int append_string(const char* src, char** dest) {
+int append_string(const char *src, char** dest) {
 	if(!src || !dest) {
 		return 1; }
 
@@ -39,7 +40,7 @@ int append_string(const char* src, char** dest) {
 			return 1; }
 		*(dest[0]) = 0;
 	} else {
-		char* tmp = 0;
+		char *tmp = 0;
 		newsize += strlen(src) + strlen(*dest);
 		tmp = realloc((*dest),newsize);
 		if(!tmp) {
@@ -48,4 +49,13 @@ int append_string(const char* src, char** dest) {
 	}
 	strcat(*dest,src);
 	return 0;
+}
+
+void get_limit(const size_t limits[], char *limit) {
+	limit[0] = 0;
+	if(limits[0] > 0) {
+		snprintf(limit,32,"LIMIT %lu",limits[0]);
+		if( limits[1] ) {
+			snprintf(limit,32,"LIMIT %lu %lu",limits[0],limits[1]); }
+	}
 }

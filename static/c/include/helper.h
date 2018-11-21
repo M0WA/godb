@@ -24,4 +24,5 @@ struct _WhereClause;
 */
 
 char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols );
-int append_string(const char* src, char** dest);
+int append_string(const char *src, char** dest);
+void get_limit(const size_t limits[], char *limit);

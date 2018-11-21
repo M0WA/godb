@@ -18,8 +18,8 @@ struct _DeleteStmt;
 struct _SelectStmt;
 struct _SelectResult;
 
-typedef int (*DBConnectHook)(struct _DBHandle* h);
-typedef int (*DBDisconnectHook)(struct _DBHandle* h);
+typedef int (*DBConnectHook)(struct _DBHandle*);
+typedef int (*DBDisconnectHook)(struct _DBHandle*);
 
 typedef int (*DBInsertHook)(struct _DBHandle*,const struct _InsertStmt *const);
 typedef int (*DBUpdateHook)(struct _DBHandle*,const struct _UpdateStmt *const);

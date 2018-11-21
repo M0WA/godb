@@ -7,9 +7,7 @@
 #include "hooks.h"
 #include "postgreshooks.h"
 
-int postgres_init_dbh(struct _DBHandle* dbh) {
-	if(PQisthreadsafe() == 0) {
-		LOG_FATAL(1,"please use a thread-safe version of pq library"); }
+int postgres_init_dbh(struct _DBHandle *dbh) {
 	if(dbh->postgres.conn) {
 		LOG_WARN("postgres handle is already initalized"); }
 	REGISTER_HOOKS(dbh,postgres)
@@ -17,6 +15,8 @@ int postgres_init_dbh(struct _DBHandle* dbh) {
 }
 
 int postgres_init_dblib() {
+	if(PQisthreadsafe() == 0) {
+		LOG_FATAL(1,"please use a thread-safe version of pq library"); }
 	return 0;
 }
 

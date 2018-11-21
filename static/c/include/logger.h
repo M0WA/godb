@@ -13,7 +13,7 @@ typedef enum _LogLevel {
 } LogLevel;
 
 void logger_end();
-void set_logfile(FILE* f);
+void set_logfile(FILE *f);
 void set_loglevel(LogLevel lvl);
 
 #define LOG_DEBUG(msg)       _log (LOGLVL_DEBUG,msg);

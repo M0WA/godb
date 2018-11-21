@@ -5,7 +5,7 @@
 struct _DBTable;
 
 typedef struct _SelectResult {
-	const struct _DBColumnDef* cols;
+	const struct _DBColumnDef *cols;
 	size_t ncols;
 	void** rows;
 	size_t nrows;

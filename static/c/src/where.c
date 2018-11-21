@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-static void where_cond_destroy(struct _WhereCondition* c) {
+static void where_cond_destroy(struct _WhereCondition *c) {
 	/*
 	if(c) {
 		free(c);
@@ -10,7 +10,7 @@ static void where_cond_destroy(struct _WhereCondition* c) {
 	*/
 }
 
-static void where_comp_destroy(struct _WhereComposite* comp) {
+static void where_comp_destroy(struct _WhereComposite *comp) {
 	if(!comp) {
 		return; }
 
@@ -23,7 +23,7 @@ static void where_comp_destroy(struct _WhereComposite* comp) {
 	}
 }
 
-static void where_stmt_destroy(union _WhereStmt* s) {
+static void where_stmt_destroy(union _WhereStmt *s) {
 	if(!s) {
 		return;	}
 
@@ -39,7 +39,7 @@ static void where_stmt_destroy(union _WhereStmt* s) {
 	}
 }
 
-void where_destroy(struct _WhereClause* clause) {
+void where_destroy(struct _WhereClause *clause) {
 	if(!clause||!clause->cnt||!clause->stmts) {
 		return;	}
 	for(size_t i = 0; i < clause->cnt; i++) {
@@ -49,7 +49,7 @@ void where_destroy(struct _WhereClause* clause) {
 	clause->stmts = 0;
 }
 
-int where_comp_append(struct _WhereComposite* comp,struct _WhereClause* clause) {
+int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause) {
 	if(!comp || !clause) {
 		return 1; }
 
@@ -70,7 +70,7 @@ int where_comp_append(struct _WhereComposite* comp,struct _WhereClause* clause) 
 	return 0;
 }
 
-int where_append(struct _WhereClause* clause,union _WhereStmt* stmt) {
+int where_append(struct _WhereClause *clause,union _WhereStmt *stmt) {
 	if(!clause || !stmt ) {
 		return 1; }
 

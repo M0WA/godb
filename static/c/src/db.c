@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int init_db_config(DBConfig* conf,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
+static int init_db_config(DBConfig *conf,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
 	if(!host || strlen(host) > (MAX_DB_HOST - 1) ) {
 		LOG_ERROR("hostname too long");
 		return 0;
@@ -108,7 +108,7 @@ DBHandle* create_dbhandle(DBTypes type) {
 	return dbh;
 }
 
-int connect_db(DBHandle* dbh,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
+int connect_db(DBHandle *dbh,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
 	if( init_db_config(&(dbh->config),host,port,db,user,pass) ) {
 		return 1;
 	}
@@ -131,7 +131,7 @@ int disconnect_db(DBHandle* dbh) {
 	return dbh->hooks.disconnect(dbh);
 }
 
-int destroy_dbhandle(struct _DBHandle* dbh) {
+int destroy_dbhandle(struct _DBHandle *dbh) {
 	if(!dbh) {
 		return 1;
 	}
@@ -148,7 +148,7 @@ void destroy_dbtable(struct _DBTable** tbl) {
 	(*tbl)->valbuf = 0;
 }
 
-int insert_stmt(struct _DBHandle* dbh,const struct _InsertStmt *const stmt) {
+int insert_stmt(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
 	if(!dbh || !dbh->hooks.insert || !stmt) {
 		LOG_ERROR("null database handle/hook/stmt");
 		return 1;
@@ -156,7 +156,7 @@ int insert_stmt(struct _DBHandle* dbh,const struct _InsertStmt *const stmt) {
 	return dbh->hooks.insert(dbh,stmt);
 }
 
-int insert_dbtable(struct _DBHandle* dbh,const struct _DBTable *const*const tbl,size_t nrows) {
+int insert_dbtable(struct _DBHandle *dbh,const struct _DBTable *const*const tbl,size_t nrows) {
 	if(!dbh || !tbl || !nrows) {
 		LOG_ERROR("null database handle/dbtable");
 		return 1;
@@ -172,7 +172,7 @@ int insert_dbtable(struct _DBHandle* dbh,const struct _DBTable *const*const tbl,
 	return rc;
 }
 
-int insert_db(struct _DBHandle* dbh,const struct _DBTableDef *const def,const void *const*const*const values,size_t nrows){
+int insert_db(struct _DBHandle *dbh,const struct _DBTableDef *const def,const void *const*const*const values,size_t nrows){
 	if(!dbh|!def|!values) {
 		LOG_ERROR("null database handle/table/values");
 		return 1;
@@ -186,7 +186,7 @@ int insert_db(struct _DBHandle* dbh,const struct _DBTableDef *const def,const vo
 	return insert_stmt(dbh,&stmt);
 }
 
-int update_db(struct _DBHandle* dbh,const struct _UpdateStmt *const stmt) {
+int update_db(struct _DBHandle *dbh,const struct _UpdateStmt *const stmt) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;
@@ -198,7 +198,7 @@ int update_db(struct _DBHandle* dbh,const struct _UpdateStmt *const stmt) {
 	return dbh->hooks.update(dbh,stmt);
 }
 
-int upsert_db(struct _DBHandle* dbh,const struct _UpsertStmt *const stmt) {
+int upsert_db(struct _DBHandle *dbh,const struct _UpsertStmt *const stmt) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;
@@ -210,7 +210,7 @@ int upsert_db(struct _DBHandle* dbh,const struct _UpsertStmt *const stmt) {
 	return dbh->hooks.upsert(dbh,stmt);
 }
 
-int delete_db(struct _DBHandle* dbh,const struct _DeleteStmt *const stmt) {
+int delete_db(struct _DBHandle *dbh,const struct _DeleteStmt *const stmt) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;
@@ -222,7 +222,7 @@ int delete_db(struct _DBHandle* dbh,const struct _DeleteStmt *const stmt) {
 	return dbh->hooks.delete(dbh,stmt);
 }
 
-int select_db(struct _DBHandle* dbh,const struct _SelectStmt *const stmt, struct _SelectResult** res) {
+int select_db(struct _DBHandle *dbh,const struct _SelectStmt *const stmt, struct _SelectResult** res) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;

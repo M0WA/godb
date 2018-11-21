@@ -9,7 +9,7 @@
 #ifndef _DISABLE_MYSQL
 #include <mysql/mysql.h>
 struct _MySQLHandle {
-	MYSQL* conn;
+	MYSQL *conn;
 } MySQLHandle;
 
 struct _MySQLConfig {
@@ -23,7 +23,7 @@ struct _MySQLConfig {
 #ifndef _DISABLE_POSTGRES
 #include <postgresql/libpq-fe.h>
 struct _PostgresHandle {
-	PGconn* conn;
+	PGconn *conn;
 } PostgresHandle;
 #endif
 

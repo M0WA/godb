@@ -14,6 +14,8 @@
 #include "logger.h"
 
 int mysql_init_dblib() {
+	if (!mysql_thread_safe()) {
+		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}
 	return mysql_library_init(0, NULL, NULL);
 }
 
@@ -22,9 +24,7 @@ int mysql_exit_dblib() {
 	return 0;
 }
 
-int mysql_init_dbh(struct _DBHandle* dbh) {
-	if (!mysql_thread_safe()) {
-		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}
+int mysql_init_dbh(struct _DBHandle *dbh) {
 	if(dbh->mysql.conn) {
 		LOG_WARN("mysql handle is already initalized");	}
 	REGISTER_HOOKS(dbh,mysql)

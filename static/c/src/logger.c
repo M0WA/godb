@@ -67,7 +67,7 @@ static void printPrefix(LogLevel lvl) {
 	fprintf(logger->fp,"[%s][%s] ",pszTimeString,ll);
 }
 
-void set_logfile(FILE* f) {
+void set_logfile(FILE *f) {
 	if(initLogger()) {
 		return;	}
 	if( f ) {

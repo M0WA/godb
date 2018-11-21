@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-int destroy_selectresult(struct _SelectResult* res) {
+int destroy_selectresult(struct _SelectResult *res) {
 	if(res) {
 		if(res->rows) {
 			free(res->rows);

@@ -52,7 +52,7 @@ static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_t
 	return 0;
 }
 
-static int mysql_time(const struct tm *const t,MYSQL_TIME* mt) {
+static int mysql_time(const struct tm *const t,MYSQL_TIME *mt) {
 	mt->year=t->tm_year + 1900;
 	mt->month=t->tm_mon;
 	mt->day=t->tm_mday;
@@ -75,7 +75,7 @@ static int mysql_comp_op(WhereCompOperator op,char** sql) {
 	}
 }
 
-static int mysql_where_comp(const struct _WhereComposite* comp, MySQLBindWrapper* wrapper,char** sql) {
+static int mysql_where_comp(const struct _WhereComposite *comp, MySQLBindWrapper *wrapper,char** sql) {
 	for(size_t i = 0; i < comp->cnt; i++) {
 		if(wrapper->bind_idx) {
 			if( mysql_comp_op(comp->where[i]->comp,sql) ) {
@@ -87,7 +87,7 @@ static int mysql_where_comp(const struct _WhereComposite* comp, MySQLBindWrapper
 	return 1;
 }
 
-static int mysql_where_cond(const struct _WhereCondition* cond, MySQLBindWrapper* wrapper,char** sql) {
+static int mysql_where_cond(const struct _WhereCondition *cond, MySQLBindWrapper *wrapper,char** sql) {
 	if(cond->cnt > 1 && cond->cond != WHERE_EQUAL && cond->cond != WHERE_NOT_EQUAL) {
 		LOG_WARN("only equal/not equal allow for range types in where clause");
 		return 1; }

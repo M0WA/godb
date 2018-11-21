@@ -12,7 +12,7 @@
 #include "helper.h"
 #include "mysqlhelper.h"
 
-int mysql_connect_hook(struct _DBHandle* dbh) {
+int mysql_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
 		return 1;
@@ -54,7 +54,7 @@ int mysql_connect_hook(struct _DBHandle* dbh) {
 	return 0;
 }
 
-int mysql_disconnect_hook(struct _DBHandle* dbh) {
+int mysql_disconnect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
 		return 1;
@@ -70,11 +70,11 @@ int mysql_disconnect_hook(struct _DBHandle* dbh) {
 	return 0;
 }
 
-int mysql_insert_hook(struct _DBHandle* dbh,const struct _InsertStmt *const s) {
+int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char* colnames = 0;
-	char* stmtbuf = 0;
-	char* values = 0;
+	char *colnames = 0;
+	char *stmtbuf = 0;
+	char *values = 0;
 	MYSQL_STMT *mystmt = 0;
 
 	MySQLBindWrapper bind;
@@ -105,7 +105,7 @@ int mysql_insert_hook(struct _DBHandle* dbh,const struct _InsertStmt *const s) {
 
 	char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES %s";
 	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->database) + strlen(s->defs->table);
-	stmtbuf = malloc(lenStmt);
+	stmtbuf = alloca(lenStmt);
 	if(!stmtbuf) {
 		return 1; }
 	snprintf(stmtbuf,lenStmt,fmt,s->defs->database,s->defs->table,colnames,values);
@@ -148,17 +148,15 @@ MYSQL_INSERT_EXIT:
 		free(colnames);	}
 	if(values) {
 		free(values); }
-	if(stmtbuf) {
-		free(stmtbuf); }
 
 	return rc;
 }
 
-int mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s,struct _SelectResult** res) {
+int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult** res) {
 	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s %s %s";
-	char* colnames = 0;
-	char* where = 0;
-	char* stmtbuf = 0;
+	char *colnames = 0;
+	char *where = 0;
+	char *stmtbuf = 0;
 	char limit[32] = {0};
 	int rc = 0;
 	MYSQL_STMT *mystmt = 0;
@@ -175,13 +173,12 @@ int mysql_select_hook(struct _DBHandle* dbh,const struct _SelectStmt *const s,st
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
 
-	if(s->limit[0] > 0) {
-		snprintf(limit,32,"LIMIT %lu %s",s->limit[0],(s->limit[1] ? limit : ""));	}
+	get_limit(s->limit, limit);
 
 	size_t wheresize = where ? strlen(where) : 0;
 	size_t limitsize = strlen(limit);
 	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
-	stmtbuf = malloc(sqlsize);
+	stmtbuf = alloca(sqlsize);
 	if(!stmtbuf) {
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
@@ -215,22 +212,63 @@ MYSQL_SELECT_EXIT:
 		mysql_stmt_close(mystmt); }
 	if(colnames) {
 		free(colnames); }
-	if(stmtbuf) {
-		free(stmtbuf); }
 	if(where) {
 		free(where); }
 	return rc;
 }
 
-int mysql_update_hook(struct _DBHandle* dbh,const struct _UpdateStmt *const s) {
+int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
+	char *where = 0;
+	char *stmtbuf = 0;
+	char limit[32] = {0};
+	int rc = 0;
+	MYSQL_STMT *mystmt = 0;
+
+	MySQLBindWrapper bind;
+	memset(&bind,0,sizeof(MySQLBindWrapper));
+
+	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
+	size_t wheresize = where ? strlen(where) : 0;
+	size_t limitsize = strlen(limit);
+	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->table) + 1;
+	stmtbuf = alloca(sqlsize);
+	if(!stmtbuf) {
+		goto MYSQL_DELETE_EXIT;
+		rc = 1; }
+	sprintf(stmtbuf,fmt,s->def->database,s->def->table,(where ? " WHERE " : ""),(where ? where : ""),limit);
+
+	mystmt = mysql_stmt_init(dbh->mysql.conn);
+	if(!mystmt) {
+		rc = 1;
+		LOG_WARN("mysql_stmt_init: is null");
+		goto MYSQL_DELETE_EXIT; }
+	if( mysql_stmt_prepare(mystmt, stmtbuf, strlen(stmtbuf)) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+	if( bind.bind_idx && mysql_stmt_bind_param(mystmt,bind.bind) ) {
+		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+	if( mysql_stmt_execute(mystmt) ) {
+		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(mystmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+
+MYSQL_DELETE_EXIT:
+	if(where) {
+		free(where); }
+	return rc;
+}
+
+int mysql_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
+	//const char fmt[] = "UPDATE `%s`.`%s` SET";
 	return 1;
 }
 
-int mysql_upsert_hook(struct _DBHandle* dbh,const struct _UpsertStmt *const s) {
-	return 1;
-}
-
-int mysql_delete_hook(struct _DBHandle* dbh,const struct _DeleteStmt *const s) {
+int mysql_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
+	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
 	return 1;
 }
 
