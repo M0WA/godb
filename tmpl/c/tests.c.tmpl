@@ -37,12 +37,22 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* d
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
 
-	SelectResult* res = 0;
+	SelectResult res;
+	memset(&res,0,sizeof(res));
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
+	
+	int rc = 0;
+	size_t rowcount = 0;
+	while( (rc = fetch_db(dbh,&res)) > 0){
+		rowcount++;
+		LOGF_DEBUG("fetched row %lu",rowcount);	
+	}
+	if(rc != 0 || rowcount == 0) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch"); }
 
 	DESTROY_STMT( (&stmt) );
-	destroy_selectresult(res);
+	destroy_selectresult(&res);
 }
 
 static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}

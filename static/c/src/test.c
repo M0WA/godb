@@ -13,7 +13,7 @@
 
 static DBHandle* test_create_connection(DBTypes type) {
 	LOG_DEBUG("checking create_dbhandle()");
-	DBHandle* dbh = create_dbhandle(type);
+	DBHandle *dbh = create_dbhandle(type);
 	if ( !dbh ) {
 		LOG_FATAL(1,"create_dbhandle() failed"); }
 
@@ -170,14 +170,11 @@ int main(int argc,char** argv) {
 	LOG_DEBUG("checking delete statements");
 	test_delete();
 
-#ifndef _DISABLE_MYSQL
-	LOG_DEBUG("checking db type mysql");
-	test(DB_TYPE_MYSQL);
-#endif
-#ifndef _DISABLE_POSTGRES
-	LOG_DEBUG("checking db type postgres");
-	test(DB_TYPE_POSTGRES);
-#endif
+	for(DBTypes i = DB_TYPE_INVALID + 1; i < DB_TYPE_MAX; i++) {
+		const char *dbtypestr = dbtype_to_string(i);
+		LOGF_DEBUG("checking db type %s",dbtypestr);
+		test(i);
+	}
 
 	exit_dblib();
 	return 0;

@@ -2,6 +2,7 @@
 
 GoDB's main goal is to abstract code from your database manufacturer while giving a strong binding to the actual database structure.
 It is written with a strong consideration of limited resources like memory and cpu power to be "big-data ready".
+Think of it as an advanced version of the well known libdbi.
 
 For more information visit the GoDB [homepage](https://go-db.net) and the public [github](https://github.com/M0WA/GoDB) page.
 

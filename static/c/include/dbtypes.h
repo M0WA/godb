@@ -21,3 +21,5 @@ typedef enum _DBTypes {
 
 	DB_TYPE_MAX,
 } DBTypes;
+
+const char* dbtype_to_string(enum _DBTypes t);

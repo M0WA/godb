@@ -10,6 +10,7 @@
 #include <mysql/mysql.h>
 struct _MySQLHandle {
 	MYSQL *conn;
+	MYSQL_STMT *stmt;
 } MySQLHandle;
 
 struct _MySQLConfig {

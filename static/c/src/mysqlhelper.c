@@ -13,25 +13,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *ftype,unsigned long *buffer_length) {
-	enum enum_field_types ftmp;
-	enum enum_field_types *ft = ftype ? ftype : &ftmp;
-	*buffer_length = 0;
+size_t mysql_get_colbuf_size(const struct _DBColumnDef *const col) {
+	if(col->type == COL_TYPE_DATETIME) {
+		return sizeof(MYSQL_TIME);
+	}
+	return get_column_bufsize(col);
+}
+
+int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *ft) {
 	switch(col->type) {
 	case COL_TYPE_STRING:
 		*ft = MYSQL_TYPE_STRING;
-		*buffer_length = (col->size + 1);
 		break;
 	case COL_TYPE_INT:
 		if(col->size != 0 && col->size <= 16) {
 			*ft = MYSQL_TYPE_SHORT;
-			*buffer_length = sizeof(short);
 		} else if(col->size <= 32 || col->size == 0) {
 			*ft = MYSQL_TYPE_LONG;
-			*buffer_length = sizeof(long);
 		} else if (col->size <= 64) {
 			*ft = MYSQL_TYPE_LONGLONG;
-			*buffer_length = sizeof(long long);
 		} else {
 			LOGF_WARN("invalid int size for mysql: %lu",col->size);
 			return 1;
@@ -39,16 +39,24 @@ static int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_t
 		break;
 	case COL_TYPE_FLOAT:
 		*ft = MYSQL_TYPE_DOUBLE;
-		*buffer_length = sizeof(double);
 		break;
 	case COL_TYPE_DATETIME:
 		*ft = MYSQL_TYPE_TIMESTAMP;
-		*buffer_length = sizeof(MYSQL_TIME);
 		break;
 	default:
 		LOG_WARN("invalid datatype for mysql");
 		return 1;
 	}
+	return 0;
+}
+
+int mysql_tm(const MYSQL_TIME *mt, struct tm *const t) {
+	t->tm_year = mt->year -1900;
+	t->tm_mon = mt->month;
+	t->tm_mday = mt->day;
+	t->tm_hour = mt->hour;
+	t->tm_min = mt->minute;
+	t->tm_sec = mt->second;
 	return 0;
 }
 
@@ -142,9 +150,7 @@ static int mysql_where_cond(const struct _WhereCondition *cond, MySQLBindWrapper
 		}
 	}
 
-	unsigned long buffer_length;
-	if( mysql_datatype(cond->def,0,&buffer_length) ) {
-		return 1; }
+	unsigned long buffer_length = mysql_get_colbuf_size(cond->def);
 	for(size_t i = 0,pos = 0; i < cond->cnt; i++, pos += buffer_length) {
 		if( mysql_bind_append(cond->def,(cond->values+pos),wrapper) ) {
 			return 1; }
@@ -198,9 +204,10 @@ int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWr
 	memset(&wrapper->bind[wrapper->bind_idx],0,sizeof(MYSQL_BIND));
 	wrapper->is_null[wrapper->bind_idx] = 0;
 
-	if( mysql_datatype(def,&wrapper->bind[wrapper->bind_idx].buffer_type,&wrapper->bind[wrapper->bind_idx].buffer_length) ) {
+	if( mysql_datatype(def,&wrapper->bind[wrapper->bind_idx].buffer_type) ) {
 		LOG_WARN("mysql_datatype: error");
 		return 1; }
+	wrapper->bind[wrapper->bind_idx].buffer_length = mysql_get_colbuf_size(def);
 
 	if(!val) {
 		wrapper->is_null[wrapper->bind_idx] = 1;
@@ -227,67 +234,6 @@ int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWr
 		}
 	}
 	wrapper->bind_idx++;
-	return 0;
-}
-
-int mysql_selectresult_from_stmt(const struct _DBColumnDef *cols,size_t ncols,struct _SelectResult** res,MYSQL_STMT *stmt) {
-	MYSQL_BIND bind[MAX_MYSQL_BIND_COLS];
-	my_bool is_null[MAX_MYSQL_BIND_COLS];
-	unsigned long length[MAX_MYSQL_BIND_COLS];
-	memset(&bind,0,sizeof(MYSQL_BIND) * MAX_MYSQL_BIND_COLS);
-	memset(&is_null,0,sizeof(my_bool) * MAX_MYSQL_BIND_COLS);
-	memset(&length,0,sizeof(unsigned long) * MAX_MYSQL_BIND_COLS);
-
-	size_t row_size = 0;
-	for(size_t i = 0; i < ncols; i++) {
-		if( mysql_datatype(&cols[i],&bind[i].buffer_type,&bind[i].buffer_length) ) {
-			return 1; }
-		row_size += bind[i].buffer_length;
-		bind[i].length = &length[i];
-		bind[i].is_null = &is_null[i];
-	}
-
-	*res = malloc(sizeof(struct _SelectResult));
-	if(!*res) {
-		return 1; }
-	memset(*res,0,sizeof(struct _SelectResult));
-	(*res)->cols = cols;
-	(*res)->ncols = ncols;
-
-	(*res)->nrows = 0;
-	while(1) {
-		if(!(*res)->rows) {
-			(*res)->rows = malloc(row_size);
-			if(!*res) {
-				return 1; }
-		} else {
-			void** tmp = realloc((*res)->rows,row_size * ((*res)->nrows + 1));
-			if(!tmp) {
-				return 1; }
-			(*res)->rows = tmp;
-		}
-		void* rowbuf = (*res)->rows + (row_size * (*res)->nrows);
-		memset(rowbuf,0,row_size);
-
-		for(size_t j = 0,b = 0; j < ncols; j++) {
-			void* colbuf = (rowbuf + b);
-			size_t rowidx = (ncols * (*res)->nrows) + j;
-			bind[rowidx].buffer = colbuf;
-			bind[rowidx].length = &length[rowidx];
-			bind[rowidx].is_null = &is_null[rowidx];
-			bind[rowidx].buffer_length = length[rowidx];
-			*(bind[rowidx].length) = length[rowidx];
-			b += length[rowidx];
-		}
-		if (mysql_stmt_bind_result(stmt, &(bind[0]))) {
-			LOGF_WARN("mysql_stmt_bind_result: %s", mysql_stmt_error(stmt));
-			return 1;
-		}
-		if ( mysql_stmt_fetch(stmt) ) {
-			break;
-		}
-		(*res)->nrows++;
-	}
 	return 0;
 }
 

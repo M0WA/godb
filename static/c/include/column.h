@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <stddef.h>
+
 #include "columntypes.h"
 
 typedef struct _DBColumnDef {
@@ -12,3 +13,6 @@ typedef struct _DBColumnDef {
 	int notnull;
 	size_t size;
 } DBColumnDef;
+
+const void* get_columnbuf_from_row(const struct _DBColumnDef *def,size_t colidx,const void *buf);
+size_t get_column_bufsize(const struct _DBColumnDef *def);

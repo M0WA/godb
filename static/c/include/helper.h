@@ -5,7 +5,6 @@
 struct _DBColumnDef;
 struct _WhereClause;
 
-/*
 #define ARRAY_RESIZE(arr,idx,type) ({ \
 	int rc = 0; \
 	if(arr) { \
@@ -21,7 +20,6 @@ struct _WhereClause;
 	} \
 	rc; \
 })
-*/
 
 char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols );
 int append_string(const char *src, char** dest);

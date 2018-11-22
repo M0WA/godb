@@ -17,3 +17,5 @@ typedef struct _DBTable {
 	void** valbuf;
 } DBTable;
 #pragma pack(pop)
+
+size_t get_row_size(const struct _DBColumnDef *const defs,size_t ncols);

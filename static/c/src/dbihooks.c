@@ -11,8 +11,9 @@ int dbi_connect_hook(struct _DBHandle *dbh) {
     dbi_conn_set_option(dbh->dbi.conn, "dbname", dbh->config.name);
     dbi_conn_set_option(dbh->dbi.conn, "encoding", "UTF-8");
 
-	if(dbi_conn_connect(dbh->dbi.conn) < 0) {
-		LOG_WARN("dbi_conn_connect() failed");
+    int connerr = dbi_conn_connect(dbh->dbi.conn);
+	if(connerr != 0) {
+		LOGF_WARN("dbi_conn_connect() failed: %d",connerr);
 		return 1;}
 	return 0;
 }
@@ -41,7 +42,11 @@ int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	return 1;
 }
 
-int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult** res) {
+int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult* res) {
+	return 1;
+}
+
+int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 

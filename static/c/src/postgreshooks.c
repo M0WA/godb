@@ -70,7 +70,11 @@ int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s)
 	return 1;
 }
 
-int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult** res) {
+int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
+	return 1;
+}
+
+int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 

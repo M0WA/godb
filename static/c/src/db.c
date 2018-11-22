@@ -240,7 +240,7 @@ int delete_db(struct _DBHandle *dbh,const struct _DeleteStmt *const stmt) {
 	return dbh->hooks.delete(dbh,stmt);
 }
 
-int select_db(struct _DBHandle *dbh,const struct _SelectStmt *const stmt, struct _SelectResult** res) {
+int select_db(struct _DBHandle *dbh,const struct _SelectStmt *const stmt, struct _SelectResult* res) {
 	if(!dbh) {
 		LOG_ERROR("null database handle");
 		return 1;
@@ -250,4 +250,16 @@ int select_db(struct _DBHandle *dbh,const struct _SelectStmt *const stmt, struct
 		return 1;
 	}
 	return dbh->hooks.select(dbh,stmt,res);
+}
+
+int fetch_db(struct _DBHandle *dbh,struct _SelectResult* res) {
+	if(!dbh) {
+		LOG_ERROR("null database handle");
+		return 1;
+	}
+	if(!dbh->hooks.fetch) {
+		LOG_ERROR("invalid database handle");
+		return 1;
+	}
+	return dbh->hooks.fetch(dbh,res);
 }

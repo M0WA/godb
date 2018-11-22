@@ -74,7 +74,7 @@ int where_append(struct _WhereClause *clause,union _WhereStmt *stmt) {
 	if(!clause || !stmt ) {
 		return 1; }
 
-	size_t newsize = (clause->cnt + 1) + sizeof(union _WhereStmt*);
+	size_t newsize = (clause->cnt + 1) * sizeof(union _WhereStmt*);
 
 	if(!clause->stmts) {
 		clause->stmts = malloc(newsize);

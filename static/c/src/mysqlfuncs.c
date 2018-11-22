@@ -27,6 +27,7 @@ int mysql_exit_dblib() {
 int mysql_init_dbh(struct _DBHandle *dbh) {
 	if(dbh->mysql.conn) {
 		LOG_WARN("mysql handle is already initalized");	}
+	dbh->mysql.stmt = 0;
 	REGISTER_HOOKS(dbh,mysql)
 	return 0;
 }
