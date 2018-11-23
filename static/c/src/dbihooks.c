@@ -206,15 +206,15 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 
+int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
+	return 1;
+}
+
 int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	return 1;
 }
 
 int dbi_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
-	return 1;
-}
-
-int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	return 1;
 }
 

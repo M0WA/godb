@@ -240,6 +240,16 @@ int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
+	get_limit(s->limit, limit);
+
+	if( mysql_where(&s->where,&bind) ) {
+		rc = 1;
+		goto MYSQL_DELETE_EXIT; }
+
+	if(where_string(&s->where,"?",&where)) {
+		rc = 1;
+		goto MYSQL_DELETE_EXIT; }
+
 	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
 	size_t wheresize = where ? strlen(where) : 0;
 	size_t limitsize = strlen(limit);
