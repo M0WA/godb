@@ -70,120 +70,41 @@ static int mysql_time(const struct tm *const t,MYSQL_TIME *mt) {
 	return 0;
 }
 
-static int mysql_comp_op(WhereCompOperator op,char** sql) {
-	if(sql || (*sql) == 0) {
-		return 1; }
-	switch(op) {
-	case WHERE_AND:
-		return append_string(") AND (", sql);
-	case WHERE_OR:
-		return append_string(") OR (", sql);
-	default:
-		return 1;
-	}
-}
-
-static int mysql_where_comp(const struct _WhereComposite *comp, MySQLBindWrapper *wrapper,char** sql) {
+static int mysql_where_comp(const struct _WhereComposite *comp, MySQLBindWrapper *wrapper) {
 	for(size_t i = 0; i < comp->cnt; i++) {
-		if(wrapper->bind_idx) {
-			if( mysql_comp_op(comp->where[i]->comp,sql) ) {
-				return 1; }
-		}
-		if( mysql_where(comp->where[i],wrapper,sql) ) {
+		if( mysql_where(comp->where[i],wrapper) ) {
 			return 1; }
 	}
 	return 1;
 }
 
-static int mysql_where_cond(const struct _WhereCondition *cond, MySQLBindWrapper *wrapper,char** sql) {
+static int mysql_where_cond(const struct _WhereCondition *cond, MySQLBindWrapper *wrapper) {
 	if(cond->cnt > 1 && cond->cond != WHERE_EQUAL && cond->cond != WHERE_NOT_EQUAL) {
 		LOG_WARN("only equal/not equal allow for range types in where clause");
 		return 1; }
 
-	if(append_string("(", sql)) {
-		return 1;}
-	if(append_string(cond->def->name, sql)) {
-		return 1;}
-	if(cond->cnt > 1) {
-		switch(cond->cond) {
-		case WHERE_EQUAL:
-			if(append_string(" IN (", sql)) {
-				return 1;}
-			break;
-		case WHERE_NOT_EQUAL:
-			if(append_string(" NOT IN (", sql)) {
-				return 1;}
-			break;
-		default:
-			LOG_WARN("multi column in where clause cannot combined with 'like' or is null operator");
-			return 1;
-		}
-	} else {
-		switch(cond->cond) {
-		case WHERE_EQUAL:
-			if(append_string(" = ?", sql)) {
-				return 1;}
-			break;
-		case WHERE_NOT_EQUAL:
-			if(append_string(" != ?", sql)) {
-				return 1;}
-			break;
-		case WHERE_LIKE:
-			if(append_string(" LIKE %?%", sql)) {
-				return 1;}
-			break;
-		case WHERE_NOT_LIKE:
-			if(append_string(" NOT LIKE %?%", sql)) {
-				return 1;}
-			break;
-		case WHERE_IS_NULL:
-			if(append_string(" IS NULL ", sql)) {
-				return 1;}
-			break;
-		case WHERE_IS_NOT_NULL:
-			if(append_string(" IS NOT NULL ", sql)) {
-				return 1;}
-			break;
-		default:
-			LOG_WARN("column in where clause cannot combined with 'like' operator");
-			return 1;
-		}
-	}
-
 	unsigned long buffer_length = mysql_get_colbuf_size(cond->def);
 	for(size_t i = 0,pos = 0; i < cond->cnt; i++, pos += buffer_length) {
-		if( mysql_bind_append(cond->def,(cond->values+pos),wrapper) ) {
+		if( mysql_bind_append(cond->def,cond->values[i],wrapper) ) {
 			return 1; }
-		if(cond->cnt > 1) {
-			if(i && append_string(", ", sql)) {
-				return 1; }
-			if(append_string("?", sql)) {
-				return 1; }
-		}
 	}
-	if(cond->cnt > 1 && append_string(")", sql)) {
-		return 1; }
-	if(append_string(")", sql)) {
-		return 1;}
 	return 0;
 }
 
-int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrapper,char** sql) {
+int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrapper) {
 	if(clause->cnt == 0) {
 		return 0; }
-	if(append_string("(", sql)) {
-		return 1;}
 	for(size_t i = 0; i < clause->cnt; i++) {
 		switch(clause->stmts[i]->cond.type) {
 		case WHERE_COND:
-			if( mysql_where_cond(&clause->stmts[i]->cond, wrapper,sql) ) {
+			if( mysql_where_cond(&clause->stmts[i]->cond, wrapper) ) {
 				LOG_WARN("invalid condition for mysql");
 				return 1;
 			}
 			break;
 		case WHERE_COMP:
 			for(size_t j = 0; j < clause->stmts[i]->comp.cnt; j++) {
-				if( mysql_where_comp(&clause->stmts[i]->comp, wrapper,sql) ) {
+				if( mysql_where_comp(&clause->stmts[i]->comp, wrapper) ) {
 					LOG_WARN("invalid composite for mysql");
 					return 1;
 				}
@@ -191,8 +112,6 @@ int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrap
 			break;
 		}
 	}
-	if(append_string(")", sql)) {
-			return 1;}
 	return 0;
 }
 
@@ -228,7 +147,7 @@ int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWr
 		wrapper->bind[wrapper->bind_idx].length = 0;
 
 		if(def->type == COL_TYPE_STRING) {
-			wrapper->str_length[wrapper->str_idx] = strlen((char *)val) + 1;
+			wrapper->str_length[wrapper->str_idx] = strlen((char *)val);
 			wrapper->bind[wrapper->bind_idx].length = &wrapper->str_length[wrapper->str_idx];
 			wrapper->str_idx++;
 		}

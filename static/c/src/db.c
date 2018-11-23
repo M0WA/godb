@@ -89,6 +89,7 @@ DBHandle* create_dbhandle(DBTypes type) {
 		return 0;
 	}
 	memset(dbh,0,sizeof(DBHandle));
+	dbh->type = type;
 
 	switch(type) {
 #ifndef _DISABLE_MYSQL

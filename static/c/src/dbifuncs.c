@@ -16,7 +16,7 @@ int dbi_exit_dblib() {
 
 int dbi_init_dbh(struct _DBHandle *dbh) {
 	dbi_initialize_r(NULL, &dbh->dbi.inst);
-
+	dbh->dbi.result = 0;
 	switch(dbh->config.dbi.type) {
 	case DBI_TYPE_MYSQL:
 		dbh->dbi.conn = dbi_conn_new_r("mysql", dbh->dbi.inst);

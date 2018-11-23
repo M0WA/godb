@@ -28,6 +28,8 @@ struct _PostgresHandle {
 } PostgresHandle;
 #endif
 
+/* *********** DBI        **************** */
+
 #ifndef _DISABLE_DBI
 #include <dbi/dbi.h>
 typedef enum _DBIType {
@@ -37,6 +39,7 @@ typedef enum _DBIType {
 typedef struct _DBIHandle {
 	dbi_inst inst;
 	dbi_conn conn;
+	dbi_result result;
 } DBIHandle;
 
 typedef struct _DBIConfig {

@@ -52,3 +52,4 @@ typedef struct _WhereClause {
 void where_destroy(struct _WhereClause *c);
 int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause);
 int where_append(struct _WhereClause *clause,union _WhereStmt *stmt);
+int where_string(const struct _WhereClause *c,const char *specifier,char** sql);

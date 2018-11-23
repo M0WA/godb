@@ -13,5 +13,4 @@ typedef struct _SelectResult {
 int destroy_selectresult(SelectResult *res);
 /*
 int dump_selectresult(const SelectResult *res, char** buf);
-int append_selectresult_row(SelectResult *res, void *row);
 */

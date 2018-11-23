@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols ) {
 	size_t string_size = 0;
@@ -27,6 +28,12 @@ char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols )
 	}
 	return buf;
 }
+/*
+int get_time_string_from_tm(const struct tm *t,char *buf) {
+	strftime(buf, 80, "%Y-%m-%d %H:%M:%S", t);
+	return 0;
+}
+*/
 
 int append_string(const char *src, char** dest) {
 	if(!src || !dest) {

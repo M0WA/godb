@@ -169,7 +169,11 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 		rc = 1;
 		goto MYSQL_SELECT_EXIT;	}
 
-	if( mysql_where(&s->where,&bind,&where) ) {
+	if( mysql_where(&s->where,&bind) ) {
+		rc = 1;
+		goto MYSQL_SELECT_EXIT; }
+
+	if(where_string(&s->where,"?",&where)) {
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
 
@@ -183,6 +187,7 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
 	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? " WHERE " : ""),(where ? where : ""),limit);
+	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {

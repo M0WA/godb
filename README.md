@@ -38,7 +38,7 @@ Supported languages:<br><br>
 <tr><td>Python</td><td>TBD</td></tr>
 </table>
 
-* Prepared Statements
+* Prepared Statements (where applicable)
 * Maximum Brand Independance
 * Full Language Flexibility
 * Extensive Test Framework

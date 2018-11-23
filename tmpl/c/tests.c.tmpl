@@ -31,7 +31,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* d
 	cond.cond = WHERE_EQUAL;
 	cond.type = WHERE_COND;
 	cond.def = &(tbl.dbtbl.def->cols[1]);
-	cond.values = (const void**)&test;
+	cond.values = (const void*[]){&test};
 	cond.cnt = 1;
 
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
@@ -45,11 +45,11 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* d
 	int rc = 0;
 	size_t rowcount = 0;
 	while( (rc = fetch_db(dbh,&res)) > 0){
-		rowcount++;
-		LOGF_DEBUG("fetched row %lu",rowcount);	
+		rowcount++;	
 	}
+	LOGF_DEBUG("fetched %lu rows",rowcount);
 	if(rc != 0 || rowcount == 0) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch"); }
+		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }
 
 	DESTROY_STMT( (&stmt) );
 	destroy_selectresult(&res);
