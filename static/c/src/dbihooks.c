@@ -207,7 +207,44 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 }
 
 int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	return 1;
+	char *where = 0;
+	char *stmtbuf = 0;
+	char limit[32] = {0};
+	int rc = 0;
+
+	get_limit(s->limit, limit);
+
+	if(where_string(&s->where,0,&where)) {
+		rc = 1;
+		goto DBI_DELETE_EXIT; }
+
+	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
+	size_t wheresize = where ? strlen(where) : 0;
+	size_t limitsize = strlen(limit);
+	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->name) + 1;
+	stmtbuf = alloca(sqlsize);
+	if(!stmtbuf) {
+		goto DBI_DELETE_EXIT;
+		rc = 1; }
+	sprintf(stmtbuf,fmt,s->def->database,s->def->name,(where ? " WHERE " : ""),(where ? where : ""),limit);
+	LOGF_DEBUG("statement:\n%s",stmtbuf);
+
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	if(!dbh->dbi.result) {
+		rc = 1;
+		const char* errmsg = 0;
+		dbi_conn_error(dbh->dbi.conn, &errmsg);
+		LOGF_WARN("error while dbi_conn_query(): %s",(errmsg ? errmsg :""));
+		goto DBI_DELETE_EXIT; }
+
+DBI_DELETE_EXIT:
+	if(where) {
+		free(where); }
+	if(dbh->dbi.result) {
+		dbi_result_free(dbh->dbi.result);
+		dbh->dbi.result = 0; }
+
+	return rc;
 }
 
 int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {

@@ -27,7 +27,7 @@ typedef struct _SelectStmt {
 } SelectStmt;
 
 typedef struct _DeleteStmt {
-	const struct _DBColumnDef *def;
+	const struct _DBTableDef *def;
 	struct _WhereClause where;
 	size_t limit[2];
 } DeleteStmt;

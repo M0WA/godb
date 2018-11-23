@@ -33,7 +33,7 @@ static const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DB
 	.ncols = {{ len $tbl.Columns }},
 };
 
-void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) {
+void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl) {
 	tbl->tbl.def = &def_{{ $db.Name }}_{{ $tbl.Name }};
 	//tbl->tbl.bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
 	memset(&(tbl->tbl.valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	

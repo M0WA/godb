@@ -109,6 +109,7 @@ int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	if(!stmtbuf) {
 		return 1; }
 	snprintf(stmtbuf,lenStmt,fmt,s->defs->database,s->defs->table,colnames,values);
+	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {
@@ -253,12 +254,13 @@ int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
 	size_t wheresize = where ? strlen(where) : 0;
 	size_t limitsize = strlen(limit);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->table) + 1;
+	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->name) + 1;
 	stmtbuf = alloca(sqlsize);
 	if(!stmtbuf) {
 		goto MYSQL_DELETE_EXIT;
 		rc = 1; }
-	sprintf(stmtbuf,fmt,s->def->database,s->def->table,(where ? " WHERE " : ""),(where ? where : ""),limit);
+	sprintf(stmtbuf,fmt,s->def->database,s->def->name,(where ? " WHERE " : ""),(where ? where : ""),limit);
+	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {

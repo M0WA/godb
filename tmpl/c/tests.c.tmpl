@@ -14,7 +14,36 @@
 #include "logger.h"
 
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
-static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {
+static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} delete");
+	
+	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	
+	char test[] = "test";
+
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbl.dbtbl.def->cols[1]);
+	cond.values = (const void*[]){&test};
+	cond.cnt = 1;
+	
+	DeleteStmt stmt;
+	memset(&stmt,0,sizeof(DeleteStmt));
+	stmt.def = tbl.dbtbl.def;
+	stmt.limit[0] = 1;
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
+	
+	if(delete_db(dbh,&stmt)) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while delete"); }
+	
+	DESTROY_STMT(&stmt);
+}
+
+static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} select");
 
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
@@ -91,7 +120,7 @@ static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.N
 	{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
 }
 
-static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(struct _DBHandle* dbh) {
+static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} single row insert");
 
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
@@ -183,10 +212,11 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_INFO("all static checks on generated tables: SUCCESS");
 }
 
-void test_tables_db(struct _DBHandle* dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
+void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
 		test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-		test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+		test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+		test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }
 

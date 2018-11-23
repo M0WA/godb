@@ -20,8 +20,8 @@ typedef struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} { {{ range $col := $tbl.Co
 
 #pragma pack(push, 1)
 typedef struct _{{ $db.Name }}_{{ $tbl.Name }}_impl {
-	const struct _DBTableDef* def;
-	const struct _colptr_{{ $db.Name }}_{{ $tbl.Name }}* p_colptr;
+	const struct _DBTableDef *def;
+	const struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} *p_colptr;
 	struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} colptr;
 	struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} valbuf;
 } {{ $db.Name }}_{{ $tbl.Name }}_impl;
@@ -35,5 +35,5 @@ typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
 #pragma pack(pop)
 
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
-void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl);
+void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl);
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

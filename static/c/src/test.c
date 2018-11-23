@@ -132,6 +132,13 @@ static void test_delete() {
 		.size = 255,
 	};
 
+	DBTableDef tbl = (DBTableDef){
+		.name = "testtable",
+		.database = "testdb",
+		.cols = &col,
+		.ncols = 1,
+	};
+
 	WhereCondition cond = (WhereCondition) {
 		.type = WHERE_COND,
 		.cond = WHERE_EQUAL,
@@ -142,7 +149,7 @@ static void test_delete() {
 
 	DeleteStmt stmt;
 	memset(&stmt,0,sizeof(DeleteStmt));
-	stmt.def = &col;
+	stmt.def = &tbl;
 	stmt.limit[0] = 1;
 	if( where_append(&stmt.where,(WhereStmt*)&cond) ) {
 		LOG_FATAL(1,"where_append() failed"); }
