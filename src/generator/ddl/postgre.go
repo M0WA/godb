@@ -102,7 +102,7 @@ func postgreColSpec(l layout.Layouter, db string, tbl string, col string)string 
 }
 
 func postgreFKSpec(l layout.Layouter, db string, tbl string, fk layout.ForeignKey)string {
-	return fk.RefTable + " (" + fk.Column + ")"
+	return fk.RefTable + " (" + fk.RefColumn + ")"
 }
 
 func postgreIndexSpec(l layout.Layouter, db string, tbl string, k layout.IndexKey)string {

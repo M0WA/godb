@@ -11,12 +11,12 @@ typedef enum _DBTypes {
 	DB_TYPE_MYSQL,
 #endif
 
-#ifndef _DISABLE_POSTGRES
-	DB_TYPE_POSTGRES,
-#endif
-
 #ifndef _DISABLE_DBI
 	DB_TYPE_DBI,
+#endif
+
+#ifndef _DISABLE_POSTGRES
+	DB_TYPE_POSTGRES,
 #endif
 
 	DB_TYPE_MAX,

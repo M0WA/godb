@@ -26,4 +26,7 @@ int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrap
 size_t mysql_get_colbuf_size(const struct _DBColumnDef *const col);
 int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *ft);
 
+int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial);
+int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial);
+
 #endif

@@ -118,7 +118,7 @@ func mysqlFKSpec(l layout.Layouter, db string, tbl string, fk layout.ForeignKey)
 	if fk.MySQL.RefDatabase != "" {
 		ref = fk.MySQL.RefDatabase + "." + fk.RefTable
 	}
-	return ref + " (" + fk.Column + ")"
+	return ref + " (" + fk.RefColumn + ")"
 }
 
 func mysqlIndexSpec(l layout.Layouter, db string, tbl string, k layout.IndexKey)string {

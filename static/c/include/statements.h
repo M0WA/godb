@@ -4,6 +4,7 @@
 
 #include "table.h"
 #include "where.h"
+#include "values.h"
 
 #define DESTROY_STMT(somestmt) where_destroy(&((somestmt)->where));
 
@@ -37,3 +38,9 @@ typedef struct _UpsertStmt {
 
 typedef struct _UpdateStmt {
 } UpdateStmt;
+
+int upsert_stmt_string(const UpsertStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql);
+int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql);
+int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, char** sql);
+int select_stmt_string(const SelectStmt *const, WhereSpecifier where, char** sql);
+int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, char** sql);

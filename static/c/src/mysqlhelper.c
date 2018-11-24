@@ -156,4 +156,16 @@ int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWr
 	return 0;
 }
 
+int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
+	if( append_string("?",sql) ) {
+		return 1; }
+	return 0;
+}
+
+int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
+	if( append_string("?",sql) ) {
+		return 1; }
+	return 0;
+}
+
 #endif

@@ -7,6 +7,8 @@
 #include "column.h"
 #include "statements.h"
 #include "selectresult.h"
+#include "dbihelper.h"
+#include "values.h"
 
 #include <string.h>
 
@@ -34,47 +36,11 @@ int dbi_disconnect_hook(struct _DBHandle *dbh) {
 
 int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char *colnames = 0;
-	char *values = 0;
 	char *stmtbuf = 0;
 
-	colnames = comma_concat_colnames(s->defs,s->ncols);
-	if(!colnames) {
+	if( insert_stmt_string(s,dbi_values_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
-
-	void **colbuf = alloca(sizeof(void*) * s->ncols);
-	if(!colbuf) {
-		return 1; }
-	for(size_t i = 0; i < s->ncols; i++) {
-		size_t bufsize = s->defs[i].type == COL_TYPE_STRING ? s->defs[i].size : 64;
-		colbuf[i] = alloca(bufsize);
-		if(!colbuf[i]) {
-			return 1; }
-	}
-
-	for(size_t i = 0; i < s->nrows; i++) {
-		if(i) {
-			append_string(",",&values);	}
-		append_string("(",&values);
-		for(size_t j = 0; j < s->ncols; j++) {
-			size_t bufsize = s->defs[j].type == COL_TYPE_STRING ? s->defs[j].size : 64;
-			if( get_column_string(colbuf[j],bufsize,&(s->defs[j]),s->valbuf[i][j]) ) {
-				return 1; }
-			if(j) {
-				append_string(",",&values);	}
-			append_string(colbuf[j],&values);
-		}
-		append_string(")",&values);
-	}
-
-	char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES %s";
-	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->database) + strlen(s->defs->table);
-	stmtbuf = alloca(lenStmt);
-	if(!stmtbuf) {
-		return 1; }
-	snprintf(stmtbuf,lenStmt,fmt,s->defs->database,s->defs->table,colnames,values);
-	LOGF_DEBUG("statement: %s",stmtbuf);
 
 	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
 	if(!dbh->dbi.result) {
@@ -85,43 +51,20 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 		goto DBI_INSERT_EXIT; }
 
 DBI_INSERT_EXIT:
-	if(colnames) {
-		free(colnames); }
-	if(values) {
-		free(values); }
+	if(stmtbuf) {
+		free(stmtbuf); }
 	if(dbh->dbi.result) {
 		dbi_result_free(dbh->dbi.result); }
 	return rc;
 }
 
 int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult* res) {
-	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s %s %s";
-	char *colnames = 0;
-	char *where = 0;
 	char *stmtbuf = 0;
-	char limit[32] = {0};
 	int rc = 0;
 
-	colnames = comma_concat_colnames(s->defs,s->ncols);
-	if(!colnames) {
-		rc = 1;
-		goto DBI_SELECT_EXIT;	}
-
-	if(where_string(&s->where,0,&where)) {
+	if( select_stmt_string(s,dbi_where_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_SELECT_EXIT; }
-
-	get_limit(s->limit, limit);
-
-	size_t wheresize = where ? strlen(where) : 0;
-	size_t limitsize = strlen(limit);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
-	stmtbuf = alloca(sqlsize);
-	if(!stmtbuf) {
-		rc = 1;
-		goto DBI_SELECT_EXIT; }
-	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? " WHERE " : ""),(where ? where : ""),limit);
-	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
 	if(!dbh->dbi.result) {
@@ -147,10 +90,8 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 	}
 
 DBI_SELECT_EXIT:
-	if(colnames) {
-		free(colnames); }
-	if(where) {
-		free(where); }
+	if(stmtbuf) {
+		free(stmtbuf); }
 	return rc;
 }
 
@@ -207,27 +148,12 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 }
 
 int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	char *where = 0;
 	char *stmtbuf = 0;
-	char limit[32] = {0};
 	int rc = 0;
 
-	get_limit(s->limit, limit);
-
-	if(where_string(&s->where,0,&where)) {
+	if( delete_stmt_string(s,dbi_where_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_DELETE_EXIT; }
-
-	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
-	size_t wheresize = where ? strlen(where) : 0;
-	size_t limitsize = strlen(limit);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->name) + 1;
-	stmtbuf = alloca(sqlsize);
-	if(!stmtbuf) {
-		goto DBI_DELETE_EXIT;
-		rc = 1; }
-	sprintf(stmtbuf,fmt,s->def->database,s->def->name,(where ? " WHERE " : ""),(where ? where : ""),limit);
-	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
 	if(!dbh->dbi.result) {
@@ -238,8 +164,8 @@ int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 		goto DBI_DELETE_EXIT; }
 
 DBI_DELETE_EXIT:
-	if(where) {
-		free(where); }
+	if(stmtbuf) {
+		free(stmtbuf); }
 	if(dbh->dbi.result) {
 		dbi_result_free(dbh->dbi.result);
 		dbh->dbi.result = 0; }

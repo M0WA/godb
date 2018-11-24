@@ -4,6 +4,9 @@
 
 #include "dbhandle_impl.h"
 #include "logger.h"
+#include "statements.h"
+#include "helper.h"
+#include "postgreshelper.h"
 
 int postgres_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
@@ -55,6 +58,58 @@ int postgres_disconnect_hook(struct _DBHandle *dbh) {
 }
 
 int postgres_insert_hook(struct _DBHandle *dbh,struct _InsertStmt const*const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+
+	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf) ) {
+		rc = 1;
+		goto POSTGRES_INSERT_EXIT; }
+
+	//TODO:
+
+POSTGRES_INSERT_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
+int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
+	char *stmtbuf = 0;
+	int rc = 0;
+
+	if( delete_stmt_string(s,postgres_where_specifier,&stmtbuf) ) {
+		rc = 1;
+		goto POSTGRES_DELETE_EXIT; }
+
+	//TODO:
+
+POSTGRES_DELETE_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+	if(dbh->dbi.result) {
+		dbi_result_free(dbh->dbi.result);
+		dbh->dbi.result = 0; }
+
+	return rc;
+}
+
+int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
+	char *stmtbuf = 0;
+	int rc = 0;
+
+	if( select_stmt_string(s,postgres_where_specifier,&stmtbuf) ) {
+		rc = 1;
+		goto POSTGRES_SELECT_EXIT; }
+
+	//TODO:
+
+POSTGRES_SELECT_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+		return rc;
+}
+
+int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 
@@ -63,18 +118,6 @@ int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s)
 }
 
 int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
-	return 1;
-}
-
-int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
-	return 1;
-}
-
-int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
-	return 1;
-}
-
-int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 

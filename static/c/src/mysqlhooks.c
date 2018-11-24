@@ -12,6 +12,7 @@
 #include "helper.h"
 #include "mysqlhelper.h"
 #include "selectresult.h"
+#include "values.h"
 
 int mysql_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
@@ -73,43 +74,23 @@ int mysql_disconnect_hook(struct _DBHandle *dbh) {
 
 int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char *colnames = 0;
 	char *stmtbuf = 0;
-	char *values = 0;
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
-
-	colnames = comma_concat_colnames(s->defs,s->ncols);
-	if(!colnames) {
-		rc = 1;
-		goto MYSQL_INSERT_EXIT;	}
-
 	for(size_t i = 0; i < s->nrows; i++) {
-		if(i) {
-			append_string(",",&values);	}
-		append_string("(",&values);
 		for(size_t j = 0; j < s->ncols; j++) {
 			if( mysql_bind_append(&(s->defs[j]),s->valbuf[i][j], &bind ) ) {
 				rc = 1;
 				LOG_WARN("mysql_bind_append: error");
 				goto MYSQL_INSERT_EXIT;
 			}
-			if(j) {
-				append_string(",",&values);
-			}
-			append_string("?",&values);
 		}
-		append_string(")",&values);
 	}
 
-	char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES %s";
-	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->database) + strlen(s->defs->table);
-	stmtbuf = alloca(lenStmt);
-	if(!stmtbuf) {
-		return 1; }
-	snprintf(stmtbuf,lenStmt,fmt,s->defs->database,s->defs->table,colnames,values);
-	LOGF_DEBUG("statement:\n%s",stmtbuf);
+	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf) ) {
+		rc = 1;
+		goto MYSQL_INSERT_EXIT; }
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {
@@ -146,49 +127,67 @@ MYSQL_INSERT_EXIT:
 	if(dbh->mysql.stmt) {
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;}
-	if(colnames) {
-		free(colnames);	}
-	if(values) {
-		free(values); }
+	if(stmtbuf) {
+		free(stmtbuf); }
 
 	return rc;
 }
 
-int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult *res) {
-	const char fmt[] = "SELECT %s FROM `%s`.`%s` %s %s %s";
-	char *colnames = 0;
-	char *where = 0;
+int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	char *stmtbuf = 0;
-	char limit[32] = {0};
+	int rc = 0;
+	MySQLBindWrapper bind;
+	memset(&bind,0,sizeof(MySQLBindWrapper));
+
+	if( mysql_where(&s->where,&bind) ) {
+		rc = 1;
+		goto MYSQL_DELETE_EXIT; }
+
+	if( delete_stmt_string(s,mysql_where_specifier,&stmtbuf) ) {
+		rc = 1;
+		goto MYSQL_DELETE_EXIT; }
+
+	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
+	if(!dbh->mysql.stmt) {
+		rc = 1;
+		LOG_WARN("mysql_stmt_init: is null");
+		goto MYSQL_DELETE_EXIT; }
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+	if( bind.bind_idx && mysql_stmt_bind_param(dbh->mysql.stmt,bind.bind) ) {
+		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+	if( mysql_stmt_execute(dbh->mysql.stmt) ) {
+		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_DELETE_EXIT;	}
+
+MYSQL_DELETE_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+	if(dbh->mysql.stmt) {
+		mysql_stmt_close(dbh->mysql.stmt);
+		dbh->mysql.stmt = 0;}
+	return rc;
+}
+
+int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult *res) {
+	char *stmtbuf = 0;
 	int rc = 0;
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
-
-	colnames = comma_concat_colnames(s->defs,s->ncols);
-	if(!colnames) {
-		rc = 1;
-		goto MYSQL_SELECT_EXIT;	}
-
 	if( mysql_where(&s->where,&bind) ) {
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
 
-	if(where_string(&s->where,"?",&where)) {
+	if( select_stmt_string(s,mysql_where_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_EXIT; }
-
-	get_limit(s->limit, limit);
-
-	size_t wheresize = where ? strlen(where) : 0;
-	size_t limitsize = strlen(limit);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->defs[0].database) + strlen(s->defs[0].table) + strlen(colnames) + 1;
-	stmtbuf = alloca(sqlsize);
-	if(!stmtbuf) {
-		rc = 1;
-		goto MYSQL_SELECT_EXIT; }
-	sprintf(stmtbuf,fmt,colnames,s->defs[0].database,s->defs[0].table,(where ? " WHERE " : ""),(where ? where : ""),limit);
-	LOGF_DEBUG("statement:\n%s",stmtbuf);
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {
@@ -225,68 +224,8 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 	}
 
 MYSQL_SELECT_EXIT:
-	if(colnames) {
-		free(colnames); }
-	if(where) {
-		free(where); }
-	return rc;
-}
-
-int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	char *where = 0;
-	char *stmtbuf = 0;
-	char limit[32] = {0};
-	int rc = 0;
-
-	MySQLBindWrapper bind;
-	memset(&bind,0,sizeof(MySQLBindWrapper));
-
-	get_limit(s->limit, limit);
-
-	if( mysql_where(&s->where,&bind) ) {
-		rc = 1;
-		goto MYSQL_DELETE_EXIT; }
-
-	if(where_string(&s->where,"?",&where)) {
-		rc = 1;
-		goto MYSQL_DELETE_EXIT; }
-
-	const char fmt[] = "DELETE FROM `%s`.`%s` %s %s %s";
-	size_t wheresize = where ? strlen(where) : 0;
-	size_t limitsize = strlen(limit);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + limitsize + strlen(s->def->database) + strlen(s->def->name) + 1;
-	stmtbuf = alloca(sqlsize);
-	if(!stmtbuf) {
-		goto MYSQL_DELETE_EXIT;
-		rc = 1; }
-	sprintf(stmtbuf,fmt,s->def->database,s->def->name,(where ? " WHERE " : ""),(where ? where : ""),limit);
-	LOGF_DEBUG("statement:\n%s",stmtbuf);
-
-	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
-	if(!dbh->mysql.stmt) {
-		rc = 1;
-		LOG_WARN("mysql_stmt_init: is null");
-		goto MYSQL_DELETE_EXIT; }
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
-		LOGF_DEBUG("%s",stmtbuf);
-		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
-		rc = 1;
-		goto MYSQL_DELETE_EXIT;	}
-	if( bind.bind_idx && mysql_stmt_bind_param(dbh->mysql.stmt,bind.bind) ) {
-		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(dbh->mysql.stmt));
-		rc = 1;
-		goto MYSQL_DELETE_EXIT;	}
-	if( mysql_stmt_execute(dbh->mysql.stmt) ) {
-		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(dbh->mysql.stmt));
-		rc = 1;
-		goto MYSQL_DELETE_EXIT;	}
-
-MYSQL_DELETE_EXIT:
-	if(where) {
-		free(where); }
-	if(dbh->mysql.stmt) {
-		mysql_stmt_close(dbh->mysql.stmt);
-		dbh->mysql.stmt = 0;}
+	if(stmtbuf) {
+		free(stmtbuf); }
 	return rc;
 }
 

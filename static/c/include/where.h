@@ -49,7 +49,9 @@ typedef struct _WhereClause {
 	size_t cnt;
 } WhereClause;
 
+typedef int (*WhereSpecifier)(const struct _DBColumnDef *def,const void* value,char** sql,size_t* serial);
+
 void where_destroy(struct _WhereClause *c);
 int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause);
 int where_append(struct _WhereClause *clause,union _WhereStmt *stmt);
-int where_string(const struct _WhereClause *c,const char *specifier,char** sql);
+int where_string(const struct _WhereClause *c,WhereSpecifier spec,char** sql, size_t* serial);
