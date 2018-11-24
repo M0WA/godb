@@ -140,6 +140,71 @@ insert rows into exampledb.exampletable:
 	if( insert_dbtable(dbh,rowp,2) ) {
 		LOG_FATAL(1,"bulk insert failed"); }
 
+select rows from exampledb.exampletable include where clause:
+
+	TABLE_STRUCT(exampledb,exampletable,tbl);
+	
+	SelectStmt stmt;
+	memset(&stmt,0,sizeof(SelectStmt));
+	stmt.defs = tbl.dbtbl.def->cols;
+	stmt.ncols = tbl.dbtbl.def->ncols;
+	
+	char test[] = "test";
+	
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbl.dbtbl.def->cols[1]);
+	cond.values = (const void*[]){&test};
+	cond.cnt = 1;
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"exampledb.exampletable: cannot append where stmt"); }
+	
+	SelectResult res;
+	memset(&res,0,sizeof(res));
+	if( select_db(dbh,&stmt,&res) ) {
+		LOG_FATAL(1,"exampledb.exampletable: error while select"); }
+	
+	int rc = 0;
+	size_t rowcount = 0;
+	while( (rc = fetch_db(dbh,&res)) > 0){
+		rowcount++;	
+	}
+	LOGF_DEBUG("fetched %lu rows",rowcount);
+	if(rc != 0 || rowcount == 0) {
+		LOGF_FATAL(1,"exampledb.exampletable: error while fetch: rows: %lu, rc: %d",rowcount,rc); }
+	
+	DESTROY_STMT( (&stmt) );
+	destroy_selectresult(&res);
+
+delete rows from exampledb.exampletable including where clause:
+
+	TABLE_STRUCT(exampledb,exampletable,tbl);
+	
+	int id = 10;
+	
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_NOT_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbl.dbtbl.def->cols[0]);
+	cond.values = (const void*[]){&id};
+	cond.cnt = 1;
+	
+	DeleteStmt stmt;
+	memset(&stmt,0,sizeof(DeleteStmt));
+	stmt.def = tbl.dbtbl.def;
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"exampledb.exampletable: cannot append where stmt"); }
+	
+	if(delete_db(dbh,&stmt)) {
+		LOG_FATAL(1,"exampledb.exampletable: error while delete"); }
+	
+	DESTROY_STMT(&stmt);
+	
 ## Components <a name="Components"></a>
 
 ### Code Generator <a name="Code Generator"></a>
