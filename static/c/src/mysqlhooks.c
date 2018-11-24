@@ -36,22 +36,22 @@ int mysql_connect_hook(struct _DBHandle *dbh) {
 
 	dbh->mysql.conn = mysql_real_connect(
 			dbh->mysql.conn,
-			dbh->config.host,
-			dbh->config.user,
-			dbh->config.pass,
-			dbh->config.name,
-			dbh->config.port,
+			dbh->cred.host,
+			dbh->cred.user,
+			dbh->cred.pass,
+			dbh->cred.name,
+			dbh->cred.port,
 			NULL,
 			CLIENT_MULTI_STATEMENTS |
-			CLIENT_COMPRESS |
+			(dbh->config.mysql.compression ? CLIENT_COMPRESS : 0) |
 			CLIENT_IGNORE_SIGPIPE );
 
 	if(!dbh->mysql.conn) {
 		LOGF_WARN("mysql connect: %s",mysql_error(dbh->mysql.conn));
 		return 1;
 	}
-	mysql_autocommit(dbh->mysql.conn,1);
 
+	mysql_autocommit(dbh->mysql.conn,1);
 	LOG_DEBUG("connected to mysql-database");
 	return 0;
 }
@@ -88,7 +88,7 @@ int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 		}
 	}
 
-	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf,0) ) {
 		rc = 1;
 		goto MYSQL_INSERT_EXIT; }
 

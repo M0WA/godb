@@ -13,10 +13,10 @@
 #include <string.h>
 
 int dbi_connect_hook(struct _DBHandle *dbh) {
-    dbi_conn_set_option(dbh->dbi.conn, "host", dbh->config.host /* dbh->config.port */);
-    dbi_conn_set_option(dbh->dbi.conn, "username", dbh->config.user);
-    dbi_conn_set_option(dbh->dbi.conn, "password", dbh->config.pass);
-    dbi_conn_set_option(dbh->dbi.conn, "dbname", dbh->config.name);
+    dbi_conn_set_option(dbh->dbi.conn, "host", dbh->cred.host /* dbh->config.port */);
+    dbi_conn_set_option(dbh->dbi.conn, "username", dbh->cred.user);
+    dbi_conn_set_option(dbh->dbi.conn, "password", dbh->cred.pass);
+    dbi_conn_set_option(dbh->dbi.conn, "dbname", dbh->cred.name);
     dbi_conn_set_option(dbh->dbi.conn, "encoding", "UTF-8");
 
     int connerr = dbi_conn_connect(dbh->dbi.conn);
@@ -38,7 +38,11 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
 	char *stmtbuf = 0;
 
-	if( insert_stmt_string(s,dbi_values_specifier,&stmtbuf) ) {
+	int skip_autoincrement = 0;
+	if(dbh->config.dbi.type == DBI_TYPE_POSTGRES) {
+		skip_autoincrement = 1;	}
+
+	if( insert_stmt_string(s,dbi_values_specifier,&stmtbuf,skip_autoincrement) ) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
 

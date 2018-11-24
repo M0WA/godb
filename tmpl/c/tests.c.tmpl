@@ -32,7 +32,6 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	DeleteStmt stmt;
 	memset(&stmt,0,sizeof(DeleteStmt));
 	stmt.def = tbl.dbtbl.def;
-	stmt.limit[0] = 1;
 	
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }

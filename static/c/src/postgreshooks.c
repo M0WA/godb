@@ -19,15 +19,15 @@ int postgres_connect_hook(struct _DBHandle *dbh) {
 	}
 
 	char port[6] = {0};
-	sprintf(port,"%d",dbh->config.port);
+	sprintf(port,"%d",dbh->cred.port);
 	dbh->postgres.conn = PQsetdbLogin(
-			dbh->config.host,
+			dbh->cred.host,
 			port,
 			"", //options
 			"", //tty
-			dbh->config.name,
-			dbh->config.user,
-			dbh->config.pass );
+			dbh->cred.name,
+			dbh->cred.user,
+			dbh->cred.pass );
 	if(!dbh->postgres.conn) {
 		LOG_WARN("postgres handle failed to initalize");
 		return 1;
@@ -61,7 +61,7 @@ int postgres_insert_hook(struct _DBHandle *dbh,struct _InsertStmt const*const s)
 	int rc = 0;
 	char *stmtbuf = 0;
 
-	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf, 1) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_EXIT; }
 
@@ -86,10 +86,6 @@ int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s)
 POSTGRES_DELETE_EXIT:
 	if(stmtbuf) {
 		free(stmtbuf); }
-	if(dbh->dbi.result) {
-		dbi_result_free(dbh->dbi.result);
-		dbh->dbi.result = 0; }
-
 	return rc;
 }
 
@@ -106,11 +102,11 @@ int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,
 POSTGRES_SELECT_EXIT:
 	if(stmtbuf) {
 		free(stmtbuf); }
-		return rc;
+	return rc;
 }
 
 int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
-	return 1;
+	return 0;
 }
 
 int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {

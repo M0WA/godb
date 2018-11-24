@@ -18,7 +18,7 @@ func postgreColumnDataType(tbl *layout.Table,col *layout.Column)string {
 		fmt.Printf("invalid datatype: %s",col.DataType)
 		os.Exit(1)
 	}
-	if col.Name == tbl.PrimaryKey.Column && d == layout.INT && col.AutoIncrement {
+	if d == layout.INT && col.AutoIncrement {
 		return "BIGSERIAL"
 	}
 	typeStr := ""
@@ -94,15 +94,25 @@ func postgreColSpec(l layout.Layouter, db string, tbl string, col string)string 
 			dft = " DEFAULT " + *c.DefaultValue
 		}
 	}
-	ai := ""
-	if c.AutoIncrement {
-		ai = " AUTO_INCREMENT "
-	}
-	return col + " " + postgreColumnDataType(t,c) + ai + nn + dft
+	return col + " " + postgreColumnDataType(t,c) + nn + dft
 }
 
 func postgreFKSpec(l layout.Layouter, db string, tbl string, fk layout.ForeignKey)string {
-	return fk.RefTable + " (" + fk.RefColumn + ")"
+	return "\\c " + db + "\nALTER TABLE " + tbl +" ADD CONSTRAINT FK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + strings.ToUpper(fk.Column) + " FOREIGN KEY (" + fk.Column + ") REFERENCES " + fk.RefTable + " (" + fk.RefColumn + ")"
+}
+
+func postgreUKSpec(l layout.Layouter, db string, tbl string, uk layout.UniqueKey)string {
+	cols := ""
+	name := ""
+	for i,k := range uk.Columns {
+		if i != 0 {
+			cols += ","
+			name += "_"
+		}
+		cols += k
+		name += strings.ToUpper(k)
+	}
+	return "CONSTRAINT UK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + name + " UNIQUE(" + cols + ")"
 }
 
 func postgreIndexSpec(l layout.Layouter, db string, tbl string, k layout.IndexKey)string {
@@ -122,7 +132,7 @@ func (*PostgreTmpl)Funcs()template.FuncMap {
 		"IndexSpec": postgreIndexSpec,
 		"PKSpec": PKSpec,
 		"FKSpec": postgreFKSpec,
-		"UKSpec": UKSpec,
+		"UKSpec": postgreUKSpec,
 	}
 }
 

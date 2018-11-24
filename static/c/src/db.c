@@ -18,38 +18,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int init_db_config(DBConfig *conf,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
-	if(!host || strlen(host) > (MAX_DB_HOST - 1) ) {
+static int init_db_credentials(struct _DBHandle *dbh,const struct _DBCredentials *cred) {
+	if(!cred->host || strlen(cred->host) > (MAX_DB_HOST - 1) ) {
 		LOG_ERROR("hostname too long");
 		return 0;
 	}
-	if(!port) {
+	if(!cred->port) {
 		LOG_ERROR("invalid port");
 		return 0;
 	}
-	if(!db || strlen(db) > (MAX_DB_NAME - 1) ) {
+	if(!cred->name || strlen(cred->name) > (MAX_DB_NAME - 1) ) {
 		LOG_ERROR("database name too long");
 		return 0;
 	}
-	if(!user || strlen(user) > (MAX_DB_USER - 1) ) {
+	if(!cred->user || strlen(cred->user) > (MAX_DB_USER - 1) ) {
 		LOG_ERROR("username too long");
 		return 0;
 	}
-	if(!pass || strlen(pass) > (MAX_DB_PASS - 1) ) {
+	if(!cred->pass || strlen(cred->pass) > (MAX_DB_PASS - 1) ) {
 		LOG_ERROR("password too long");
 		return 0;
 	}
 
-	conf->port = port;
-	strncpy( conf->host, host, MAX_DB_HOST );
-	strncpy( conf->name, db  ,  MAX_DB_NAME );
-	strncpy( conf->user, user, MAX_DB_USER );
-	strncpy( conf->pass, pass, MAX_DB_PASS );
-
-#ifndef _DISABLE_MYSQL
-	conf->mysql.autoreconnect = 1;
-	conf->mysql.compression = 1;
-#endif
+	dbh->cred.port = cred->port;
+	strncpy( dbh->cred.host, cred->host, MAX_DB_HOST );
+	strncpy( dbh->cred.name, cred->name, MAX_DB_NAME );
+	strncpy( dbh->cred.user, cred->user, MAX_DB_USER );
+	strncpy( dbh->cred.pass, cred->pass, MAX_DB_PASS );
 	return 0;
 }
 
@@ -82,16 +77,16 @@ int exit_dblib() {
 	return 0;
 }
 
-DBHandle* create_dbhandle(DBTypes type) {
+DBHandle* create_dbhandle(const struct _DBConfig *conf) {
 	DBHandle* dbh = malloc(sizeof(DBHandle));
 	if(!dbh) {
 		LOG_ERROR("could not malloc database handle");
 		return 0;
 	}
 	memset(dbh,0,sizeof(DBHandle));
-	dbh->type = type;
+	dbh->config = *conf;
 
-	switch(type) {
+	switch(dbh->config.type) {
 #ifndef _DISABLE_MYSQL
 	case DB_TYPE_MYSQL:
 		if( mysql_init_dbh(dbh) ) {
@@ -127,8 +122,8 @@ DBHandle* create_dbhandle(DBTypes type) {
 	return dbh;
 }
 
-int connect_db(DBHandle *dbh,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass) {
-	if( init_db_config(&(dbh->config),host,port,db,user,pass) ) {
+int connect_db(struct _DBHandle *dbh,const struct _DBCredentials *cred) {
+	if( init_db_credentials(dbh,cred) ) {
 		return 1;
 	}
 	if(!dbh->hooks.connect) {

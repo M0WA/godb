@@ -44,19 +44,35 @@ Supported languages:<br><br>
 * Extensive Test Framework
 * Minimal Memory + CPU Footprint
 * Open Source
+* Type Safety
 
 ## Usage <a name="Usage"></a>
-get and build the library:
+get and build the example library:
 
 	git clone https://github.com/M0WA/GoDB
 	cd GoDB
 	cp db.yaml.example db.yaml
 	DATABASE_YAML=db.yaml make
 
-initialize the database (i.e. MySQL):
+create the example database:
 
-	cd generated/sql/mysql/
-	cat * | mysql
+	# for mysql databases
+	cat generated/sql/mysql/* | sudo mysql -u root
+
+    # for postgresql databases
+    cat generated/sql/postgre/* | sudo -u postgres psql -U postgres
+
+initialize the example database for tests:
+
+	# mysql init statement:
+	echo "insert into complexdb1.complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW());" | sudo mysql
+	
+	# postgresql init statement:
+	echo "insert into complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW());" | sudo -u postgres psql -U postgres -d complexdb1
+
+test library:
+
+	make test
 
 ## API <a name="API"></a>
 
@@ -64,38 +80,61 @@ initialize the database (i.e. MySQL):
 
 connect to mysql database:
 
+	// initialize library
 	init_dblib();
 	
-	DBHandle *dbh = create_dbhandle(DBTYPE_MYSQL);
+	// settings
+	DBConfig config = (DBConfig){
+		.type = DB_TYPE_MYSQL,
+		.mysql.autoreconnect = 1,
+		.mysql.compression = 1,
+	};
+	
+	// create a database handle
+	DBHandle *dbh = create_dbhandle(&config);
 	if ( !dbh ) {
 		LOG_FATAL(1,"create_dbhandle() failed"); }
 	
-	if( connect_db(dbh,"localhost",3306,"mydb","myuser","mypass") ) {
+	// set credentials
+	DBCredentials creds = () {
+		.host = "localhost",
+		.port = 3306,
+		.name = "complexdb1",
+		.user = "myuser",
+		.pass = "mypass",
+	};
+	
+	// connect to database
+	if( connect_db(dbh,&creds) ) {
 		LOG_FATAL(1,"connect_db() failed"); }
 	
 	// -> do some work here <-
-		
+	
+	// disconnect from database
 	if ( disconnect_db(dbh) ) {
 		LOG_FATAL(1,"disconnect_db() failed"); }
 	
+	// destroy the database handle
 	if( destroy_dbhandle(dbh) ) {
 		LOG_FATAL(1,"destroy_dbhandle() failed"); }
-		
+	
+	// shutdown library
 	exit_dblib();
 
 insert rows into exampledb.exampletable:
 
+	// create tables to insert
 	TABLE_STRUCT(exampledb,exampletable,tbl);
 	set_example_values(&tbl);
+	
+	TABLE_STRUCT(exampledb,exampletable,tbl2);
+	set_example_values(&tbl2);
 	
 	// single row insert
 	if( INSERT_ONE_DBTABLE(dbh,&tbl.dbtbl) ) {
 		LOG_FATAL(1,"insert failed"); }
 	
 	// bulk insert (multiple rows)
-	TABLE_STRUCT(exampledb,exampletable,tbl2);
-	set_example_values(&tbl2);
-	
 	DBTable* rows[2] = { &(tbl.dbtbl), &(tbl2.dbtbl) };
 	const DBTable *const*const rowp = (const DBTable *const*const)&rows;
 	if( insert_dbtable(dbh,rowp,2) ) {

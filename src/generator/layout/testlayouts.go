@@ -32,7 +32,7 @@ func singleOneTableLayout(tbl string)string{
         columns:
           - name: ID
             datatype: int
-            notnull: true
+            notnull: false
             autoincrement: true
             size: 64
           - name: teststr
@@ -69,7 +69,7 @@ func oneTableFields()([]Column) {
 		Column{
 			Name: "ID",
 			DataType: INT.String(),
-			NotNull: true,
+			NotNull: false,
 			Size: 64,
 			AutoIncrement: true,
 		},
@@ -123,8 +123,14 @@ func complexDatabases(db string)([]Database) {
 func ComplexLayout(db string)(string) {
 	t1 := singleOneTableLayout("complextable1")
 	t2 := singleOneTableLayout("complextable2") + `
+          - name: testfk
+            datatype: int
+            notnull: false
+            autoincrement: false
+            size: 64
+            defaultvalue: "0"
         foreignkeys:
-          - column: ID
+          - column: testfk
             refcolumn: ID
             reftable: complextable1
             mysql:
@@ -144,7 +150,7 @@ func complexTables(db string)([]Table) {
 	t1 := Table{ Name: "complextable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } }
 	
 	f := ForeignKey{
-		Column: "ID",
+		Column: "testfk",
 		RefColumn: "ID",
 		RefTable: "complextable1",
 		MySQL: MySQLForeignKey{ RefDatabase: db  },
@@ -152,9 +158,21 @@ func complexTables(db string)([]Table) {
 	u := UniqueKey{
 		Columns: []string{"ID","testint"},
 	}
+	
+	dfk := "0"
+	c := oneTableFields()
+	c = append(c, Column{
+			Name: "testfk",
+			DataType: INT.String(),
+			NotNull: false,
+			Size: 64,
+			AutoIncrement: false,
+			DefaultValue: &dfk,
+	})
+	
 	t2 := Table{ 
 		Name: "complextable2", 
-		Columns: oneTableFields(), 
+		Columns: c, 
 		PrimaryKey: PrimaryKey{ Column: "ID" },
 		ForeignKeys: []ForeignKey{ f },
 		UniqueKeys: []UniqueKey{ u },

@@ -2,7 +2,7 @@
 
 #include "dbtypes.h"
 #include "hooks.h"
-#include "dblimits.h"
+#include "dbhandle.h"
 
 /* *********** MySQL **************** */
 
@@ -12,11 +12,6 @@ struct _MySQLHandle {
 	MYSQL *conn;
 	MYSQL_STMT *stmt;
 } MySQLHandle;
-
-struct _MySQLConfig {
-	int autoreconnect;
-	int compression;
-} MySQLConfig;
 #endif
 
 /* *********** Postgres **************** */
@@ -32,43 +27,18 @@ struct _PostgresHandle {
 
 #ifndef _DISABLE_DBI
 #include <dbi/dbi.h>
-typedef enum _DBIType {
-	DBI_TYPE_MYSQL,
-} DBIType;
-
 typedef struct _DBIHandle {
 	dbi_inst inst;
 	dbi_conn conn;
 	dbi_result result;
 } DBIHandle;
-
-typedef struct _DBIConfig {
-	DBIType type;
-} DBIConfig;
 #endif
-
-/* *********** DBConfig **************** */
-
-typedef struct _DBConfig {
-	char host[MAX_DB_HOST];
-	unsigned short port;
-	char name[MAX_DB_NAME];
-	char user[MAX_DB_USER];
-	char pass[MAX_DB_PASS];
-
-#ifndef _DISABLE_MYSQL
-	struct _MySQLConfig mysql;
-#endif
-#ifndef _DISABLE_DBI
-		struct _DBIConfig dbi;
-#endif
-} DBConfig;
 
 /* *********** DBHandle **************** */
 
 typedef struct _DBHandle {
-	DBTypes type;
 	DBConfig config;
+	DBCredentials cred;
 	DBHooks hooks;
 
 	union {

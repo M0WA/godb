@@ -30,7 +30,6 @@ typedef struct _SelectStmt {
 typedef struct _DeleteStmt {
 	const struct _DBTableDef *def;
 	struct _WhereClause where;
-	size_t limit[2];
 } DeleteStmt;
 
 typedef struct _UpsertStmt {
@@ -43,4 +42,4 @@ int upsert_stmt_string(const UpsertStmt *const, ValueSpecifier val, WhereSpecifi
 int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql);
 int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, char** sql);
 int select_stmt_string(const SelectStmt *const, WhereSpecifier where, char** sql);
-int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, char** sql);
+int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, char** sql, int skip_autoincrement);

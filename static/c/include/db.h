@@ -8,6 +8,8 @@
 
 struct _DBHandle;
 typedef struct _DBHandle DBHandle;
+struct _DBConfig;
+struct _DBCredentials;
 
 struct _DBTable;
 struct _DBTableDef;
@@ -19,13 +21,14 @@ struct _DeleteStmt;
 struct _SelectStmt;
 struct _SelectResult;
 
-/* db connection */
-
+/* (de-)initialization */
 int init_dblib();
 int exit_dblib();
-struct _DBHandle* create_dbhandle(DBTypes type);
+
+/* db connection */
+struct _DBHandle* create_dbhandle(const struct _DBConfig *conf);
 int destroy_dbhandle(struct _DBHandle *dbh);
-int connect_db(struct _DBHandle *dbh,const char* __restrict host,unsigned short port,const char* __restrict db,const char* __restrict user, const char* __restrict pass);
+int connect_db(struct _DBHandle *dbh,const struct _DBCredentials *cred);
 int disconnect_db(struct _DBHandle *dbh);
 
 /* statements */

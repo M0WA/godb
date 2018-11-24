@@ -10,15 +10,70 @@
 #include "logger.h"
 #include "statements.h"
 #include "tests.h"
+#include "dbhandle.h"
 
-static DBHandle* test_create_connection(DBTypes type) {
+#ifndef _DISABLE_DBI
+#define ENABLE_MYSQL_CRED
+#define ENABLE_POSTGRES_CRED
+#endif
+
+#ifndef _DISABLE_MYSQL
+#define ENABLE_MYSQL_CRED
+#endif
+
+#ifndef _DISABLE_POSTGRES
+#define ENABLE_POSTGRES_CRED
+#endif
+
+#ifdef ENABLE_MYSQL_CRED
+static const DBCredentials mysql_creds = (DBCredentials) {
+	.host = "localhost",
+	.port = 3306,
+	.name = "complexdb1",
+	.user = "myuser",
+	.pass = "mypass",
+};
+#endif
+
+#ifdef ENABLE_POSTGRES_CRED
+static const DBCredentials postgres_creds = (DBCredentials) {
+	.host = "localhost",
+	.port = 5432,
+	.name = "complexdb1",
+	.user = "myuser",
+	.pass = "mypass",
+};
+#endif
+
+#ifndef _DISABLE_MYSQL
+static const DBConfig mysql_conf = (DBConfig) {
+	.type = DB_TYPE_MYSQL,
+	.mysql.compression = 1,
+	.mysql.autoreconnect = 1,
+};
+#endif
+#ifndef _DISABLE_POSTGRES
+static const DBConfig postgres_conf = (DBConfig) {
+	.type = DB_TYPE_POSTGRES,
+};
+#endif
+#ifndef _DISABLE_DBI
+#include "dbitypes.h"
+static const DBConfig dbi_conf = (DBConfig) {
+	.type = DB_TYPE_DBI,
+    .dbi.type = DBI_TYPE_INVALID,
+};
+#endif
+
+static DBHandle* test_create_connection(const DBConfig *conf,const DBCredentials *creds) {
 	LOG_DEBUG("checking create_dbhandle()");
-	DBHandle *dbh = create_dbhandle(type);
+
+	DBHandle *dbh = create_dbhandle(conf);
 	if ( !dbh ) {
 		LOG_FATAL(1,"create_dbhandle() failed"); }
 
 	LOG_DEBUG("checking connect_db()");
-	if( connect_db(dbh,"localhost",3306,"mydb","myuser","mypass") ) {
+	if( connect_db(dbh,creds) ) {
 		LOG_FATAL(1,"connect_db() failed"); }
 
 	return dbh;
@@ -35,7 +90,6 @@ static void test_destroy_connection(DBHandle* dbh) {
 }
 
 static void test_where() {
-
 	DBColumnDef cols[] = {
 		(DBColumnDef){
 			.type = COL_TYPE_STRING,
@@ -150,15 +204,14 @@ static void test_delete() {
 	DeleteStmt stmt;
 	memset(&stmt,0,sizeof(DeleteStmt));
 	stmt.def = &tbl;
-	stmt.limit[0] = 1;
 	if( where_append(&stmt.where,(WhereStmt*)&cond) ) {
 		LOG_FATAL(1,"where_append() failed"); }
 
 	DESTROY_STMT(&stmt);
 }
 
-static void test(DBTypes type) {
-	DBHandle* dbh = test_create_connection(type);
+static void test(const DBConfig *conf,const DBCredentials *creds) {
+	DBHandle *dbh = test_create_connection(conf,creds);
 	test_tables_db(dbh);
 	test_destroy_connection(dbh);
 }
@@ -180,7 +233,49 @@ int main(int argc,char** argv) {
 	for(DBTypes i = DB_TYPE_INVALID + 1; i < DB_TYPE_MAX; i++) {
 		const char *dbtypestr = dbtype_to_string(i);
 		LOGF_DEBUG("checking db type %s",dbtypestr);
-		test(i);
+
+		switch(i) {
+#ifndef _DISABLE_MYSQL
+		case DB_TYPE_MYSQL:
+			test(&mysql_conf,&mysql_creds);
+			break;
+#endif
+#ifndef _DISABLE_POSTGRES
+		case DB_TYPE_POSTGRES:
+			test(&postgres_conf,&postgres_creds);
+			break;
+#endif
+#ifndef _DISABLE_DBI
+		case DB_TYPE_DBI:
+			for(DBIType dbi = (DBI_TYPE_INVALID + 1); dbi < DBI_TYPE_MAX; dbi++) {
+				switch(dbi) {
+				case DBI_TYPE_MYSQL:
+					LOG_DEBUG("checking dbi mysql");
+				{
+					DBConfig ctmp = dbi_conf;
+					ctmp.dbi.type = DBI_TYPE_MYSQL;
+					test(&ctmp,&mysql_creds);
+				}
+				case DBI_TYPE_POSTGRES:
+					LOG_DEBUG("checking dbi postgres");
+				{
+					DBConfig ctmp = dbi_conf;
+					ctmp.dbi.type = DBI_TYPE_POSTGRES;
+					test(&ctmp,&postgres_creds);
+				}
+					break;
+				default:
+					LOG_FATAL(1,"invalid dbitype");
+					break;
+				}
+			}
+			break;
+#endif
+		default:
+			LOG_FATAL(1,"invalid dbtype");
+			break;
+		}
+
 	}
 
 	exit_dblib();
