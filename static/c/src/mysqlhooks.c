@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "helper.h"
 #include "mysqlhelper.h"
+#include "mysqlbind.h"
 #include "selectresult.h"
 #include "values.h"
 
