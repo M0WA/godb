@@ -13,8 +13,8 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
       1. [YAML Format](#yamlformat)
       2. [C](#clib)
 4. [Components](#Components)
-       1. [Code Generator](#Code Generator)
-      2. [Library](#Library)
+     1. [Code Generator](#Code Generator)
+     2. [Library](#Library)
 
 
 
