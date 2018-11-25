@@ -10,6 +10,8 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 1. [Features](#Features)
 2. [Usage/Install](#Usage)
 3. [API](#API)
+	  1. [YAML Format](#yamlformat)
+	  2. [C](#clib)
 4. [Components](#Components)
       1. [Code Generator](#Code Generator)
       2. [Library](#Library)
@@ -81,7 +83,92 @@ test library:
 
 ## API <a name="API"></a>
 
-### C
+### YAML Format <a name="yamlformat"></a>
+
+the following is a full-featured example database structure
+
+	---
+	databases:
+	  - name: complexdb1
+	    tables:
+	      - name: complextable1
+	        mysql:
+	           engine: innodb
+	           rowformat: dynamic
+	        primarykey:
+	          column: ID
+	        columns:
+	          - name: ID
+	            datatype: int
+	            notnull: false
+	            autoincrement: true
+	            size: 64
+	            unsigned: true
+	          - name: teststr
+	            datatype: string
+	            notnull: false
+	            size: 255
+	            defaultvalue: ""            
+	          - name: testint
+	            datatype: int
+	            notnull: true
+	            defaultvalue: -1
+	          - name: testdate
+	            datatype: datetime
+	            notnull: true
+	          - name: testfloat
+	            datatype: float
+	            notnull: true
+	            defaultvalue: 0.0 
+	      - name: complextable2
+	        mysql:
+	           engine: innodb
+	           rowformat: dynamic
+	        primarykey:
+	          column: ID
+	        columns:
+	          - name: ID
+	            datatype: int
+	            notnull: false
+	            autoincrement: true
+	            size: 64
+	            unsigned: true
+	          - name: teststr
+	            datatype: string
+	            notnull: false
+	            size: 255
+	            defaultvalue: ""            
+	          - name: testint
+	            datatype: int
+	            notnull: true
+	            defaultvalue: -1
+	          - name: testdate
+	            datatype: datetime
+	            notnull: true
+	          - name: testfloat
+	            datatype: float
+	            notnull: true
+	            defaultvalue: 0.0 
+	          - name: testfk
+	            datatype: int
+	            notnull: false
+	            autoincrement: false
+	            size: 64
+	            defaultvalue: "0"
+	            unsigned: true
+	        foreignkeys:
+	          - column: testfk
+	            refcolumn: ID
+	            reftable: complextable1
+	            mysql:
+	              refdatabase: complexdb1
+	        uniquekeys:
+	          - columns:
+	              - ID
+	              - testint
+
+
+### C <a name="clib"></a>
 
 connect to mysql database:
 
