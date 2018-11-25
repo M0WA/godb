@@ -88,6 +88,10 @@ test library:
 
 	make test
 
+test library for memory leaks/memory access errors etc:
+
+	make valgrind
+
 ## API <a name="API"></a>
 
 ### YAML Format <a name="YamlFormat"></a>
