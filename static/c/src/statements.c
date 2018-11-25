@@ -22,7 +22,7 @@ int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char**
 		rc = 1;
 		goto INSERT_STMT_STRING_EXIT;	}
 
-	if( values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, skip_autoincrement) ) {
+	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, skip_autoincrement) ) {
 		rc = 1;
 		goto INSERT_STMT_STRING_EXIT;	}
 
@@ -30,8 +30,8 @@ int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char**
 	*sql = malloc(lenStmt);
 	if(!*sql) {
 		return 1; }
-	snprintf(*sql,lenStmt,fmt,s->defs->table,colnames,values);
-	LOGF_DEBUG("statement:\n%s",*sql);
+	sprintf(*sql,fmt,s->defs->table,colnames,(values ? values : ""));
+	LOGF_DEBUG("statement: %s",*sql);
 
 INSERT_STMT_STRING_EXIT:
 	if(colnames) {
@@ -69,7 +69,7 @@ int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, char
 		rc = 1;
 		goto SELECT_STMT_STRING_EXIT; }
 	sprintf(*sql,fmt,colnames,s->defs[0].table,(where ? " WHERE " : ""),(where ? where : ""),limit);
-	LOGF_DEBUG("statement:\n%s",*sql);
+	LOGF_DEBUG("statement: %s",*sql);
 
 SELECT_STMT_STRING_EXIT:
 	if(colnames) {
@@ -95,7 +95,7 @@ int delete_stmt_string(const DeleteStmt *const s, WhereSpecifier wherespec, char
 		goto DELETE_STMT_STRING_EXIT;
 		rc = 1; }
 	sprintf(*sql,fmt,s->def->name,(where ? " WHERE " : ""),(where ? where : ""));
-	LOGF_DEBUG("statement:\n%s",*sql);
+	LOGF_DEBUG("statement: %s",*sql);
 
 DELETE_STMT_STRING_EXIT:
 	if(where) {
@@ -103,10 +103,38 @@ DELETE_STMT_STRING_EXIT:
 	return rc;
 }
 
-int update_stmt_string(const UpdateStmt *const stmt, ValueSpecifier val, WhereSpecifier where, char** sql) {
-	return 0;
+int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereSpecifier wherespec, char** sql, int skip_autoincrement) {
+	const char fmt[] = "UPDATE %s SET %s %s %s";
+	char *where = 0;
+	char *values = 0;
+	int rc = 0;
+
+	if(where_string(&s->where,wherespec,&where,0)) {
+		rc = 1;
+		goto UPDATE_STMT_STRING_EXIT; }
+
+	if( update_values_string(s->defs, s->ncols, valspec, s->valbuf, &values, 0, skip_autoincrement) ) {
+		rc = 1;
+		goto UPDATE_STMT_STRING_EXIT;	}
+
+	size_t wheresize = where ? (strlen(where) + strlen(" WHERE ")) : 0;
+	size_t valuesize = values ? strlen(values) : 0;
+	size_t sqlsize = strlen(fmt) + wheresize + valuesize + strlen(s->defs[0].table) + 1;
+	*sql = malloc(sqlsize);
+	if(!*sql) {
+		rc = 1;
+		goto UPDATE_STMT_STRING_EXIT; }
+	sprintf(*sql,fmt,s->defs[0].table,(values ? values : ""),(where ? " WHERE " : ""),(where ? where : ""));
+	LOGF_DEBUG("statement: %s",*sql);
+
+UPDATE_STMT_STRING_EXIT:
+	if(where) {
+		free(where); }
+	if(values) {
+		free(values); }
+	return rc;
 }
 
-int upsert_stmt_string(const UpsertStmt *const stmt, ValueSpecifier val, WhereSpecifier where, char** sql) {
+int upsert_stmt_string(const UpsertStmt *const stmt, ValueSpecifier val, WhereSpecifier wherespec, char** sql) {
 	return 0;
 }

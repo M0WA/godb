@@ -14,6 +14,9 @@
 #include "logger.h"
 
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
+static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+}
+
 static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} delete");
 	
@@ -42,7 +45,27 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	DESTROY_STMT(&stmt);
 }
 
+static void test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(SelectResult *res) {
+	for(size_t col = 0; col < res->ncols; col++) {
+		if( strcasecmp(res->cols[col].name,"ID") == 0 ) {
+			if( (*(unsigned long long*)res->row[col]) == 0 ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID in select result");	}
+		} else if( strcasecmp(res->cols[col].name,"testint") == 0 ) {
+			if( (*(long long*)res->row[col]) != 10 ) {
+				LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint in select result: %ld",*((long long*)res->row[col])); }
+		} else if( strcasecmp(res->cols[col].name,"testfloat") == 0 ) {
+			if( (*(double*)res->row[col]) != 10.10 ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat in select result"); }
+		} else if( strcasecmp(res->cols[col].name,"teststr") == 0 ) {
+			if( strcmp(res->row[col],"test") != 0 ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr in select result"); }
+		}
+	}
+}
+
 static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	int rc = 0;
+	size_t rowcount = 0;
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} select");
 
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
@@ -70,18 +93,17 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 	
-	int rc = 0;
-	size_t rowcount = 0;
 	while( (rc = fetch_db(dbh,&res)) > 0){
 		char *buf = 0;
 		dump_selectresult(&res,&buf);
 		if(buf) {
 			LOGF_DEBUG("%s",buf);
 			free(buf); }
+		test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(&res);
 		rowcount++;	
 	}
 	LOGF_DEBUG("fetched %lu rows",rowcount);
-	if(rc != 0 || rowcount == 0) {
+	if(rc != 0 || rowcount != 4) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }
 
 	DESTROY_STMT( (&stmt) );
@@ -218,9 +240,10 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 
 void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
-		test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-		test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-		test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }
 

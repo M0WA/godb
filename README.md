@@ -17,7 +17,9 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 
 
 ## Features <a name="Features"></a>
-Supported databases:<br>
+
+<table cellspacing="15"><tr><td>
+Supported databases:<br><br>
 
 <table border=1>
 <tr><td>Manufacturer</td><td>DBI</td><td>NATIVE</td></tr>
@@ -26,8 +28,7 @@ Supported databases:<br>
 <tr><td>Oracle DB</td><td>TBD</td><td>TBD</td></tr>
 <tr><td>IBM DB2</td><td>TBD</td><td>TBD</td></tr>
 </table>
-
-<br><br>
+</td><td>
 Supported languages:<br><br>
 
 <table border=1>
@@ -37,6 +38,7 @@ Supported languages:<br><br>
 <tr><td>Golang</td><td>TBD</td></tr>
 <tr><td>Python</td><td>TBD</td></tr>
 </table>
+</td><td>
 
 * Prepared Statements (where applicable)
 * Maximum Brand Independance
@@ -45,6 +47,9 @@ Supported languages:<br><br>
 * Minimal Memory + CPU Footprint
 * Open Source
 * Type Safety
+* Business Support Available
+
+</td></tr></table>
 
 ## Usage <a name="Usage"></a>
 get and build the example library:
