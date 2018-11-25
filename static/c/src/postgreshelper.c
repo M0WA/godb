@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <alloca.h>
 
 int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
 	size_t bufsize = def->type == COL_TYPE_STRING ? def->size : 64;
@@ -37,7 +38,7 @@ int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,c
 
 int postgres_time_to_tm(const char *val, struct tm *t) {
 	memset(t, 0, sizeof(struct tm));
-	if( getdate_r (val, t) ) {
+	if( !strptime(val, "%Y-%m-%d %H:%M:%S", t) ) {
 		LOGF_WARN("invalid postgres date: %s",val);
 		return 1;
 	}

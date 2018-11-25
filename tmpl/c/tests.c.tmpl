@@ -240,6 +240,7 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 
 void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
+	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);

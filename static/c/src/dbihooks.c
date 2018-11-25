@@ -12,6 +12,42 @@
 
 #include <string.h>
 
+static dbi_inst dbiinst;
+
+int dbi_initlib_hook() {
+	dbi_initialize_r(NULL, &dbiinst);
+	return 0;
+}
+
+int dbi_exitlib_hook() {
+    dbi_shutdown_r(dbiinst);
+	return 0;
+}
+
+int dbi_create_hook(struct _DBHandle *dbh) {
+	dbh->dbi.result = 0;
+	switch(dbh->config.dbi.type) {
+	case DBI_TYPE_MYSQL:
+		dbh->dbi.conn = dbi_conn_new_r("mysql", dbiinst);
+		break;
+	case DBI_TYPE_POSTGRES:
+		dbh->dbi.conn = dbi_conn_new_r("pgsql", dbiinst);
+		break;
+	default:
+		LOG_WARN("invalid dbi type");
+		return 1;
+	}
+	if(!dbh->dbi.conn) {
+		LOG_WARN("could not create dbi connection");
+		return 1;
+	}
+	return 0;
+}
+
+int dbi_destroy_hook(struct _DBHandle* dbh) {
+	return 0;
+}
+
 int dbi_connect_hook(struct _DBHandle *dbh) {
     dbi_conn_set_option(dbh->dbi.conn, "host", dbh->cred.host /* dbh->config.port */);
     dbi_conn_set_option(dbh->dbi.conn, "username", dbh->cred.user);
@@ -30,7 +66,6 @@ int dbi_disconnect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		return 0; }
 	dbi_conn_close(dbh->dbi.conn);
-    dbi_shutdown_r(dbh->dbi.inst);
 	return 0;
 }
 

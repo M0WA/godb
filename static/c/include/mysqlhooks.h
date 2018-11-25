@@ -10,8 +10,15 @@ struct _DeleteStmt;
 struct _SelectStmt;
 struct _SelectResult;
 
+int mysql_initlib_hook();
+int mysql_exitlib_hook();
+
+int mysql_create_hook(struct _DBHandle*);
+int mysql_destroy_hook(struct _DBHandle*);
+
 int mysql_connect_hook(struct _DBHandle*);
 int mysql_disconnect_hook(struct _DBHandle*);
+
 int mysql_insert_hook(struct _DBHandle*,const struct _InsertStmt *const);
 int mysql_update_hook(struct _DBHandle*,const struct _UpdateStmt *const);
 int mysql_upsert_hook(struct _DBHandle*,const struct _UpsertStmt *const);

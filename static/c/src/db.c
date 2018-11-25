@@ -6,13 +6,13 @@
 #include "statements.h"
 
 #ifndef _DISABLE_MYSQL
-	#include "mysqlfuncs.h"
+	#include "mysqlhooks.h"
 #endif
 #ifndef _DISABLE_POSTGRES
-	#include "postgresfuncs.h"
+	#include "postgreshooks.h"
 #endif
 #ifndef _DISABLE_DBI
-	#include "dbifuncs.h"
+	#include "dbihooks.h"
 #endif
 
 #include <stdlib.h>
@@ -51,13 +51,13 @@ static int init_db_credentials(struct _DBHandle *dbh,const struct _DBCredentials
 int init_dblib() {
 	LOG_DEBUG("initialize database library");
 #ifndef _DISABLE_MYSQL
-	mysql_init_dblib();
+	mysql_initlib_hook();
 #endif
 #ifndef _DISABLE_POSTGRES
-	postgres_init_dblib();
+	postgres_initlib_hook();
 #endif
 #ifndef _DISABLE_DBI
-	dbi_init_dblib();
+	dbi_initlib_hook();
 #endif
 	return 0;
 }
@@ -65,13 +65,13 @@ int init_dblib() {
 int exit_dblib() {
 	LOG_DEBUG("release database library");
 #ifndef _DISABLE_MYSQL
-	mysql_exit_dblib();
+	mysql_exitlib_hook();
 #endif
 #ifndef _DISABLE_POSTGRES
-	postgres_exit_dblib();
+	postgres_exitlib_hook();
 #endif
 #ifndef _DISABLE_DBI
-	dbi_exit_dblib();
+	dbi_exitlib_hook();
 #endif
 	logger_end();
 	return 0;
@@ -89,34 +89,27 @@ DBHandle *create_dbhandle(const struct _DBConfig *conf) {
 	switch(dbh->config.type) {
 #ifndef _DISABLE_MYSQL
 	case DB_TYPE_MYSQL:
-		if( mysql_init_dbh(dbh) ) {
-			free(dbh);
-			LOG_ERROR("could not init mysql database handle");
-			return 0;
-		}
+		REGISTER_HOOKS(dbh,mysql);
 		break;
 #endif
 #ifndef _DISABLE_POSTGRES
 	case DB_TYPE_POSTGRES:
-		if( postgres_init_dbh(dbh) ) {
-			free(dbh);
-			LOG_ERROR("could not init postgres database handle");
-			return 0;
-		}
+		REGISTER_HOOKS(dbh,postgres);
 		break;
 #endif
 #ifndef _DISABLE_DBI
 	case DB_TYPE_DBI:
-		if( dbi_init_dbh(dbh) ) {
-			free(dbh);
-			LOG_ERROR("could not init postgres database handle");
-			return 0;
-		}
+		REGISTER_HOOKS(dbh,dbi);
 		break;
 #endif
 	default:
 		free(dbh);
 		LOG_ERROR("invalid database type");
+		return 0;
+	}
+	if( !dbh->hooks.create || dbh->hooks.create(dbh) ) {
+		free(dbh);
+		LOG_ERROR("could not initialize db handle");
 		return 0;
 	}
 	return dbh;
@@ -148,6 +141,11 @@ int disconnect_db(DBHandle* dbh) {
 int destroy_dbhandle(struct _DBHandle *dbh) {
 	if(!dbh) {
 		return 1;
+	}
+	if( !dbh->hooks.destroy || dbh->hooks.destroy(dbh) ) {
+		free(dbh);
+		LOG_ERROR("could not destroy db handle");
+		return 0;
 	}
 	free(dbh);
 	return 0;

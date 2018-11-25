@@ -1,12 +1,13 @@
 #include "selectresult.h"
 
-#include <stdlib.h>
-
 #include "helper.h"
 #include "table.h"
 #include "column.h"
 #include "logger.h"
 #include "selectresult.h"
+
+#include <stdlib.h>
+#include <alloca.h>
 
 int dump_selectresult(const SelectResult *res, char** buf) {
 	*buf = 0;

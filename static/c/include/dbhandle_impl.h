@@ -30,7 +30,6 @@ struct _PostgresHandle {
 #ifndef _DISABLE_DBI
 #include <dbi/dbi.h>
 typedef struct _DBIHandle {
-	dbi_inst inst;
 	dbi_conn conn;
 	dbi_result result;
 } DBIHandle;

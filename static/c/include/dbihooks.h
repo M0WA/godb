@@ -10,8 +10,15 @@ struct _DeleteStmt;
 struct _SelectStmt;
 struct _SelectResult;
 
+int dbi_initlib_hook();
+int dbi_exitlib_hook();
+
+int dbi_create_hook(struct _DBHandle*);
+int dbi_destroy_hook(struct _DBHandle*);
+
 int dbi_connect_hook(struct _DBHandle*);
 int dbi_disconnect_hook(struct _DBHandle*);
+
 int dbi_insert_hook(struct _DBHandle*,const struct _InsertStmt *const);
 int dbi_update_hook(struct _DBHandle*,const struct _UpdateStmt *const);
 int dbi_upsert_hook(struct _DBHandle*,const struct _UpsertStmt *const);

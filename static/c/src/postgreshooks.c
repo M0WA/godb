@@ -10,6 +10,27 @@
 #include "column.h"
 #include "postgreshelper.h"
 
+int postgres_initlib_hook() {
+	if(PQisthreadsafe() == 0) {
+		LOG_FATAL(1,"please use a thread-safe version of pq library"); }
+	return 0;
+}
+
+int postgres_exitlib_hook() {
+	return 0;
+}
+
+int postgres_create_hook(struct _DBHandle *dbh) {
+	if(dbh->postgres.conn) {
+		LOG_WARN("postgres handle is already initalized"); }
+	dbh->postgres.res = 0;
+	return 0;
+}
+
+int postgres_destroy_hook(struct _DBHandle *dbh) {
+	return 0;
+}
+
 int postgres_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
@@ -192,7 +213,9 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 				break;
 			case COL_TYPE_DATETIME:
 			{
-				postgres_time_to_tm(val, ((struct tm*)res->row[residx]));
+				if( postgres_time_to_tm(val, ((struct tm*)res->row[residx])) ) {
+					return -1;
+				}
 			}
 				break;
 			default:

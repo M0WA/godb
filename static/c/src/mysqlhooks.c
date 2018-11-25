@@ -14,6 +14,28 @@
 #include "selectresult.h"
 #include "values.h"
 
+int mysql_initlib_hook() {
+	if (!mysql_thread_safe()) {
+		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}
+	return mysql_library_init(0, NULL, NULL);
+}
+
+int mysql_exitlib_hook() {
+	mysql_library_end();
+	return 0;
+}
+
+int mysql_create_hook(struct _DBHandle* dbh) {
+	if(dbh->mysql.conn) {
+		LOG_WARN("mysql handle is already initalized");	}
+	dbh->mysql.stmt = 0;
+	return 0;
+}
+
+int mysql_destroy_hook(struct _DBHandle* dbh) {
+	return 0;
+}
+
 int mysql_connect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		LOG_WARN("handle is null");
