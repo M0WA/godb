@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef _DISABLE_MYSQL
+#ifdef _ENABLE_MYSQLHELPER
 
 #include "dblimits.h"
 #include <mysql/mysql.h>
@@ -8,6 +8,7 @@
 struct _DBColumnDef;
 struct _WhereClause;
 struct _SelectResult;
+struct _UpsertStmt;
 struct tm;
 
 typedef struct _MySQLBindWrapper {
@@ -28,5 +29,7 @@ int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *f
 
 int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial);
 int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial);
+
+int mysql_upsert_stmt_string(const struct _UpsertStmt *const, char**);
 
 #endif

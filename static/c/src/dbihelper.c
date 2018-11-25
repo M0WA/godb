@@ -3,6 +3,9 @@
 #include "dbihelper.h"
 #include "column.h"
 #include "helper.h"
+#include "statements.h"
+#include "mysqlhelper.h"
+#include "postgreshelper.h"
 
 #include <stdlib.h>
 
@@ -27,6 +30,11 @@ int dbi_values_specifier(const struct _DBColumnDef *def,const void *value,char**
 		return 1; }
 	if(append_string(buf,sql)) {
 		return 1; }
+	return 0;
+}
+
+int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const UpsertStmt *const s, char** sql) {
+	//use mysqlhelper/postgreshelper
 	return 0;
 }
 

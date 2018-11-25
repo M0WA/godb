@@ -42,7 +42,6 @@ typedef struct _UpdateStmt {
 typedef struct _UpsertStmt {
 } UpsertStmt;
 
-int upsert_stmt_string(const UpsertStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql);
 int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql, int skip_autoincrement);
 int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, char** sql);
 int select_stmt_string(const SelectStmt *const, WhereSpecifier where, char** sql);

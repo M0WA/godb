@@ -66,6 +66,7 @@ int dbi_disconnect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		return 0; }
 	dbi_conn_close(dbh->dbi.conn);
+	dbh->dbi.conn = 0;
 	return 0;
 }
 
@@ -234,6 +235,7 @@ int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 }
 
 int dbi_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
+	//int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const UpsertStmt *const s, char** sql);
 	return 1;
 }
 

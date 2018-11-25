@@ -233,6 +233,7 @@ int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s)
 }
 
 int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
+	//int postgres_upsert_stmt_string(const UpsertStmt *const s, char** sql)
 	return 1;
 }
 

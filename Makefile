@@ -4,7 +4,7 @@ TMPL_DIR=tmpl
 GENERATED_DIR=generated
 LIBS_DIR=libs
 
-.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean test valgrind
+.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean preparetest test valgrind gprof
 
 default_target: all
 
@@ -53,23 +53,26 @@ clean:
 	$(MAKE) cleangenerator
 	$(MAKE) cleanlibs
 	
-test:
+preparetest:
 	$(MAKE) clean
 	$(MAKE) generator
 	$(MAKE) testgenerator
 	$(MAKE) cleanlibs
 	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
 	$(MAKE) copylib
+	
+test:
+	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) test )
 	$(MAKE) clean
 	
 valgrind:
-	$(MAKE) clean
-	$(MAKE) generator
-	$(MAKE) testgenerator
-	$(MAKE) cleanlibs
-	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
-	$(MAKE) copylib
+	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) valgrind )
+	$(MAKE) clean
+	
+gprof:
+	$(MAKE) preparetest
+	( cd $(LIBS_DIR)/c && $(MAKE) gprof )
 	$(MAKE) clean
 	

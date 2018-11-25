@@ -1,4 +1,4 @@
-#ifndef _DISABLE_MYSQL
+#ifdef _ENABLE_MYSQLHELPER
 
 #include "mysqlhelper.h"
 
@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "helper.h"
 #include "selectresult.h"
+#include "statements.h"
 
 #include <time.h>
 #include <stdlib.h>
@@ -166,6 +167,11 @@ int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char
 	if( append_string("?",sql) ) {
 		return 1; }
 	return 0;
+}
+
+int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql) {
+	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
+	return 1;
 }
 
 #endif

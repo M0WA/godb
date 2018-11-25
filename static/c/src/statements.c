@@ -134,7 +134,3 @@ UPDATE_STMT_STRING_EXIT:
 		free(values); }
 	return rc;
 }
-
-int upsert_stmt_string(const UpsertStmt *const stmt, ValueSpecifier val, WhereSpecifier wherespec, char** sql) {
-	return 0;
-}

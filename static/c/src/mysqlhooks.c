@@ -338,7 +338,7 @@ MYSQL_UPDATE_EXIT:
 }
 
 int mysql_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
-	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
+	//int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql)
 	return 1;
 }
 
