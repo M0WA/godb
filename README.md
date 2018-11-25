@@ -9,12 +9,14 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 ## Table of contents
 1. [Features](#Features)
 2. [Usage/Install](#Usage)
+    1. [Install](#Install)
+    2. [Example/Test](#Example)
 3. [API](#API)
-      1. [YAML Format](#yamlformat)
-      2. [C](#clib)
+    1. [YAML Format](#YamlFormat)
+    2. [C](#CLib)
 4. [Components](#Components)
-     1. [Code Generator](#Code Generator)
-     2. [Library](#Library)
+    1. [Code Generator](#CodeGenerator)
+    2. [Library](#Library)
 
 
 
@@ -54,12 +56,17 @@ Supported languages:<br><br>
 </td></tr></table>
 
 ## Usage <a name="Usage"></a>
+
+### Install <a name="Install"></a>
+
 get and build the example library:
 
 	git clone https://github.com/M0WA/GoDB
 	cd GoDB
 	cp db.yaml.example db.yaml
 	DATABASE_YAML=db.yaml make
+	
+### Example <a name="Example"></a>
 
 create the example database:
 
@@ -83,7 +90,7 @@ test library:
 
 ## API <a name="API"></a>
 
-### YAML Format <a name="yamlformat"></a>
+### YAML Format <a name="YamlFormat"></a>
 
 the following is a full-featured example database structure
 
@@ -168,7 +175,7 @@ the following is a full-featured example database structure
 	              - testint
 
 
-### C <a name="clib"></a>
+### C <a name="CLib"></a>
 
 connect to mysql database:
 
