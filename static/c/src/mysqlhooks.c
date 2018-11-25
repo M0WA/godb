@@ -208,20 +208,10 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 		rc = 1;
 		goto MYSQL_SELECT_EXIT;	}
 
-	res->cols = s->defs;
-	res->ncols = s->ncols;
-	res->row = malloc(sizeof(void*) * s->ncols);
-	if(!res->row) {
-		return 1; }
-	memset(res->row,0,sizeof(void*) * s->ncols);
-	for(size_t i = 0; i < s->ncols; i++) {
-		size_t colsize = mysql_get_colbuf_size(&(s->defs[i]));
-		if(colsize == 0) {
-			LOG_WARN("invalid column size");
-			rc = 1;
-			goto MYSQL_SELECT_EXIT; }
-		res->row[i] = malloc(colsize);
-	}
+	if( create_selectresult(s->defs,s->ncols,res) ) {
+		LOG_WARN("create_selectresult(): could not create select stmt");
+		rc = 1;
+		goto MYSQL_SELECT_EXIT;}
 
 MYSQL_SELECT_EXIT:
 	if(stmtbuf) {

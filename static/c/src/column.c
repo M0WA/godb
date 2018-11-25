@@ -22,11 +22,11 @@ size_t get_column_bufsize(const struct _DBColumnDef *col) {
 	case COL_TYPE_STRING:
 		return (col->size + 1);
 	case COL_TYPE_INT:
-		if(col->size != 0 && col->size <= 16) {
+		if(col->size != 0 && col->size <= sizeof(short)) {
 			return sizeof(short);
-		} else if(col->size <= 32 || col->size == 0) {
+		} else if(col->size <= sizeof(long) || col->size == 0) {
 			return sizeof(long);
-		} else if (col->size <= 64) {
+		} else if (col->size <= sizeof(long long)) {
 			return sizeof(long long);
 		} else {
 			LOGF_WARN("invalid int size: %lu",col->size);

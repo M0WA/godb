@@ -35,6 +35,7 @@ func singleOneTableLayout(tbl string)string{
             notnull: false
             autoincrement: true
             size: 64
+            unsigned: true
           - name: teststr
             datatype: string
             notnull: false
@@ -72,6 +73,7 @@ func oneTableFields()([]Column) {
 			NotNull: false,
 			Size: 64,
 			AutoIncrement: true,
+			Unsigned: true,
 		},
 		Column{
 			Name: "teststr",
@@ -129,6 +131,7 @@ func ComplexLayout(db string)(string) {
             autoincrement: false
             size: 64
             defaultvalue: "0"
+            unsigned: true
         foreignkeys:
           - column: testfk
             refcolumn: ID
@@ -168,6 +171,7 @@ func complexTables(db string)([]Table) {
 			Size: 64,
 			AutoIncrement: false,
 			DefaultValue: &dfk,
+			Unsigned: true,
 	})
 	
 	t2 := Table{ 

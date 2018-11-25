@@ -26,12 +26,16 @@ func (*cTmplData)DataVar(c *layout.Column, varname string)(string) {
 		case layout.DATETIME:
 			return "struct tm " + varname 
 		case layout.INT:
+			unsigned := ""
+			if c.Unsigned {
+				unsigned = "unsigned " 
+			}
 			if c.Size == 16 {
-				return "short " + varname
+				return unsigned + "short " + varname
 			} else if c.Size == 32 || c.Size == 0 {
-				return "long " + varname
+				return unsigned + "long " + varname
 			} else if c.Size == 64 {
-				return "long long " + varname
+				return unsigned + "long long " + varname
 			} else {
 				return "invalid"
 			}
@@ -53,12 +57,16 @@ func (*cTmplData)PtrVar(c *layout.Column, varname string)(string) {
 		case layout.DATETIME:
 			return "struct tm* " + varname 
 		case layout.INT:
+			unsigned := ""
+			if c.Unsigned {
+				unsigned = "unsigned " 
+			}
 			if c.Size == 16 {
-				return "short *" + varname
+				return unsigned + "short *" + varname
 			} else if c.Size == 32 || c.Size == 0 {
-				return "long *" + varname
+				return unsigned + "long *" + varname
 			} else if c.Size == 64 {
-				return "long long *" + varname
+				return unsigned + "long long *" + varname
 			} else {
 				return "invalid"
 			}
@@ -81,12 +89,16 @@ func (td *cTmplData)SizeOf(c *layout.Column)(string) {
 		case layout.DATETIME:
 			s = "struct tm"
 		case layout.INT:
+			unsigned := ""
+			if c.Unsigned {
+				unsigned = "unsigned " 
+			}
 			if c.Size == 16 {
-				s = "short"
+				s = unsigned + "short"
 			} else if c.Size == 32 || c.Size == 0 {
-				s = "long"
+				s = unsigned + "long"
 			} else if c.Size == 64 {
-				s = "long long"
+				s = unsigned + "long long"
 			} else {
 				return "invalid"
 			}

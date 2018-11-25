@@ -11,6 +11,7 @@ typedef struct _DBColumnDef {
 	const char *database;
 	int autoincrement;
 	int notnull;
+	int notsigned;
 	size_t size;
 } DBColumnDef;
 

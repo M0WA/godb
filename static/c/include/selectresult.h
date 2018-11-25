@@ -11,6 +11,5 @@ typedef struct _SelectResult {
 } SelectResult;
 
 int destroy_selectresult(SelectResult *res);
-/*
+int create_selectresult(const struct _DBColumnDef *defs,size_t ncols, struct _SelectResult *res);
 int dump_selectresult(const SelectResult *res, char** buf);
-*/

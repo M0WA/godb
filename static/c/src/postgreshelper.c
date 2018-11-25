@@ -5,8 +5,11 @@
 #include "where.h"
 #include "column.h"
 #include "helper.h"
+#include "logger.h"
 
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
 	size_t bufsize = def->type == COL_TYPE_STRING ? def->size : 64;
@@ -29,6 +32,15 @@ int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,c
 		return 1; }
 	if(append_string(buf,sql)) {
 		return 1; }
+	return 0;
+}
+
+int postgres_time_to_tm(const char *val, struct tm *t) {
+	memset(t, 0, sizeof(struct tm));
+	if( getdate_r (val, t) ) {
+		LOGF_WARN("invalid postgres date: %s",val);
+		return 1;
+	}
 	return 0;
 }
 

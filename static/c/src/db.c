@@ -77,8 +77,8 @@ int exit_dblib() {
 	return 0;
 }
 
-DBHandle* create_dbhandle(const struct _DBConfig *conf) {
-	DBHandle* dbh = malloc(sizeof(DBHandle));
+DBHandle *create_dbhandle(const struct _DBConfig *conf) {
+	DBHandle *dbh = malloc(sizeof(DBHandle));
 	if(!dbh) {
 		LOG_ERROR("could not malloc database handle");
 		return 0;

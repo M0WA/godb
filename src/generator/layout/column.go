@@ -44,6 +44,7 @@ func (l *Column)Equals(r *Column)bool {
 	  l.DataType == r.DataType &&
 	  l.Size == r.Size &&
 	  l.NotNull == r.NotNull &&
+	  l.Unsigned == r.Unsigned &&
 	  ( (l.DefaultValue == nil && r.DefaultValue == nil) || (*l.DefaultValue == *r.DefaultValue) ) &&
 	  l.AutoIncrement == r.AutoIncrement &&
 	  l.MySQL == r.MySQL &&
@@ -57,6 +58,7 @@ type Column struct {
 	NotNull bool
 	DefaultValue *string
 	AutoIncrement bool
+	Unsigned bool
 	
 	MySQL MySQLColumn
 	Postgre PostgreColumn

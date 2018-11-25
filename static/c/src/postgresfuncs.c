@@ -10,6 +10,7 @@
 int postgres_init_dbh(struct _DBHandle *dbh) {
 	if(dbh->postgres.conn) {
 		LOG_WARN("postgres handle is already initalized"); }
+	dbh->postgres.res = 0;
 	REGISTER_HOOKS(dbh,postgres)
 	return 0;
 }

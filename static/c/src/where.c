@@ -104,7 +104,7 @@ static int where_comp_op(WhereCompOperator op,char** sql) {
 	}
 }
 
-static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,char** sql, size_t* serial) {
+static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,char** sql, size_t *serial) {
 	if(cond->cnt > 1 && cond->cond != WHERE_EQUAL && cond->cond != WHERE_NOT_EQUAL) {
 		LOG_WARN("only equal/not equal allow for range types in where clause");
 		return 1; }
@@ -186,7 +186,7 @@ static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier s
 	return 0;
 }
 
-static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,char** sql, size_t* serial) {
+static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,char** sql, size_t *serial) {
 	for(size_t i = 0; i < comp->cnt; i++) {
 		if(i) {
 			if( where_comp_op(comp->where[i]->comp,sql) ) {
@@ -198,7 +198,7 @@ static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier s
 	return 0;
 }
 
-int where_string(const struct _WhereClause *clause,WhereSpecifier spec,char** sql, size_t* serial) {
+int where_string(const struct _WhereClause *clause,WhereSpecifier spec,char** sql, size_t *serial) {
 	size_t tmpserial = 1;
 	size_t *realserial = serial ? serial : &tmpserial;
 	if(clause->cnt == 0) {

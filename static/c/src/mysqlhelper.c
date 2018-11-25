@@ -26,11 +26,11 @@ int mysql_datatype(const struct _DBColumnDef *const col,enum enum_field_types *f
 		*ft = MYSQL_TYPE_STRING;
 		break;
 	case COL_TYPE_INT:
-		if(col->size != 0 && col->size <= 16) {
+		if(col->size != 0 && col->size <= sizeof(short)) {
 			*ft = MYSQL_TYPE_SHORT;
-		} else if(col->size <= 32 || col->size == 0) {
+		} else if(col->size <= sizeof(long) || col->size == 0) {
 			*ft = MYSQL_TYPE_LONG;
-		} else if (col->size <= 64) {
+		} else if (col->size <= sizeof(long long)) {
 			*ft = MYSQL_TYPE_LONGLONG;
 		} else {
 			LOGF_WARN("invalid int size for mysql: %lu",col->size);

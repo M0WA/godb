@@ -73,6 +73,11 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	int rc = 0;
 	size_t rowcount = 0;
 	while( (rc = fetch_db(dbh,&res)) > 0){
+		char *buf = 0;
+		dump_selectresult(&res,&buf);
+		if(buf) {
+			LOGF_DEBUG("%s",buf);
+			free(buf); }
 		rowcount++;	
 	}
 	LOGF_DEBUG("fetched %lu rows",rowcount);

@@ -23,6 +23,7 @@ static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{
 		.size = {{ $td.SizeOf $col }},
 		.autoincrement = {{ if $col.AutoIncrement }}1{{ else }}0{{ end }},
 		.notnull = {{ if $col.NotNull }}1{{ else }}0{{ end }},
+		.notsigned = {{ if $col.Unsigned }}1{{ else }}0{{ end }},
 	}, {{ end }}{{/* columns */}}
 };
 

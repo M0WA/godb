@@ -31,12 +31,16 @@ func postgreColumnDataType(tbl *layout.Table,col *layout.Column)string {
 				typeStr = fmt.Sprintf("VARCHAR(%d)",col.Size)
 			}
 		case layout.INT:
+			unsigned := ""
+			if col.Unsigned {
+				unsigned = " CHECK(" + col.Name + " > 0)" 
+			}
 			if col.Size == 32 || col.Size == 0 {
-				typeStr = "INTEGER"
+				typeStr = "INTEGER" + unsigned
 			} else if col.Size == 16 {
-				typeStr = "SMALLINT"
+				typeStr = "SMALLINT" + unsigned
 			} else if col.Size == 64 {
-				typeStr = "BIGINT"
+				typeStr = "BIGINT" + unsigned
 			} else {
 				fmt.Printf("invalid integer column size: %d",col.Size)
 				os.Exit(1)

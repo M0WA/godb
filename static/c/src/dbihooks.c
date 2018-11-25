@@ -78,20 +78,10 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 		LOGF_WARN("error while dbi_conn_query(): %s",(errmsg ? errmsg :""));
 		goto DBI_SELECT_EXIT; }
 
-	res->cols = s->defs;
-	res->ncols = s->ncols;
-	res->row = malloc(sizeof(void*) * s->ncols);
-	if(!res->row) {
-		return 1; }
-	memset(res->row,0,sizeof(void*) * s->ncols);
-	for(size_t i = 0; i < s->ncols; i++) {
-		size_t colsize = get_column_bufsize(&(s->defs[i]));
-		if(colsize == 0) {
-			LOG_WARN("invalid column size");
-			rc = 1;
-			goto DBI_SELECT_EXIT; }
-		res->row[i] = malloc(colsize);
-	}
+	if( create_selectresult(s->defs,s->ncols,res) ) {
+		LOG_WARN("create_selectresult(): could not create select stmt");
+		rc = 1;
+		goto DBI_SELECT_EXIT;}
 
 DBI_SELECT_EXIT:
 	if(stmtbuf) {
@@ -110,36 +100,86 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 		const char* errmsg = 0;
 		dbi_conn_error(dbh->dbi.conn, &errmsg);
 		LOGF_WARN("error while dbi_result_next_row(): %s",(errmsg ? errmsg :""));
-		return 1; }
+		return -1;
+	}
 
-	for(size_t i = 0; i < res->ncols; i++) {
-		if( dbi_result_field_is_null_idx(dbh->dbi.result,i) ) {
+	if(dbi_result_get_numfields(dbh->dbi.result) != res->ncols) {
+		LOG_WARN("invalid field count in result")
+		return -1;
+	}
 
+	for(size_t residx = 0; residx < res->ncols; residx++) {
+		int found = 0;
+		size_t dbiidx = 1;
+		for(; dbiidx <= res->ncols; dbiidx++) {
+			if(strcasecmp(dbi_result_get_field_name(dbh->dbi.result,dbiidx),res->cols[residx].name) == 0) {
+				found = 1;
+				break;
+			}
+		}
+		if(!found) {
+			LOGF_WARN("missing column %s in result",res->cols[residx].name);
+			return -1;
+		}
+
+		if( dbi_result_field_is_null_idx(dbh->dbi.result,dbiidx) ) {
+			res->row[residx] = 0;
 		} else {
-			const DBColumnDef *col = &(res->cols[i]);
+			const DBColumnDef *col = &(res->cols[residx]);
+
+			/*
+			unsigned short dbitype = dbi_result_get_field_type(dbh->dbi.result,col->name);
+			switch(dbitype) {
+			case DBI_TYPE_INTEGER:
+				LOGF_DEBUG("DBI_TYPE_INTEGER :%s",col->name);
+				break;
+			case DBI_TYPE_DECIMAL:
+				LOGF_DEBUG("DBI_TYPE_DECIMAL :%s",col->name);
+				break;
+			case DBI_TYPE_STRING:
+				LOGF_DEBUG("DBI_TYPE_STRING :%s",col->name);
+				break;
+			case DBI_TYPE_BINARY:
+				LOGF_DEBUG("DBI_TYPE_BINARY :%s",col->name);
+				break;
+			case DBI_TYPE_DATETIME:
+				LOGF_DEBUG("DBI_TYPE_DATETIME :%s",col->name);
+				break;
+			default:
+				LOGF_DEBUG("INVALID DBI_TYPE_* :%s",col->name);
+				break;
+			}
+			*/
+
 			switch(col->type) {
 			case COL_TYPE_STRING:
-				snprintf((char*)res->row[i],col->size,"%s",dbi_result_get_string_idx(dbh->dbi.result,i));
+				snprintf((char*)res->row[residx],col->size,"%s",dbi_result_get_string_idx(dbh->dbi.result,dbiidx));
 				break;
 			case COL_TYPE_INT:
-				if(col->size != 0 && col->size <= 16) {
-					*((short*)res->row[i]) = dbi_result_get_short_idx(dbh->dbi.result,i);
-				} else if(col->size <= 32 || col->size == 0) {
-					*((long*)res->row[i]) = dbi_result_get_int_idx(dbh->dbi.result,i);
-				} else if (col->size <= 64) {
-					*((long long*)res->row[i]) = dbi_result_get_longlong_idx(dbh->dbi.result,i);
+				if(col->size != 0 && col->size <= sizeof(short)) {
+					short tmpint = col->notsigned ? dbi_result_get_short_idx(dbh->dbi.result,dbiidx) : dbi_result_get_ushort_idx(dbh->dbi.result,dbiidx);
+					*((short*)res->row[residx]) = tmpint;
+				} else if(col->size <= sizeof(long) || col->size == 0) {
+					long tmpint = col->notsigned ? dbi_result_get_int_idx(dbh->dbi.result,dbiidx) : dbi_result_get_uint_idx(dbh->dbi.result,dbiidx);
+					*((long*)res->row[residx]) = tmpint;
+				} else if (col->size <= sizeof(long long)) {
+					long long tmpint = col->notsigned ? dbi_result_get_longlong_idx(dbh->dbi.result,dbiidx) : dbi_result_get_ulonglong_idx(dbh->dbi.result,dbiidx);
+					*((long long*)res->row[residx]) = tmpint;
 				} else {
-					LOGF_WARN("invalid int size for mysql: %lu",col->size);
+					LOGF_WARN("invalid int size for dbi: %lu",col->size);
 					return -1;
 				}
 				break;
 			case COL_TYPE_FLOAT:
-				*((double*)res->row[i]) = dbi_result_get_double_idx(dbh->dbi.result,i);
+			{
+				double tmpfloat = dbi_result_get_double_idx(dbh->dbi.result,dbiidx);
+				*((double*)res->row[residx]) = tmpfloat;
+			}
 				break;
 			case COL_TYPE_DATETIME:
 			{
-				time_t t = dbi_result_get_datetime_idx(dbh->dbi.result,i);
-				gmtime_r(&t,((struct tm*)res->row[i]));
+				time_t t = dbi_result_get_datetime_idx(dbh->dbi.result,dbiidx);
+				gmtime_r(&t,((struct tm*)res->row[residx]));
 			}
 				break;
 			default:
@@ -148,6 +188,7 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 			}
 		}
 	}
+
 	return 1;
 }
 

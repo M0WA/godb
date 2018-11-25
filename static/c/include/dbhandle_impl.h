@@ -20,6 +20,8 @@ struct _MySQLHandle {
 #include <postgresql/libpq-fe.h>
 struct _PostgresHandle {
 	PGconn *conn;
+	PGresult *res;
+	size_t resrow;
 } PostgresHandle;
 #endif
 
