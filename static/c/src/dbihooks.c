@@ -127,30 +127,6 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 		} else {
 			const DBColumnDef *col = &(res->cols[residx]);
 
-			/*
-			unsigned short dbitype = dbi_result_get_field_type(dbh->dbi.result,col->name);
-			switch(dbitype) {
-			case DBI_TYPE_INTEGER:
-				LOGF_DEBUG("DBI_TYPE_INTEGER :%s",col->name);
-				break;
-			case DBI_TYPE_DECIMAL:
-				LOGF_DEBUG("DBI_TYPE_DECIMAL :%s",col->name);
-				break;
-			case DBI_TYPE_STRING:
-				LOGF_DEBUG("DBI_TYPE_STRING :%s",col->name);
-				break;
-			case DBI_TYPE_BINARY:
-				LOGF_DEBUG("DBI_TYPE_BINARY :%s",col->name);
-				break;
-			case DBI_TYPE_DATETIME:
-				LOGF_DEBUG("DBI_TYPE_DATETIME :%s",col->name);
-				break;
-			default:
-				LOGF_DEBUG("INVALID DBI_TYPE_* :%s",col->name);
-				break;
-			}
-			*/
-
 			switch(col->type) {
 			case COL_TYPE_STRING:
 				snprintf((char*)res->row[residx],col->size,"%s",dbi_result_get_string_idx(dbh->dbi.result,dbiidx));
@@ -159,7 +135,7 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 				if(col->size != 0 && col->size <= sizeof(short)) {
 					short tmpint = col->notsigned ? dbi_result_get_short_idx(dbh->dbi.result,dbiidx) : dbi_result_get_ushort_idx(dbh->dbi.result,dbiidx);
 					*((short*)res->row[residx]) = tmpint;
-				} else if(col->size <= sizeof(long) || col->size == 0) {
+				} else if((col->size <= sizeof(long) && sizeof(long long) != sizeof(long)) || col->size == 0) {
 					long tmpint = col->notsigned ? dbi_result_get_int_idx(dbh->dbi.result,dbiidx) : dbi_result_get_uint_idx(dbh->dbi.result,dbiidx);
 					*((long*)res->row[residx]) = tmpint;
 				} else if (col->size <= sizeof(long long)) {
