@@ -68,21 +68,24 @@ get and build the example library:
 	
 ### Example <a name="Example"></a>
 
-create the example database:
+initialize the example databases for tests:
+
+	# build the generator
+	make generator
+
+	# generate example sql/code
+	bin/./generator -l | bin/./generator -o generated -t tmpl
+
+	# one-time initialization of the example database
+	scripts/./init_db.sh -U myuser
+
+create the example database manually (without user initialization):
 
 	# for mysql databases
 	cat generated/sql/mysql/* | sudo mysql -u root
 
     # for postgresql databases
     cat generated/sql/postgre/* | sudo -u postgres psql -U postgres
-
-initialize the example database for tests:
-
-	# mysql init statement:
-	echo "insert into complexdb1.complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW());" | sudo mysql
-	
-	# postgresql init statement:
-	echo "insert into complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW());" | sudo -u postgres psql -U postgres -d complexdb1
 
 test library:
 
@@ -119,7 +122,7 @@ the following is a full-featured example database structure
 	            datatype: string
 	            notnull: false
 	            size: 255
-	            defaultvalue: ""            
+	            defaultvalue: ""
 	          - name: testint
 	            datatype: int
 	            notnull: true
@@ -148,7 +151,7 @@ the following is a full-featured example database structure
 	            datatype: string
 	            notnull: false
 	            size: 255
-	            defaultvalue: ""            
+	            defaultvalue: ""
 	          - name: testint
 	            datatype: int
 	            notnull: true
