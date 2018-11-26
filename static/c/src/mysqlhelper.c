@@ -4,14 +4,11 @@
 
 #include "where.h"
 #include "column.h"
-#include "columntypes.h"
 #include "logger.h"
 #include "helper.h"
-#include "selectresult.h"
 #include "statements.h"
 
 #include <time.h>
-#include <stdlib.h>
 #include <string.h>
 
 size_t mysql_get_colbuf_size(const struct _DBColumnDef *const col) {
