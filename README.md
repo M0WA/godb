@@ -64,6 +64,7 @@ get and build the example library:
 	git clone https://github.com/M0WA/GoDB
 	cd GoDB
 	cp db.yaml.example db.yaml
+	source goenv
 	DATABASE_YAML=db.yaml make
 	
 ### Example <a name="Example"></a>
@@ -76,10 +77,10 @@ initialize the example databases for tests:
 	# generate example sql/code
 	bin/./generator -l | bin/./generator -o generated -t tmpl
 
-	# one-time initialization of the example database
+	# initialization of the example database
 	scripts/./init_db.sh -U myuser
 
-create the example database manually (without user initialization):
+reset the example database manually (without user initialization):
 
 	# for mysql databases
 	cat generated/sql/mysql/* | sudo mysql -u root
