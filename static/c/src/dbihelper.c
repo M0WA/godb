@@ -6,6 +6,8 @@
 #include "statements.h"
 #include "mysqlhelper.h"
 #include "postgreshelper.h"
+#include "dbitypes.h"
+#include "dbhandle_impl.h"
 
 #include <stdlib.h>
 
@@ -34,8 +36,15 @@ int dbi_values_specifier(const struct _DBColumnDef *def,const void *value,char**
 }
 
 int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const UpsertStmt *const s, char** sql) {
-	//use mysqlhelper/postgreshelper
-	return 0;
+	switch(dbh->config.dbi.type) {
+	case DBI_TYPE_MYSQL:
+		return mysql_upsert_stmt_string(s,sql);
+	case DBI_TYPE_POSTGRES:
+		return postgres_upsert_stmt_string(s,sql);
+	default:
+		return 1;
+	}
+	return 1;
 }
 
 #endif

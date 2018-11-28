@@ -106,4 +106,13 @@ int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWr
 	return 0;
 }
 
+int mysql_values(const struct _DBColumnDef *defs,size_t ncols,const void *const*const values,MySQLBindWrapper *wrapper) {
+	for(size_t i = 0; i < ncols; i++) {
+		if( mysql_bind_append(&(defs[i]),values[i],wrapper) ) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 #endif

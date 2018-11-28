@@ -26,6 +26,9 @@ int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,ch
 }
 
 int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
+
+	//https://www.postgresql.org/docs/9.4/libpq-exec.html -> PQexecParams
+
 	size_t bufsize = def->type == COL_TYPE_STRING ? def->size : 64;
 	char *buf = alloca(bufsize);
 	if(!buf) {

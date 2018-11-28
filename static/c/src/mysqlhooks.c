@@ -101,14 +101,11 @@ int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
-	for(size_t i = 0; i < s->nrows; i++) {
-		for(size_t j = 0; j < s->ncols; j++) {
-			if( mysql_bind_append(&(s->defs[j]),s->valbuf[i][j], &bind ) ) {
-				rc = 1;
-				LOG_WARN("mysql_bind_append: error");
-				goto MYSQL_INSERT_EXIT;
-			}
-		}
+
+	for(size_t row = 0; row < s->nrows; row++) {
+		if( mysql_values(s->defs,s->ncols,s->valbuf[row],&bind) ) {
+			rc = 1;
+			goto MYSQL_INSERT_EXIT;	}
 	}
 
 	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf,0) ) {
@@ -304,7 +301,9 @@ int mysql_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
-	//TODO: bind value part
+	if( mysql_values(s->defs,s->ncols,s->valbuf,&bind) ) {
+		rc = 1;
+		goto MYSQL_UPDATE_EXIT;	}
 
 	if( mysql_where(&s->where,&bind) ) {
 		rc = 1;
