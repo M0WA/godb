@@ -9,6 +9,7 @@
 #include "selectresult.h"
 #include "column.h"
 #include "postgreshelper.h"
+#include "postgresbind.h"
 
 int postgres_initlib_hook() {
 	if(PQisthreadsafe() == 0) {
