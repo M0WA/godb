@@ -328,7 +328,11 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 	return 1;
 }
 
-int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
+static int mysql_fetch_raw(struct _DBHandle *dbh,struct _SelectResult *res) {
+	return -1;
+}
+
+static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res) {
 	MYSQL_BIND bind[MAX_BIND_COLS];
 	my_bool is_null[MAX_BIND_COLS];
 	unsigned long length[MAX_BIND_COLS];
@@ -375,8 +379,16 @@ int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 			mysql_tm(&times[i], res->row[i]);
 		}
 	}
-
 	return 1;
+}
+
+int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
+	if(dbh->config.mysql.preparedstatements) {
+		return mysql_fetch_prepared(dbh,res);
+	} else {
+		return mysql_fetch_raw(dbh,res);
+	}
+	return -1;
 }
 
 static int mysql_update_raw(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {

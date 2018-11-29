@@ -259,11 +259,18 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 
 	dbh->postgres.res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
-	if (PQresultStatus(dbh->postgres.res) != PGRES_COMMAND_OK) {
-		LOGF_WARN("PQexecParams(): %s",PQerrorMessage(dbh->postgres.conn));
+	if (PQresultStatus(dbh->postgres.res) != PGRES_TUPLES_OK) {
+		LOGF_WARN("select failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
 		PQclear(dbh->postgres.res);
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
+	dbh->postgres.resrow = 0;
+
+	if( create_selectresult(s->defs,s->ncols,res) ) {
+		LOG_WARN("create_selectresult(): could not create select stmt");
+		rc = 1;
+		PQclear(dbh->postgres.res);
+		goto POSTGRES_SELECT_PREPARED_EXIT;}
 
 POSTGRES_SELECT_PREPARED_EXIT:
 	if(stmtbuf) {

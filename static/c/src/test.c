@@ -46,7 +46,7 @@ static const DBCredentials postgres_creds = (DBCredentials) {
 #endif
 
 #ifndef _DISABLE_MYSQL
-static const DBConfig mysql_conf = (DBConfig) {
+static DBConfig mysql_conf = (DBConfig) {
 	.type = DB_TYPE_MYSQL,
 	.mysql.compression = 1,
 	.mysql.autoreconnect = 1,
@@ -54,14 +54,14 @@ static const DBConfig mysql_conf = (DBConfig) {
 };
 #endif
 #ifndef _DISABLE_POSTGRES
-static const DBConfig postgres_conf = (DBConfig) {
+static DBConfig postgres_conf = (DBConfig) {
 	.type = DB_TYPE_POSTGRES,
 	.postgres.preparedstatements = 0,
 };
 #endif
 #ifndef _DISABLE_DBI
 #include "dbitypes.h"
-static const DBConfig dbi_conf = (DBConfig) {
+static DBConfig dbi_conf = (DBConfig) {
 	.type = DB_TYPE_DBI,
     .dbi.type = DBI_TYPE_INVALID,
 };
@@ -239,11 +239,21 @@ int main(int argc,char** argv) {
 		switch(i) {
 #ifndef _DISABLE_MYSQL
 		case DB_TYPE_MYSQL:
+			LOG_DEBUG("checking mysql raw statements");
+			mysql_conf.mysql.preparedstatements = 0;
+			test(&mysql_conf,&mysql_creds);
+			LOG_DEBUG("checking mysql prepared statements");
+			mysql_conf.mysql.preparedstatements = 1;
 			test(&mysql_conf,&mysql_creds);
 			break;
 #endif
 #ifndef _DISABLE_POSTGRES
 		case DB_TYPE_POSTGRES:
+			LOG_DEBUG("checking postgres raw statements");
+			postgres_conf.postgres.preparedstatements = 0;
+			test(&postgres_conf,&postgres_creds);
+			LOG_DEBUG("checking postgres prepared statements");
+			postgres_conf.postgres.preparedstatements = 1;
 			test(&postgres_conf,&postgres_creds);
 			break;
 #endif

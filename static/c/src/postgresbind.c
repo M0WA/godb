@@ -7,6 +7,7 @@
 #include "column.h"
 #include "logger.h"
 #include "where.h"
+#include "helper.h"
 
 static int postgres_where_comp(const struct _WhereComposite *comp, PostgresParamWrapper *param) {
 	for(size_t i = 0; i < comp->cnt; i++) {
@@ -56,18 +57,18 @@ int postgres_where(const struct _WhereClause *clause,PostgresParamWrapper *param
 int postgres_param_append(const struct _DBColumnDef *col,const void *const val,PostgresParamWrapper *param) {
 	switch(col->type) {
 	case COL_TYPE_STRING:
-		param->types[param->nparam] = 25; //TEXTOID
+		//param->types[param->nparam] = 25; //TEXTOID
 		param->formats[param->nparam] = 0;
 		param->lengths[param->nparam] = strlen((const char*)val);
 		param->values[param->nparam] = val;
 		break;
 	case COL_TYPE_INT:
 		if(col->size != 0 && col->size <= sizeof(short)) {
-			param->types[param->nparam] = 21; //INT2OID
+			//param->types[param->nparam] = 21; //INT2OID
 		} else if(col->size <= sizeof(long) || col->size == 0) {
-			param->types[param->nparam] = 23; //INT4OID
+			//param->types[param->nparam] = 23; //INT4OID
 		} else if (col->size <= sizeof(long long)) {
-			param->types[param->nparam] = 20; //INT8OID
+			//param->types[param->nparam] = 20; //INT8OID
 		} else {
 			LOGF_WARN("invalid int size: %lu",col->size);
 			return 1;
@@ -77,25 +78,28 @@ int postgres_param_append(const struct _DBColumnDef *col,const void *const val,P
 			LOG_WARN("cannot convert to int");
 			return 1;
 		}
+		param->values[param->nparam] = param->buf[param->nparam];
 		param->lengths[param->nparam] = strlen((const char*)param->buf[param->nparam]);
 		break;
 	case COL_TYPE_FLOAT:
-		param->types[param->nparam] = 701; //FLOAT8OID
+		//param->types[param->nparam] = 701; //FLOAT8OID
 		param->formats[param->nparam] = 0;
 		if( get_column_string(param->buf[param->nparam],POSTGRES_BIND_BUF,col,val) ) {
 			LOG_WARN("cannot convert to float");
 			return 1;
 		}
 		param->lengths[param->nparam] = strlen((const char*)param->buf[param->nparam]);
+		param->values[param->nparam] = param->buf[param->nparam];
 		break;
 	case COL_TYPE_DATETIME:
-		param->types[param->nparam] = 1114; //TIMESTAMPOID;
+		//param->types[param->nparam] = 1114; //TIMESTAMPOID;
 		param->formats[param->nparam] = 0;
 		if( get_column_string(param->buf[param->nparam],POSTGRES_BIND_BUF,col,val) ) {
 			LOG_WARN("cannot convert to datetime");
 			return 1;
 		}
 		param->lengths[param->nparam] = strlen((const char*)param->buf[param->nparam]);
+		param->values[param->nparam] = param->buf[param->nparam];
 		break;
 	default:
 		return 1;
@@ -107,6 +111,8 @@ int postgres_param_append(const struct _DBColumnDef *col,const void *const val,P
 
 int postgres_values(const struct _DBColumnDef *defs,size_t ncols,const void *const*const values,PostgresParamWrapper *param) {
 	for(size_t i = 0; i < ncols; i++) {
+		if(defs[i].autoincrement) {
+			continue; }
 		if( postgres_param_append(&(defs[i]),values[i],param) ) {
 			return 1;
 		}
@@ -115,12 +121,20 @@ int postgres_values(const struct _DBColumnDef *defs,size_t ncols,const void *con
 }
 
 int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
-	return 1;
+	char buf[255] = {0};
+	snprintf(buf,255,"$%zu",*serial);
+	if(append_string(buf,sql)) {
+		return 1; }
+	return 0;
 }
 
 int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
 	//https://www.postgresql.org/docs/9.4/libpq-exec.html -> PQexecParams
-	return 1;
+	char buf[255] = {0};
+	snprintf(buf,255,"$%zu",*serial);
+	if(append_string(buf,sql)) {
+		return 1; }
+	return 0;
 }
 
 #endif
