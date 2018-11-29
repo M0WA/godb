@@ -313,7 +313,71 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	return 1;
 }
 
+static int postgres_update_raw(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+	PGresult *res = 0;
+
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
+		rc = 1;
+		goto POSTGRES_UPDATE_RAW_EXIT; }
+
+	res = PQexec(dbh->postgres.conn, stmtbuf);
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
+		rc = 1;
+		PQclear(res);
+		goto POSTGRES_UPDATE_RAW_EXIT; }
+
+POSTGRES_UPDATE_RAW_EXIT:
+	if(res) {
+		PQclear(res); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
+static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+	PGresult *res = 0;
+
+	PostgresParamWrapper param;
+	memset(&param,0,sizeof(PostgresParamWrapper));
+
+	if( postgres_values(s->defs,s->ncols,s->valbuf,&param) ) {
+		rc = 1;
+		goto POSTGRES_UPDATE_PREPARED_EXIT; }
+
+	if( postgres_where(&s->where,&param) ) {
+		rc = 1;
+		goto POSTGRES_UPDATE_PREPARED_EXIT; }
+
+	if( update_stmt_string(s,postgres_values_specifier,postgres_where_specifier,&stmtbuf,1) ) {
+		rc = 1;
+		goto POSTGRES_UPDATE_PREPARED_EXIT; }
+
+	res = PQexec(dbh->postgres.conn, stmtbuf);
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
+		rc = 1;
+		PQclear(res);
+		goto POSTGRES_UPDATE_PREPARED_EXIT; }
+
+POSTGRES_UPDATE_PREPARED_EXIT:
+	if(res) {
+		PQclear(res); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
 int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
+	if(dbh->config.postgres.preparedstatements) {
+		return postgres_update_prepared(dbh,s);
+	} else {
+		return postgres_update_raw(dbh,s);
+	}
 	return 1;
 }
 

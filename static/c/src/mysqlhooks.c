@@ -441,39 +441,39 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 
 	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,&stmtbuf,1) ) {
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT; }
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
 	if( mysql_values(s->defs,s->ncols,s->valbuf,&bind) ) {
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT;	}
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
 	if( mysql_where(&s->where,&bind) ) {
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT; }
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
 	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
 	if(!dbh->mysql.stmt) {
 		rc = 1;
 		LOG_WARN("mysql_stmt_init: is null");
-		goto MYSQL_UPDATE_EXIT; }
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT;	}
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 	if( bind.bind_idx && mysql_stmt_bind_param(dbh->mysql.stmt,bind.bind) ) {
 		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT;	}
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 	if( mysql_stmt_execute(dbh->mysql.stmt) ) {
 		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
-		goto MYSQL_UPDATE_EXIT;	}
+		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
-MYSQL_UPDATE_EXIT:
+MYSQL_UPDATE_PREPARED_EXIT:
 	if(stmtbuf) {
 		free(stmtbuf); }
 	if(dbh->mysql.stmt) {
