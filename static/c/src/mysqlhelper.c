@@ -58,18 +58,6 @@ int mysql_tm(const MYSQL_TIME *mt, struct tm *const t) {
 	return 0;
 }
 
-int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
-	if( append_string("?",sql) ) {
-		return 1; }
-	return 0;
-}
-
-int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
-	if( append_string("?",sql) ) {
-		return 1; }
-	return 0;
-}
-
 int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql) {
 	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
 	return 1;

@@ -14,10 +14,17 @@ typedef struct _DBCredentials {
 } DBCredentials;
 
 #ifndef _DISABLE_MYSQL
-struct _MySQLConfig {
+typedef struct _MySQLConfig {
 	int autoreconnect;
 	int compression;
+	int preparedstatements;
 } MySQLConfig;
+#endif
+
+#ifndef _DISABLE_POSTGRES
+typedef struct _PostgresConfig {
+	int preparedstatements;
+} PostgresConfig;
 #endif
 
 #ifndef _DISABLE_DBI
@@ -32,6 +39,9 @@ typedef struct _DBConfig {
 	union {
 #ifndef _DISABLE_MYSQL
 		struct _MySQLConfig mysql;
+#endif
+#ifndef _DISABLE_POSTGRES
+		struct _PostgresConfig postgres;
 #endif
 #ifndef _DISABLE_DBI
 		struct _DBIConfig dbi;

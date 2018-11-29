@@ -78,7 +78,7 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	if(dbh->config.dbi.type == DBI_TYPE_POSTGRES) {
 		skip_autoincrement = 1;	}
 
-	if( insert_stmt_string(s,dbi_values_specifier,&stmtbuf,skip_autoincrement) ) {
+	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf,skip_autoincrement) ) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
 
@@ -102,7 +102,7 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 	char *stmtbuf = 0;
 	int rc = 0;
 
-	if( select_stmt_string(s,dbi_where_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_SELECT_EXIT; }
 
@@ -208,7 +208,7 @@ int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	char *stmtbuf = 0;
 	int rc = 0;
 
-	if( delete_stmt_string(s,dbi_where_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_DELETE_EXIT; }
 

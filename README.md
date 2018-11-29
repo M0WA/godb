@@ -27,7 +27,7 @@ Supported databases:<br><br>
 
 <table border=1>
 <tr><td>Manufacturer</td><td>DBI</td><td>NATIVE</td></tr>
-<tr><td>MYSQL</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>MySQL</td><td>TBD</td><td>TBD</td></tr>
 <tr><td>PostgreSQL</td><td>TBD</td><td>TBD</td></tr>
 <tr><td>Oracle DB</td><td>TBD</td><td>TBD</td></tr>
 <tr><td>IBM DB2</td><td>TBD</td><td>TBD</td></tr>
@@ -44,7 +44,7 @@ Supported languages:<br><br>
 </table>
 </td><td>
 
-* Prepared Statements (where applicable)
+* Prepared Statements (optional,where applicable)
 * Maximum Brand Independance
 * Full Language Flexibility
 * Extensive Test Framework

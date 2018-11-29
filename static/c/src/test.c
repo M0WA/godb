@@ -50,11 +50,13 @@ static const DBConfig mysql_conf = (DBConfig) {
 	.type = DB_TYPE_MYSQL,
 	.mysql.compression = 1,
 	.mysql.autoreconnect = 1,
+	.mysql.preparedstatements = 1,
 };
 #endif
 #ifndef _DISABLE_POSTGRES
 static const DBConfig postgres_conf = (DBConfig) {
 	.type = DB_TYPE_POSTGRES,
+	.postgres.preparedstatements = 0,
 };
 #endif
 #ifndef _DISABLE_DBI
