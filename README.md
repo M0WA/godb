@@ -286,6 +286,35 @@ select rows from exampledb.exampletable include where clause:
 	DESTROY_STMT( (&stmt) );
 	destroy_selectresult(&res);
 
+update rows from exampledb.exampletable:
+	
+	TABLE_STRUCT(exampledb,exampletable,tbl);
+	
+	int id = 10;
+
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_NOT_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbl.dbtbl.def->cols[0]);
+	cond.values = (const void*[]){&id};
+	cond.cnt = 1;
+	
+	double testfloat = 11.11;
+	UpdateStmt stmt;
+	memset(&stmt,0,sizeof(UpdateStmt));
+	stmt.defs = &(tbl.dbtbl.def->cols[4]);
+	stmt.ncols = 1;
+	stmt.valbuf = (const void*[]){&testfloat};
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"exampledb,exampletable: cannot append where stmt"); }
+		
+	if(update_db(dbh,&stmt)) {
+		LOG_FATAL(1,"exampledb,exampletable: error while update"); }
+	
+	DESTROY_STMT(&stmt);
+
 delete rows from exampledb.exampletable including where clause:
 
 	TABLE_STRUCT(exampledb,exampletable,tbl);
