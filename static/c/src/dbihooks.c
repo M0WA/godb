@@ -231,7 +231,28 @@ DBI_DELETE_EXIT:
 }
 
 int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
-	return 1;
+	int rc = 0;
+	char *stmtbuf = 0;
+
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
+		rc = 1;
+		goto DBI_UPDATE_EXIT; }
+
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	if(!dbh->dbi.result) {
+		rc = 1;
+		const char* errmsg = 0;
+		dbi_conn_error(dbh->dbi.conn, &errmsg);
+		LOGF_WARN("error while dbi_conn_query(): %s",(errmsg ? errmsg :""));
+		goto DBI_UPDATE_EXIT; }
+
+DBI_UPDATE_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+	if(dbh->dbi.result) {
+		dbi_result_free(dbh->dbi.result);
+		dbh->dbi.result = 0; }
+	return rc;
 }
 
 int dbi_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
