@@ -11,12 +11,12 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 2. [Usage/Install](#Usage)
     1. [Install](#Install)
     2. [Example/Test](#Example)
-3. [API](#API)
-    1. [YAML Format](#YamlFormat)
-    2. [C](#CLib)
-4. [Components](#Components)
+3. [Components](#Components)
     1. [Code Generator](#CodeGenerator)
     2. [Library](#Library)
+4. [API](#API)
+    1. [YAML Format](#YamlFormat)
+    2. [C](#CLib)
 
 
 
@@ -95,6 +95,30 @@ test library:
 test library for memory leaks/memory access errors etc:
 
 	make valgrind
+	
+## Components <a name="Components"></a>
+
+The GoDB framework consists of 2 components. A code generator responsible for generating SQL and language code
+for your database structure. The other components are language specific libaries that are idependently documented
+in <a href="#API>API</a>.
+
+### Code Generator <a name="Code Generator"></a>
+
+The code generator is written in Golang and follow it's standard rules for building/installing:
+
+	cd GoDB
+	source goenv
+	go build generator/layout
+	go build generator/dml
+	go build generator/ddl
+
+then to build the application itself:
+
+	go build -o bin/generator generator
+
+For a reference have a look at Makefile contained in the root of this repository.
+
+### Language Libraries <a name="Library"></a>
 
 ## API <a name="API"></a>
 
@@ -195,6 +219,7 @@ connect to mysql database:
 		.type = DB_TYPE_MYSQL,
 		.mysql.autoreconnect = 1,
 		.mysql.compression = 1,
+		.mysql.preparedstatements = 1,
 	};
 	
 	// create a database handle
@@ -340,9 +365,3 @@ delete rows from exampledb.exampletable including where clause:
 		LOG_FATAL(1,"exampledb.exampletable: error while delete"); }
 	
 	DESTROY_STMT(&stmt);
-	
-## Components <a name="Components"></a>
-
-### Code Generator <a name="Code Generator"></a>
-
-### Language Libraries <a name="Library"></a>
