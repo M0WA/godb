@@ -11,6 +11,7 @@
 struct _MySQLHandle {
 	MYSQL *conn;
 	MYSQL_STMT *stmt;
+	MYSQL_RES *res;
 } MySQLHandle;
 #endif
 

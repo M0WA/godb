@@ -5,6 +5,7 @@
 #include "helper.h"
 
 #include <time.h>
+#include <string.h>
 
 const void* get_columnbuf_from_row(const struct _DBColumnDef *def,size_t colidx,const void *buf) {
 	const char *rc = (char*)buf;
@@ -72,6 +73,54 @@ int get_column_string(char *colstr,size_t colen,const struct _DBColumnDef *col,c
 	default:
 		LOG_WARN("invalid column type");
 		return 1;
+	}
+	return 0;
+}
+
+int set_columnbuf_by_string(const struct _DBColumnDef *col,StringToTm conv,void *buf,const char *val) {
+	switch(col->type) {
+	case COL_TYPE_STRING:
+		snprintf((char*)buf,col->size,"%s",val);
+		break;
+	case COL_TYPE_INT:
+		if(col->size != 0 && col->size <= sizeof(short)) {
+			if(col->notsigned) {
+				*((short*)buf) = (short)strtol(val,0,10);
+			} else {
+				*((unsigned short*)buf) = (unsigned short)strtoul(val,0,10);
+			}
+		} else if(col->size <= sizeof(long) || col->size == 0) {
+			if(col->notsigned) {
+				*((long*)buf) = (long)strtol(val,0,10);
+			} else {
+				*((unsigned long*)buf) = (unsigned long)strtoul(val,0,10);
+			}
+		} else if (col->size <= sizeof(long long)) {
+			if(col->notsigned) {
+				*((long long*)buf) = (long long)strtoll(val,0,10);
+			} else {
+				*((unsigned long long*)buf) = (unsigned long long)strtoull(val,0,10);
+			}
+		} else {
+			LOGF_WARN("invalid int size: %lu",col->size);
+			return -1;
+		}
+		break;
+	case COL_TYPE_FLOAT:
+	{
+		*((double*)buf) = strtod(val,0);
+	}
+		break;
+	case COL_TYPE_DATETIME:
+	{
+		if( conv(val, ((struct tm*)buf)) ) {
+			return -1;
+		}
+	}
+		break;
+	default:
+		LOG_WARN("invalid datatype");
+		return -1;
 	}
 	return 0;
 }

@@ -259,15 +259,21 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT; }
 
-	if( create_selectresult(s->defs,s->ncols,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		goto MYSQL_SELECT_RAW_EXIT;}
-
 	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT;	}
+
+	dbh->mysql.res = mysql_use_result(dbh->mysql.conn);
+	if(!dbh->mysql.res && mysql_field_count(dbh->mysql.conn)>0) {
+		LOGF_WARN("mysql_use_result(): %s", mysql_error(dbh->mysql.conn));
+		rc = 1;
+		goto MYSQL_SELECT_RAW_EXIT;	}
+
+	if( create_selectresult(s->defs,s->ncols,res) ) {
+		LOG_WARN("create_selectresult(): could not create select stmt");
+		rc = 1;
+		goto MYSQL_SELECT_RAW_EXIT;}
 
 MYSQL_SELECT_RAW_EXIT:
 	if(stmtbuf) {
@@ -329,7 +335,26 @@ int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,st
 }
 
 static int mysql_fetch_raw(struct _DBHandle *dbh,struct _SelectResult *res) {
-	return -1;
+	MYSQL_ROW row;
+
+	if(!dbh->mysql.res) {
+		return 0; }
+
+	unsigned int num_fields = mysql_num_fields(dbh->mysql.res);
+
+	if(!(row = mysql_fetch_row(dbh->mysql.res))) {
+		mysql_free_result(dbh->mysql.res);
+		dbh->mysql.res = 0;
+		return 0;
+	}
+	for(size_t col = 0; col < num_fields; col++) {
+		if(!row[col]) {
+			res->row[col] = 0;
+		} else if (	set_columnbuf_by_string(&(res->cols[col]),mysql_string_to_tm,res->row[col],row[col]) ) {
+			return -1;
+		}
+	}
+	return 1;
 }
 
 static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res) {

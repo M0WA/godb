@@ -304,48 +304,7 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 			if(!val) {
 				return 0; }
 			const DBColumnDef *col = &(res->cols[residx]);
-			switch(col->type) {
-			case COL_TYPE_STRING:
-				snprintf((char*)res->row[residx],col->size,"%s",val);
-				break;
-			case COL_TYPE_INT:
-				if(col->size != 0 && col->size <= sizeof(short)) {
-					if(col->notsigned) {
-						*((short*)res->row[residx]) = (short)strtol(val,0,10);
-					} else {
-						*((unsigned short*)res->row[residx]) = (unsigned short)strtoul(val,0,10);
-					}
-				} else if(col->size <= sizeof(long) || col->size == 0) {
-					if(col->notsigned) {
-						*((long*)res->row[residx]) = (long)strtol(val,0,10);
-					} else {
-						*((unsigned long*)res->row[residx]) = (unsigned long)strtoul(val,0,10);
-					}
-				} else if (col->size <= sizeof(long long)) {
-					if(col->notsigned) {
-						*((long long*)res->row[residx]) = (long long)strtoll(val,0,10);
-					} else {
-						*((unsigned long long*)res->row[residx]) = (unsigned long long)strtoull(val,0,10);
-					}
-				} else {
-					LOGF_WARN("invalid int size for postgres: %lu",col->size);
-					return -1;
-				}
-				break;
-			case COL_TYPE_FLOAT:
-			{
-				*((double*)res->row[residx]) = strtod(val,0);
-			}
-				break;
-			case COL_TYPE_DATETIME:
-			{
-				if( postgres_time_to_tm(val, ((struct tm*)res->row[residx])) ) {
-					return -1;
-				}
-			}
-				break;
-			default:
-				LOG_WARN("invalid datatype for mysql");
+			if( set_columnbuf_by_string(col,postgres_time_to_tm,res->row[residx],val) ) {
 				return -1;
 			}
 		}

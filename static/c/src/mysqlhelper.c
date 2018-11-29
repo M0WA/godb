@@ -58,6 +58,15 @@ int mysql_tm(const MYSQL_TIME *mt, struct tm *const t) {
 	return 0;
 }
 
+int mysql_string_to_tm(const char *val, struct tm *t) {
+	memset(t, 0, sizeof(struct tm));
+	if( !strptime(val, "%Y-%m-%d %H:%M:%S", t) ) {
+		LOGF_WARN("invalid postgres date: %s",val);
+		return 1;
+	}
+	return 0;
+}
+
 int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql) {
 	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
 	return 1;
