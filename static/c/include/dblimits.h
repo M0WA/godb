@@ -7,6 +7,6 @@
 
 #ifndef _DISABLE_MYSQL
 
-#define MAX_MYSQL_BIND_COLS 32
+#define MAX_BIND_COLS 32
 
 #endif

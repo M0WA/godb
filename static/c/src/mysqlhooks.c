@@ -240,19 +240,19 @@ MYSQL_SELECT_EXIT:
 }
 
 int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
-	MYSQL_BIND bind[MAX_MYSQL_BIND_COLS];
-	my_bool is_null[MAX_MYSQL_BIND_COLS];
-	unsigned long length[MAX_MYSQL_BIND_COLS];
-	MYSQL_TIME times[MAX_MYSQL_BIND_COLS];
+	MYSQL_BIND bind[MAX_BIND_COLS];
+	my_bool is_null[MAX_BIND_COLS];
+	unsigned long length[MAX_BIND_COLS];
+	MYSQL_TIME times[MAX_BIND_COLS];
 
-	if(!res || !res->ncols || !dbh || !dbh->mysql.stmt || res->ncols > MAX_MYSQL_BIND_COLS) {
+	if(!res || !res->ncols || !dbh || !dbh->mysql.stmt || res->ncols > MAX_BIND_COLS) {
 		destroy_selectresult(res);
 		return -1;
 	}
 
-	memset(&bind,0,sizeof(MYSQL_BIND) * MAX_MYSQL_BIND_COLS);
-	memset(&is_null,0,sizeof(my_bool) * MAX_MYSQL_BIND_COLS);
-	memset(&length,0,sizeof(unsigned long) * MAX_MYSQL_BIND_COLS);
+	memset(&bind,0,sizeof(MYSQL_BIND) * MAX_BIND_COLS);
+	memset(&is_null,0,sizeof(my_bool) * MAX_BIND_COLS);
+	memset(&length,0,sizeof(unsigned long) * MAX_BIND_COLS);
 
 	for(size_t i = 0; i < res->ncols; i++) {
 		if( mysql_datatype(&(res->cols[i]),&(bind[i].buffer_type)) ) {

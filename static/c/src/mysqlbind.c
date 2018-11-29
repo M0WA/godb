@@ -66,8 +66,8 @@ int mysql_where(const struct _WhereClause *clause,struct _MySQLBindWrapper *wrap
 }
 
 int mysql_bind_append(const struct _DBColumnDef *def,const void *val,MySQLBindWrapper *wrapper) {
-	if(wrapper->bind_idx >= MAX_MYSQL_BIND_COLS) {
-		LOGF_WARN("mysql allows only %d values in statements, change MAX_MYSQL_BIND_COLS to a higher value if you need more",MAX_MYSQL_BIND_COLS);
+	if(wrapper->bind_idx >= MAX_BIND_COLS) {
+		LOGF_WARN("mysql allows only %d values in statements, change MAX_BIND_COLS to a higher value if you need more",MAX_BIND_COLS);
 		return 1;
 	}
 	memset(&wrapper->bind[wrapper->bind_idx],0,sizeof(MYSQL_BIND));

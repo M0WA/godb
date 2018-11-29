@@ -11,12 +11,12 @@ struct _DBColumnDef;
 #include <mysql/mysql.h>
 
 typedef struct _MySQLBindWrapper {
-	MYSQL_BIND bind[MAX_MYSQL_BIND_COLS];
-	my_bool is_null[MAX_MYSQL_BIND_COLS];
+	MYSQL_BIND bind[MAX_BIND_COLS];
+	my_bool is_null[MAX_BIND_COLS];
 	size_t bind_idx;
-	unsigned long str_length[MAX_MYSQL_BIND_COLS];
+	unsigned long str_length[MAX_BIND_COLS];
 	size_t str_idx;
-	MYSQL_TIME times[MAX_MYSQL_BIND_COLS];
+	MYSQL_TIME times[MAX_BIND_COLS];
 	size_t times_idx;
 } MySQLBindWrapper;
 

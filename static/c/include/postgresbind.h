@@ -5,14 +5,18 @@
 #include <stddef.h>
 #include <postgresql/libpq-fe.h>
 
+#include "dblimits.h"
+
+struct _DBColumnDef;
+
 typedef struct _PostgresParamWrapper {
-	Oid *types;
-	const char * const *values;
-	const int *lengths;
-	const int *formats;
+	Oid types[MAX_BIND_COLS];
+	const char *values[MAX_BIND_COLS];
+	int lengths[MAX_BIND_COLS];
+	int formats[MAX_BIND_COLS];
 	int nparam;
 } PostgresParamWrapper;
 
-int postgres_append_param(const DBColumnDef *def,const void *const val,size_t serial,PostgresParamWrapper *param);
+int postgres_param_append(const struct _DBColumnDef *def,size_t serial,const void *const val,PostgresParamWrapper *param);
 
 #endif
