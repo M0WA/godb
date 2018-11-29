@@ -420,7 +420,7 @@ static int mysql_update_raw(struct _DBHandle *dbh,const struct _UpdateStmt *cons
 	int rc = 0;
 	char *stmtbuf = 0;
 
-	if( update_stmt_string(s,values_generic_value_specifier,mysql_where_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_RAW_EXIT; }
 

@@ -15,6 +15,34 @@
 
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} update");
+	
+	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	
+	int id = 10;
+
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_NOT_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbl.dbtbl.def->cols[0]);
+	cond.values = (const void*[]){&id};
+	cond.cnt = 1;
+	
+	double testfloat = 11.11;
+	UpdateStmt stmt;
+	memset(&stmt,0,sizeof(UpdateStmt));
+	stmt.defs = &(tbl.dbtbl.def->cols[4]);
+	stmt.ncols = 1;
+	stmt.valbuf = (const void*[]){&testfloat};
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
+		
+	if(update_db(dbh,&stmt)) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while update"); }
+	
+	DESTROY_STMT(&stmt);
 }
 
 static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {

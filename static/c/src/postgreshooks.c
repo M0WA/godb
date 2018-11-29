@@ -357,7 +357,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
-	res = PQexec(dbh->postgres.conn, stmtbuf);
+	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;

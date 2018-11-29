@@ -39,10 +39,6 @@ int insert_values_row_string(const struct _DBColumnDef *def, size_t ncols, Value
 	return 0;
 }
 
-int update_values_string(const struct _DBColumnDef *def, size_t ncols,ValueSpecifier spec, const void * const* values,char** sql,size_t *serial,int skip_autoincrement) {
-	return 0;
-}
-
 int values_generic_value_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
 	size_t bufsize = def->type == COL_TYPE_STRING ? def->size : 64;
 	char *buf = alloca(bufsize);
@@ -52,5 +48,24 @@ int values_generic_value_specifier(const struct _DBColumnDef *def,const void *va
 		return 1; }
 	if(append_string(buf,sql)) {
 		return 1; }
+	return 0;
+}
+
+int update_values_string(const struct _DBColumnDef *def, size_t ncols,ValueSpecifier spec, const void * const* values,char** sql,size_t *serial,int skip_autoincrement) {
+	size_t printed = 0;
+	for(size_t col = 0; col < ncols; col++) {
+		if(skip_autoincrement && def[col].autoincrement) {
+			continue; }
+		if(printed && append_string(",",sql)) {
+			return 1;}
+		if(append_string(def[col].name,sql)) {
+			return 1;}
+		if(append_string("=",sql)) {
+			return 1;}
+		if(spec(&(def[col]),values[col],sql,serial)) {
+			return 1;}
+		printed++;
+		(*serial)++;
+	}
 	return 0;
 }

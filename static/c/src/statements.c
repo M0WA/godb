@@ -108,14 +108,15 @@ int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereS
 	char *where = 0;
 	char *values = 0;
 	int rc = 0;
+	size_t serial = 1;
 
-	if(where_string(&s->where,wherespec,&where,0)) {
-		rc = 1;
-		goto UPDATE_STMT_STRING_EXIT; }
-
-	if( update_values_string(s->defs, s->ncols, valspec, s->valbuf, &values, 0, skip_autoincrement) ) {
+	if( update_values_string(s->defs, s->ncols, valspec, s->valbuf, &values, &serial, skip_autoincrement) ) {
 		rc = 1;
 		goto UPDATE_STMT_STRING_EXIT;	}
+
+	if(where_string(&s->where,wherespec,&where,&serial)) {
+		rc = 1;
+		goto UPDATE_STMT_STRING_EXIT; }
 
 	size_t wheresize = where ? (strlen(where) + strlen(" WHERE ")) : 0;
 	size_t valuesize = values ? strlen(values) : 0;
