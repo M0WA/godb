@@ -99,12 +99,11 @@ test library for memory leaks/memory access errors etc:
 ## Components <a name="Components"></a>
 
 The GoDB framework consists of 2 components. A code generator responsible for generating SQL and language code
-for your database structure. The other components are language specific libaries that are idependently documented
-in <a href="#API>API</a>.
+for your database structure. The second component is one or more language specific library to access data.
 
 ### Code Generator <a name="Code Generator"></a>
 
-The code generator is written in Golang and follow it's standard rules for building/installing:
+The code generator is written in Golang and follows it's standard build rules:
 
 	cd GoDB
 	source goenv
@@ -116,9 +115,12 @@ then to build the application itself:
 
 	go build -o bin/generator generator
 
-For a reference have a look at Makefile contained in the root of this repository.
+For a reference have a look at Makefile located at the root of this repository.
 
 ### Language Libraries <a name="Library"></a>
+
+The other components are language specific libaries that are independently documented
+in <a href="#API>API</a>.
 
 ## API <a name="API"></a>
 

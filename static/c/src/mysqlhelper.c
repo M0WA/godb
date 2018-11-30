@@ -67,9 +67,37 @@ int mysql_string_to_tm(const char *val, struct tm *t) {
 	return 0;
 }
 
-int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql) {
-	//const char fmt[] = "INSERT INTO `%s`.`%s` (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
-	return 1;
+int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, char** sql) {
+	char fmt[] = "INSERT INTO %s (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
+	char *colnames = 0;
+	char *where = 0;
+	char *values = 0;
+	int rc = 0;
+
+	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
+	if(!colnames) {
+		rc = 1;
+		goto MYSQL_UPSERT_STMT_STRING_EXIT;	}
+
+	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, 0) ) {
+		rc = 1;
+		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
+
+	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table);
+	*sql = malloc(lenStmt);
+	if(!*sql) {
+		return 1; }
+	sprintf(*sql,fmt,s->defs->table,colnames,(values ? values : ""));
+	LOGF_DEBUG("statement: %s",*sql);
+
+MYSQL_UPSERT_STMT_STRING_EXIT:
+	if(colnames) {
+		free(colnames); }
+	if(where) {
+		free(where); }
+	if(values) {
+		free(values); }
+	return rc;
 }
 
 #endif

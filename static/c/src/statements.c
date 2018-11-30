@@ -13,7 +13,6 @@
 int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char** sql, int skip_autoincrement) {
 	char fmt[] = "INSERT INTO %s (%s) VALUES %s";
 	char *colnames = 0;
-	char *where = 0;
 	char *values = 0;
 	int rc = 0;
 
@@ -24,7 +23,7 @@ int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char**
 
 	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, skip_autoincrement) ) {
 		rc = 1;
-		goto INSERT_STMT_STRING_EXIT;	}
+		goto INSERT_STMT_STRING_EXIT; }
 
 	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table);
 	*sql = malloc(lenStmt);
@@ -36,8 +35,6 @@ int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char**
 INSERT_STMT_STRING_EXIT:
 	if(colnames) {
 		free(colnames); }
-	if(where) {
-		free(where); }
 	if(values) {
 		free(values); }
 	return rc;

@@ -491,8 +491,90 @@ int mysql_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	return 1;
 }
 
+static int mysql_upsert_raw(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+
+	if( mysql_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf) ) {
+		rc = 1;
+		goto MYSQL_UPSERT_RAW_EXIT;
+	}
+
+	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
+		rc = 1;
+		goto MYSQL_UPSERT_RAW_EXIT;	}
+
+MYSQL_UPSERT_RAW_EXIT:
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
+static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+
+	MySQLBindWrapper bind;
+	memset(&bind,0,sizeof(MySQLBindWrapper));
+
+	for(size_t row = 0; row < s->nrows; row++) {
+		if( mysql_values(s->defs,s->ncols,s->valbuf[row],&bind) ) {
+			rc = 1;
+			goto MYSQL_UPSERT_PREPARED_EXIT; }
+	}
+
+	if( mysql_upsert_stmt_string(s, mysql_values_specifier, &stmtbuf) ) {
+		rc = 1;
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+
+	dbh->mysql.stmt = mysql_stmt_init(dbh->mysql.conn);
+	if(!dbh->mysql.stmt) {
+		rc = 1;
+		LOG_WARN("mysql_stmt_init: is null");
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+	if( mysql_stmt_param_count(dbh->mysql.stmt) != (s->ncols * s->nrows) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOG_WARN("mysql_stmt_param_count: invalid column count in prepared statement");
+		rc = 1;
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+	if( mysql_stmt_bind_param(dbh->mysql.stmt,bind.bind) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_bind_param(): %s",mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+	if( mysql_stmt_execute(dbh->mysql.stmt) ) {
+		LOGF_DEBUG("%s",stmtbuf);
+		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(dbh->mysql.stmt));
+		rc = 1;
+		goto MYSQL_UPSERT_PREPARED_EXIT;
+	}
+
+MYSQL_UPSERT_PREPARED_EXIT:
+	if(dbh->mysql.stmt) {
+		mysql_stmt_close(dbh->mysql.stmt);
+		dbh->mysql.stmt = 0;}
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
 int mysql_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
-	//int mysql_upsert_stmt_string(const UpsertStmt *const s, char** sql)
+	if(dbh->config.mysql.preparedstatements) {
+		return mysql_upsert_prepared(dbh,s);
+	} else {
+		return mysql_upsert_raw(dbh,s);
+	}
 	return 1;
 }
 

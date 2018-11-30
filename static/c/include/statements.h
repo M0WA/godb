@@ -40,6 +40,10 @@ typedef struct _UpdateStmt {
 } UpdateStmt;
 
 typedef struct _UpsertStmt {
+	const struct _DBColumnDef *defs;
+	size_t ncols;
+	const void *const*const* valbuf;
+	size_t nrows;
 } UpsertStmt;
 
 int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql, int skip_autoincrement);
