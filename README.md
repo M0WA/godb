@@ -4,7 +4,7 @@ GoDB's main goal is to abstract code from your database manufacturer while givin
 It is written with a strong consideration of limited resources like memory and cpu power to be "big-data ready".
 Think of it as an advanced version of the well known libdbi.
 
-For more information visit the GoDB [homepage](https://go-db.net) and the public [github](https://github.com/M0WA/GoDB) page.
+For more information visit the GoDB [homepage](https://go-db.net) and the offical [github](https://github.com/M0WA/GoDB) page.
 
 ## Table of contents
 1. [Features](#Features)
@@ -17,7 +17,9 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 4. [API](#API)
     1. [YAML Format](#YamlFormat)
     2. [C](#CLib)
-
+5. [FAQ](#FAQ)
+    1. [I found a bug, missing a feature or have a patch](#bugs)
+    2. [Missing brand-specific features](#brandfeatures)
 
 
 ## Features <a name="Features"></a>
@@ -135,6 +137,9 @@ The other components are language specific libaries that are independently docum
 in <a href="#API>API</a>.
 
 ## API <a name="API"></a>
+
+This section gives an overview of the available configuration settings for the [generator](#YamlFormat)
+or language specific APIs.
 
 ### YAML Format <a name="YamlFormat"></a>
 
@@ -372,3 +377,10 @@ delete rows from exampledb.exampletable including where clause:
 		LOG_FATAL(1,"exampledb.exampletable: error while delete"); }
 	
 	DESTROY_STMT(&stmt);
+
+## FAQ <a name="FAQ"></a>
+
+### I found a bug, missing a feature or have a patch <a name="bugs"></a>
+Please file either a bugreport, feature- or pull-request on the offical [github](https://github.com/M0WA/GoDB) page.
+
+### With GoDB I cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="brandfeatures"></a>
