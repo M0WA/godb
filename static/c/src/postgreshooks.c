@@ -10,6 +10,7 @@
 #include "column.h"
 #include "postgreshelper.h"
 #include "postgresbind.h"
+#include "stringbuf.h"
 
 #include <string.h>
 
@@ -85,14 +86,16 @@ int postgres_disconnect_hook(struct _DBHandle *dbh) {
 
 static int postgres_insert_raw(struct _DBHandle *dbh,struct _InsertStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf, 1) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_RAW_EXIT; }
 
-	res = PQexec(dbh->postgres.conn, stmtbuf);
+	res = PQexec(dbh->postgres.conn, stringbuf_get(&stmtbuf));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("PQexec(): %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -102,15 +105,16 @@ static int postgres_insert_raw(struct _DBHandle *dbh,struct _InsertStmt const*co
 POSTGRES_INSERT_RAW_EXIT:
 	if(res) {
 		PQclear(res); }
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
@@ -124,7 +128,7 @@ static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt con
 			rc = 1;
 			goto POSTGRES_INSERT_PREPARED_EXIT; }
 	}
-	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
+	res = PQexecParams(dbh->postgres.conn, stringbuf_get(&stmtbuf), param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("PQexecParams(): %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -132,8 +136,7 @@ static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt con
 		goto POSTGRES_INSERT_PREPARED_EXIT; }
 
 POSTGRES_INSERT_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(res) {
 		PQclear(res); }
 	return rc;
@@ -149,15 +152,17 @@ int postgres_insert_hook(struct _DBHandle *dbh,struct _InsertStmt const*const s)
 }
 
 static int postgres_delete_raw(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
-	char *stmtbuf = 0;
 	int rc = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_DELETE_RAW_EXIT; }
 
-	res = PQexec(dbh->postgres.conn, stmtbuf);
+	res = PQexec(dbh->postgres.conn, stringbuf_get(&stmtbuf));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("delete failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -165,8 +170,7 @@ static int postgres_delete_raw(struct _DBHandle *dbh,struct _DeleteStmt const*co
 		goto POSTGRES_DELETE_RAW_EXIT; }
 
 POSTGRES_DELETE_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(res) {
 		PQclear(res); }
 	return rc;
@@ -174,8 +178,10 @@ POSTGRES_DELETE_RAW_EXIT:
 
 static int postgres_delete_prepared(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
@@ -188,7 +194,7 @@ static int postgres_delete_prepared(struct _DBHandle *dbh,struct _DeleteStmt con
 		rc = 1;
 		goto POSTGRES_DELETE_PREPARED_EXIT; }
 
-	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
+	res = PQexecParams(dbh->postgres.conn, stringbuf_get(&stmtbuf), param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("PQexecParams(): %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -196,8 +202,7 @@ static int postgres_delete_prepared(struct _DBHandle *dbh,struct _DeleteStmt con
 		goto POSTGRES_DELETE_PREPARED_EXIT; }
 
 POSTGRES_DELETE_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(res) {
 		PQclear(res); }
 	return rc;
@@ -213,14 +218,16 @@ int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s)
 }
 
 static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_SELECT_RAW_EXIT; }
 
-	dbh->postgres.res = PQexec(dbh->postgres.conn, stmtbuf);
+	dbh->postgres.res = PQexec(dbh->postgres.conn, stringbuf_get(&stmtbuf));
 	if (PQresultStatus(dbh->postgres.res) != PGRES_TUPLES_OK) {
 		LOGF_WARN("select failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -235,8 +242,7 @@ static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*co
 		goto POSTGRES_SELECT_RAW_EXIT;}
 
 POSTGRES_SELECT_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(rc) {
 		dbh->postgres.resrow = 0;
 		dbh->postgres.res = 0; }
@@ -245,7 +251,9 @@ POSTGRES_SELECT_RAW_EXIT:
 
 static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
@@ -258,7 +266,7 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 		rc = 1;
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 
-	dbh->postgres.res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
+	dbh->postgres.res = PQexecParams(dbh->postgres.conn, stringbuf_get(&stmtbuf), param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(dbh->postgres.res) != PGRES_TUPLES_OK) {
 		LOGF_WARN("select failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -273,8 +281,7 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 		goto POSTGRES_SELECT_PREPARED_EXIT;}
 
 POSTGRES_SELECT_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -315,14 +322,16 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 
 static int postgres_update_raw(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_RAW_EXIT; }
 
-	res = PQexec(dbh->postgres.conn, stmtbuf);
+	res = PQexec(dbh->postgres.conn, stringbuf_get(&stmtbuf));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -332,15 +341,16 @@ static int postgres_update_raw(struct _DBHandle *dbh,struct _UpdateStmt const*co
 POSTGRES_UPDATE_RAW_EXIT:
 	if(res) {
 		PQclear(res); }
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
@@ -357,7 +367,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
-	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
+	res = PQexecParams(dbh->postgres.conn, stringbuf_get(&stmtbuf), param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -367,8 +377,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 POSTGRES_UPDATE_PREPARED_EXIT:
 	if(res) {
 		PQclear(res); }
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -383,14 +392,16 @@ int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s)
 
 static int postgres_upsert_raw(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if(postgres_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf)) {
 		rc = 1;
 		goto POSTGRES_UPSERT_RAW_EXIT; }
 
-	res = PQexec(dbh->postgres.conn, stmtbuf);
+	res = PQexec(dbh->postgres.conn, stringbuf_get(&stmtbuf));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
@@ -400,15 +411,16 @@ static int postgres_upsert_raw(struct _DBHandle *dbh,struct _UpsertStmt const*co
 POSTGRES_UPSERT_RAW_EXIT:
 	if(res) {
 		PQclear(res); }
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int postgres_upsert_prepared(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
 	PGresult *res = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if(postgres_upsert_stmt_string(s, postgres_values_specifier, &stmtbuf)) {
 		rc = 1;
@@ -426,8 +438,7 @@ static int postgres_upsert_prepared(struct _DBHandle *dbh,struct _UpsertStmt con
 POSTGRES_UPSERT_RAW_EXIT:
 	if(res) {
 		PQclear(res); }
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 

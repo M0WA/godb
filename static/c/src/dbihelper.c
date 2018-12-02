@@ -7,7 +7,7 @@
 #include "dbhandle_impl.h"
 #include "values.h"
 
-int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const struct _UpsertStmt *const s, char** sql) {
+int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const struct _UpsertStmt *const s, struct _StringBuf *sql) {
 	switch(dbh->config.dbi.type) {
 	case DBI_TYPE_MYSQL:
 		return mysql_upsert_stmt_string(s,values_generic_value_specifier,sql);

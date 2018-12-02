@@ -9,6 +9,7 @@
 #include "statements.h"
 #include "keys.h"
 #include "stringbuf.h"
+#include "dblimits.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -29,19 +30,19 @@ static int postgres_upsert_where_string(const UpsertStmt *const s, const char *p
 	size_t printed = 0;
 	for(size_t ukey = 0; ukey < s->nuniq; ukey++) {
 		for(size_t col = 0; col < s->uniqs[ukey]->ncols; col++) {
-			if(printed && append_string(" OR ",sql)) {
+			if(printed && stringbuf_append(sql," OR ")) {
 				return 1; }
 			if(*prefix_left) {
-				if( append_string(prefix_left,sql) || append_string(".",sql) ) {
+				if( stringbuf_append(sql,prefix_left) || stringbuf_append(sql,".") ) {
 					return 1; }
 			}
-			if(append_string(s->uniqs[ukey]->cols[col],sql) || append_string(" = ",sql)) {
+			if(stringbuf_append(sql,s->uniqs[ukey]->cols[col]) || stringbuf_append(sql," = ")) {
 				return 1; }
 			if(*prefix_right) {
-				if( append_string(prefix_right,sql) || append_string(".",sql) ) {
+				if( stringbuf_append(sql,prefix_right) || stringbuf_append(sql,".") ) {
 					return 1; }
 			}
-			if(append_string(s->uniqs[ukey]->cols[col],sql)){
+			if(stringbuf_append(sql,s->uniqs[ukey]->cols[col])){
 				return 1; }
 			printed++;
 		}
@@ -51,14 +52,14 @@ static int postgres_upsert_where_string(const UpsertStmt *const s, const char *p
 
 static int postgres_upsert_set_string(const UpsertStmt *const s, const char *prefix, ValueSpecifier valspec, struct _StringBuf *sql) {
 	for(size_t col = 0; col < s->ncols; col++) {
-		if(col && append_string(",",sql)) {
+		if(col && stringbuf_append(sql,",")) {
 			return 1;
 		}
-		if(	append_string(s->defs[col].name,sql) ||
-			append_string("=",sql) ||
-			append_string(prefix,sql) ||
-			append_string(".",sql) ||
-			append_string(s->defs[col].name,sql)
+		if(	stringbuf_append(sql,s->defs[col].name) ||
+			stringbuf_append(sql,"=") ||
+			stringbuf_append(sql,prefix) ||
+			stringbuf_append(sql,".") ||
+			stringbuf_append(sql,s->defs[col].name)
 		) {
 			return 1;
 		}
@@ -129,11 +130,13 @@ WHERE NOT EXISTS \
 	const char *prefix_update_result = "updated";
 	const char *prefix_values = "new_values";
 	char *colnames = 0;
-	char *values = 0;
-	char *updateset = 0;
-	char *where_update = 0;
-	char *where_insert = 0;
 	int rc = 0;
+
+	StringBuf updateset,values,where_update,where_insert;
+	stringbuf_init(&updateset,SQL_VALUE_ALLOC_BLOCK);
+	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
+	stringbuf_init(&where_update,SQL_VALUE_ALLOC_BLOCK);
+	stringbuf_init(&where_insert,SQL_VALUE_ALLOC_BLOCK);
 
 	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
 	if(!colnames) {
@@ -156,30 +159,29 @@ WHERE NOT EXISTS \
 		rc = 1;
 		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
 
-	size_t stmtlen = 1 + strlen(fmt) + strlen(prefix_values) + strlen(colnames) + strlen(values) + strlen(alias_upsert) +
-			strlen(s->defs[0].table) + strlen(prefix_update_result) + strlen(updateset) +
-			strlen(prefix_values) + strlen(prefix_update_subselect) + strlen(where_update) + strlen(prefix_update_result) +
+	size_t sqlsize = 1 + strlen(fmt) + strlen(prefix_values) + strlen(colnames) + stringbuf_strlen(&values) + strlen(alias_upsert) +
+			strlen(s->defs[0].table) + strlen(prefix_update_result) + stringbuf_strlen(&updateset) +
+			strlen(prefix_values) + strlen(prefix_update_subselect) + stringbuf_strlen(&where_update) + strlen(prefix_update_result) +
 			//insert
-			strlen(s->defs[0].table) + strlen(colnames) + strlen(colnames) + strlen(prefix_values) + strlen(alias_upsert) + strlen(where_insert);
+			strlen(s->defs[0].table) + strlen(colnames) + strlen(colnames) + strlen(prefix_values) + strlen(alias_upsert) + stringbuf_strlen(&where_insert);
 
-	*sql = malloc(stmtlen);
-	snprintf(*sql,stmtlen,fmt,
-			prefix_values,colnames,values,alias_upsert,
-			s->defs[0].table,prefix_update_result,updateset,
-			prefix_values,prefix_update_subselect,where_update,prefix_update_result,
-			s->defs[0].table,colnames,colnames,prefix_values,alias_upsert,where_insert);
+	if( stringbuf_resize(sql,sqlsize) ) {
+		rc = 1;
+		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
+	snprintf(stringbuf_buf(sql),sqlsize,fmt,
+			prefix_values,colnames,stringbuf_get(&values),alias_upsert,
+			s->defs[0].table,prefix_update_result,stringbuf_get(&updateset),
+			prefix_values,prefix_update_subselect,stringbuf_get(&where_update),prefix_update_result,
+			s->defs[0].table,colnames,colnames,prefix_values,alias_upsert,stringbuf_get(&where_insert));
+	LOGF_DEBUG("statement: %s",stringbuf_get(sql));
 
 POSTGRES_UPSERT_STMT_STRING_EXIT:
 	if(colnames) {
 		free(colnames); }
-	if(values) {
-		free(values); }
-	if(updateset) {
-		free(updateset); }
-	if(where_update) {
-		free(where_update);	}
-	if(where_insert) {
-		free(where_insert);	}
+	stringbuf_destroy(&updateset);
+	stringbuf_destroy(&values);
+	stringbuf_destroy(&where_update);
+	stringbuf_destroy(&where_insert);
 	return rc;
 }
 

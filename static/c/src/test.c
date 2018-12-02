@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <mcheck.h>
 
 #include "db.h"
 #include "tables.h"
@@ -219,6 +220,7 @@ static void test(const DBConfig *conf,const DBCredentials *creds) {
 }
 
 int main(int argc,char** argv) {
+	mtrace ();
 
 	set_loglevel(LOGLVL_DEBUG);
 	init_dblib();
@@ -291,6 +293,7 @@ int main(int argc,char** argv) {
 	}
 
 	exit_dblib();
+	muntrace ();
 	return 0;
 }
 #endif

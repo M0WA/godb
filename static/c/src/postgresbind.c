@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "where.h"
 #include "helper.h"
+#include "stringbuf.h"
 
 static int postgres_where_comp(const struct _WhereComposite *comp, PostgresParamWrapper *param) {
 	for(size_t i = 0; i < comp->cnt; i++) {
@@ -120,19 +121,19 @@ int postgres_values(const struct _DBColumnDef *defs,size_t ncols,const void *con
 	return 0;
 }
 
-int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
+int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial) {
 	char buf[255] = {0};
 	snprintf(buf,255,"$%zu",*serial);
-	if(append_string(buf,sql)) {
+	if(stringbuf_append(sql,buf)) {
 		return 1; }
 	return 0;
 }
 
-int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
+int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial) {
 	//https://www.postgresql.org/docs/9.4/libpq-exec.html -> PQexecParams
 	char buf[255] = {0};
 	snprintf(buf,255,"$%zu",*serial);
-	if(append_string(buf,sql)) {
+	if(stringbuf_append(sql,buf)) {
 		return 1; }
 	return 0;
 }

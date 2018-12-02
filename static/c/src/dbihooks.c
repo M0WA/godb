@@ -9,6 +9,7 @@
 #include "selectresult.h"
 #include "dbihelper.h"
 #include "values.h"
+#include "stringbuf.h"
 
 #include <string.h>
 
@@ -100,14 +101,16 @@ DBI_INSERT_EXIT:
 }
 
 int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult* res) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_SELECT_EXIT; }
 
-	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stringbuf_get(&stmtbuf));
 	if(!dbh->dbi.result) {
 		rc = 1;
 		const char* errmsg = 0;
@@ -121,8 +124,7 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 		goto DBI_SELECT_EXIT;}
 
 DBI_SELECT_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -206,14 +208,16 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 }
 
 int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_DELETE_EXIT; }
 
-	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stringbuf_get(&stmtbuf));
 	if(!dbh->dbi.result) {
 		rc = 1;
 		const char* errmsg = 0;
@@ -222,8 +226,7 @@ int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 		goto DBI_DELETE_EXIT; }
 
 DBI_DELETE_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(dbh->dbi.result) {
 		dbi_result_free(dbh->dbi.result);
 		dbh->dbi.result = 0; }
@@ -233,13 +236,15 @@ DBI_DELETE_EXIT:
 
 int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
 		rc = 1;
 		goto DBI_UPDATE_EXIT; }
 
-	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stringbuf_get(&stmtbuf));
 	if(!dbh->dbi.result) {
 		rc = 1;
 		const char* errmsg = 0;
@@ -248,8 +253,7 @@ int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 		goto DBI_UPDATE_EXIT; }
 
 DBI_UPDATE_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(dbh->dbi.result) {
 		dbi_result_free(dbh->dbi.result);
 		dbh->dbi.result = 0; }

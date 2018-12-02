@@ -35,12 +35,16 @@ const char *stringbuf_get(const struct _StringBuf *buf) {
 	return buf->buf;
 }
 
+char *stringbuf_buf(struct _StringBuf *buf) {
+	return buf->buf;
+}
+
 size_t stringbuf_strlen(const struct _StringBuf *buf) {
 	return (buf->buf ? strlen(buf->buf) : 0);
 }
 
-int stringbuf_append(struct _StringBuf *buf,const char *str, size_t len) {
-	size_t newlen = stringbuf_strlen(buf) + len;
+int stringbuf_append(struct _StringBuf *buf,const char *str) {
+	size_t newlen = stringbuf_strlen(buf) + strlen(str);
 	if(stringbuf_resize(buf,newlen)) {
 		return 1; }
 	strncat(buf->buf,str,newlen + 1);

@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "mysqlhelper.h"
 #include "helper.h"
+#include "stringbuf.h"
 
 #include <string.h>
 #include <time.h>
@@ -116,14 +117,14 @@ int mysql_values(const struct _DBColumnDef *defs,size_t ncols,const void *const*
 	return 0;
 }
 
-int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
-	if( append_string("?",sql) ) {
+int mysql_where_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial) {
+	if( stringbuf_append(sql,"?") ) {
 		return 1; }
 	return 0;
 }
 
-int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial) {
-	if( append_string("?",sql) ) {
+int mysql_values_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial) {
+	if( stringbuf_append(sql,"?") ) {
 		return 1; }
 	return 0;
 }

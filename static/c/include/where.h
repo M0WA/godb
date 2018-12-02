@@ -4,6 +4,7 @@
 
 struct _DBColumnDef;
 struct _WhereClause;
+struct _StringBuf;
 
 typedef enum _WhereCondOp {
 	WHERE_EQUAL,
@@ -49,10 +50,10 @@ typedef struct _WhereClause {
 	size_t cnt;
 } WhereClause;
 
-typedef int (*WhereSpecifier)(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial);
+typedef int (*WhereSpecifier)(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial);
 
 void where_destroy(struct _WhereClause *c);
 int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause);
 int where_append(struct _WhereClause *clause,union _WhereStmt *stmt);
-int where_string(const struct _WhereClause *c,WhereSpecifier spec,char** sql, size_t *serial);
-int where_generic_value_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial);
+int where_string(const struct _WhereClause *c,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial);
+int where_generic_value_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial);

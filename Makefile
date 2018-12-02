@@ -76,3 +76,8 @@ gprof:
 	( cd $(LIBS_DIR)/c && $(MAKE) gprof )
 	$(MAKE) clean
 	
+mtrace:
+	$(MAKE) preparetest
+	( cd $(LIBS_DIR)/c && $(MAKE) mtrace )
+	$(MAKE) clean
+	

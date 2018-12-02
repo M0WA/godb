@@ -8,6 +8,8 @@
 #include "helper.h"
 #include "statements.h"
 #include "keys.h"
+#include "stringbuf.h"
+#include "dblimits.h"
 
 #include <time.h>
 #include <string.h>
@@ -73,22 +75,22 @@ static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf 
 		LOG_WARN("no primary key found");
 		return 1;
 	}
-	if( append_string(s->prikey->name,sql) ||
-	    append_string(" = LAST_INSERT_ID(",sql) ||
-		append_string(s->prikey->name,sql) ||
-		append_string(")",sql)
+	if( stringbuf_append(sql,s->prikey->name) ||
+	    stringbuf_append(sql," = LAST_INSERT_ID(") ||
+		stringbuf_append(sql,s->prikey->name) ||
+		stringbuf_append(sql,")")
 	){
 		return 1;
 	}
 	for(size_t col = 0; col < s->ncols; col++) {
 		if( strcmp(s->defs[col].name,s->prikey->name) == 0) {
 			continue; }
-		if(append_string(",",sql)) {
+		if(stringbuf_append(sql,",")) {
 			return 1; }
-		if ( append_string(s->defs[col].name,sql) ||
-			append_string(" = VALUES(",sql) ||
-			append_string(s->defs[col].name,sql) ||
-			append_string(")",sql)
+		if ( stringbuf_append(sql,s->defs[col].name) ||
+			stringbuf_append(sql," = VALUES(") ||
+			stringbuf_append(sql,s->defs[col].name) ||
+			stringbuf_append(sql,")")
 		){
 			return 1;
 		}
@@ -99,9 +101,11 @@ static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf 
 int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql) {
 	char fmt[] = "INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s";
 	char *colnames = 0;
-	char *values = 0;
-	char *updatekeys = 0;
 	int rc = 0;
+
+	StringBuf values,updatekeys;
+	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
+	stringbuf_init(&updatekeys,SQL_VALUE_ALLOC_BLOCK);
 
 	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
 	if(!colnames) {
@@ -116,21 +120,20 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
-	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table) + (updatekeys ? strlen(updatekeys) : 0);
-	*sql = malloc(lenStmt);
-	if(!*sql) {
+	size_t sqlsize = 1 + stringbuf_strlen(&values) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table) + stringbuf_strlen(&updatekeys);
+	if( stringbuf_resize(sql,sqlsize) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
-	sprintf(*sql,fmt,s->defs->table,colnames,(values ? values : ""),(updatekeys ? updatekeys : ""));
-	LOGF_DEBUG("statement: %s",*sql);
+	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->defs->table,colnames,
+			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
+			(stringbuf_get(&updatekeys) ? stringbuf_get(&updatekeys) : ""));
+	LOGF_DEBUG("statement: %s",stringbuf_get(sql));
 
 MYSQL_UPSERT_STMT_STRING_EXIT:
 	if(colnames) {
 		free(colnames); }
-	if(values) {
-		free(values); }
-	if(updatekeys) {
-		free(updatekeys); }
+	stringbuf_destroy(&updatekeys);
+	stringbuf_destroy(&values);
 	return rc;
 }
 

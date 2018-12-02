@@ -116,6 +116,12 @@ gprof:
 	gprof test | less
 	rm gmon.out
 
+mtrace:
+	$(MAKE) testbin
+	MALLOC_TRACE=mtrace.log ./test
+	less mtrace.log
+	rm mtrace.log
+
 $(LIBNAME).so: $(patsubst %.c, %.o, $(OBJS))
 	$(CC) $(CFLAGS) -shared -o $(LIBNAME).so $(OBJS) $(LDFLAGS)
 

@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "column.h"
 #include "helper.h"
+#include "stringbuf.h"
 
 static void where_cond_destroy(struct _WhereCondition *c) {
 }
@@ -91,36 +92,36 @@ int where_append(struct _WhereClause *clause,union _WhereStmt *stmt) {
 	return 0;
 }
 
-static int where_comp_op(WhereCompOperator op,char** sql) {
-	if(sql || (*sql) == 0) {
+static int where_comp_op(WhereCompOperator op,struct _StringBuf *sql) {
+	if(!sql) {
 		return 1; }
 	switch(op) {
 	case WHERE_AND:
-		return append_string(") AND (", sql);
+		return stringbuf_append(sql,") AND (");
 	case WHERE_OR:
-		return append_string(") OR (", sql);
+		return stringbuf_append(sql,") OR (");
 	default:
 		return 1;
 	}
 }
 
-static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,char** sql, size_t *serial) {
+static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
 	if(cond->cnt > 1 && cond->cond != WHERE_EQUAL && cond->cond != WHERE_NOT_EQUAL) {
 		LOG_WARN("only equal/not equal allow for range types in where clause");
 		return 1; }
 
-	if(append_string("(", sql)) {
+	if(stringbuf_append(sql,"(")) {
 		return 1;}
-	if(append_string(cond->def->name, sql)) {
+	if(stringbuf_append(sql,cond->def->name)) {
 		return 1;}
 	if(cond->cnt > 1) {
 		switch(cond->cond) {
 		case WHERE_EQUAL:
-			if(append_string(" IN (", sql)) {
+			if(stringbuf_append(sql," IN (")) {
 				return 1;}
 			break;
 		case WHERE_NOT_EQUAL:
-			if(append_string(" NOT IN (", sql)) {
+			if(stringbuf_append(sql," NOT IN (")) {
 				return 1;}
 			break;
 		default:
@@ -130,39 +131,39 @@ static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier s
 	} else {
 		switch(cond->cond) {
 		case WHERE_EQUAL:
-			if(append_string(" = ", sql)) {
+			if(stringbuf_append(sql," = ")) {
 				return 1;}
 			if( spec(cond->def,cond->values[0],sql,serial) ) {
 				return 1;}
 			(*serial)++;
 			break;
 		case WHERE_NOT_EQUAL:
-			if(append_string(" != ", sql)) {
+			if(stringbuf_append(sql," != ")) {
 				return 1;}
 			if( spec(cond->def,cond->values[0],sql,serial) ) {
 				return 1;}
 			(*serial)++;
 			break;
 		case WHERE_LIKE:
-			if(append_string(" LIKE ", sql)) {
+			if(stringbuf_append(sql," LIKE ")) {
 				return 1;}
 			if( spec(cond->def,cond->values[0],sql,serial) ) {
 				return 1;}
 			(*serial)++;
 			break;
 		case WHERE_NOT_LIKE:
-			if(append_string(" NOT LIKE ", sql)) {
+			if(stringbuf_append(sql," NOT LIKE ")) {
 				return 1;}
 			if( spec(cond->def,cond->values[0],sql,serial) ) {
 				return 1;}
 			(*serial)++;
 			break;
 		case WHERE_IS_NULL:
-			if(append_string(" IS NULL ", sql)) {
+			if(stringbuf_append(sql," IS NULL ")) {
 				return 1;}
 			break;
 		case WHERE_IS_NOT_NULL:
-			if(append_string(" IS NOT NULL ", sql)) {
+			if(stringbuf_append(sql," IS NOT NULL ")) {
 				return 1;}
 			break;
 		default:
@@ -172,21 +173,21 @@ static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier s
 	}
 	if(cond->cnt > 1) {
 		for(size_t i = 0; i < cond->cnt; i++) {
-			if(i && append_string(", ", sql)) {
+			if(i && stringbuf_append(sql,",")) {
 				return 1; }
 			if( spec(cond->def,cond->values[i],sql,serial) ) {
 				return 1;}
 			(*serial)++;
 		}
-		if(append_string(")", sql)) {
+		if(stringbuf_append(sql,")")) {
 			return 1; }
 	}
-	if(append_string(")", sql)) {
+	if(stringbuf_append(sql,")")) {
 		return 1;}
 	return 0;
 }
 
-static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,char** sql, size_t *serial) {
+static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
 	for(size_t i = 0; i < comp->cnt; i++) {
 		if(i) {
 			if( where_comp_op(comp->where[i]->comp,sql) ) {
@@ -198,12 +199,12 @@ static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier s
 	return 0;
 }
 
-int where_string(const struct _WhereClause *clause,WhereSpecifier spec,char** sql, size_t *serial) {
+int where_string(const struct _WhereClause *clause,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
 	size_t tmpserial = 1;
 	size_t *realserial = serial ? serial : &tmpserial;
 	if(clause->cnt == 0) {
 		return 0; }
-	if(append_string("(", sql)) {
+	if(stringbuf_append(sql,"(")) {
 		return 1;}
 	for(size_t i = 0; i < clause->cnt; i++) {
 		if(i && where_comp_op(clause->comp,sql)) {
@@ -226,19 +227,19 @@ int where_string(const struct _WhereClause *clause,WhereSpecifier spec,char** sq
 			break;
 		}
 	}
-	if(append_string(")", sql)) {
+	if(stringbuf_append(sql,")")) {
 			return 1;}
 	return 0;
 }
 
-int where_generic_value_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial) {
+int where_generic_value_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial) {
 	size_t bufsize = def->type == COL_TYPE_STRING ? def->size : 64;
 	char *buf = alloca(bufsize);
 	if(!buf) {
 		return 1; }
 	if(get_column_string(buf,bufsize,def,value)) {
 		return 1; }
-	if(append_string(buf,sql)) {
+	if(stringbuf_append(sql,buf)) {
 		return 1; }
 	return 0;
 }

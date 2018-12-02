@@ -2,7 +2,6 @@
 
 #ifdef _ENABLE_MYSQLHELPER
 
-#include "dblimits.h"
 #include "values.h"
 
 #include <mysql/mysql.h>
@@ -10,6 +9,7 @@
 struct _DBColumnDef;
 struct _SelectResult;
 struct _UpsertStmt;
+struct _StringBuf;
 struct tm;
 
 int mysql_tm(const MYSQL_TIME *mt, struct tm *const t);

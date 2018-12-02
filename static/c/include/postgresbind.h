@@ -9,6 +9,7 @@
 
 struct _DBColumnDef;
 struct _WhereClause;
+struct _StringBuf;
 
 typedef struct _PostgresParamWrapper {
 	Oid types[MAX_BIND_COLS];
@@ -22,7 +23,7 @@ typedef struct _PostgresParamWrapper {
 int postgres_where(const struct _WhereClause *clause,PostgresParamWrapper *param);
 int postgres_param_append(const struct _DBColumnDef *def,const void *const val,PostgresParamWrapper *param);
 int postgres_values(const struct _DBColumnDef *defs,size_t ncols,const void *const*const values,PostgresParamWrapper *param);
-int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t* serial);
-int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,char** sql,size_t *serial);
+int postgres_where_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial);
+int postgres_values_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial);
 
 #endif
