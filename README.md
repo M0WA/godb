@@ -22,27 +22,41 @@ For more information visit the GoDB [homepage](https://go-db.net) and the public
 
 ## Features <a name="Features"></a>
 
-<table cellspacing="15"><tr><td>
-Supported databases:<br><br>
+<table cellspacing="15"><tr><td style="vertical-align:top">
+Databases:<br><br>
 
 <table border=1>
 <tr><td>Manufacturer</td><td>DBI</td><td>NATIVE</td></tr>
-<tr><td>MySQL</td><td>TBD</td><td>TBD</td></tr>
-<tr><td>PostgreSQL</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>MySQL</td><td>yes</td><td>yes</td></tr>
+<tr><td>PostgreSQL</td><td>yes</td><td>yes</td></tr>
 <tr><td>Oracle DB</td><td>TBD</td><td>TBD</td></tr>
 <tr><td>IBM DB2</td><td>TBD</td><td>TBD</td></tr>
 </table>
-</td><td>
-Supported languages:<br><br>
+</td><td style="vertical-align:top">
+Languages:<br><br>
 
 <table border=1>
 <tr><td>Languages</td><td>State</td></tr>
-<tr><td>C</td><td>TBD</td></tr>
+<tr><td>C</td><td>yes</td></tr>
 <tr><td>C++</td><td>TBD</td></tr>
 <tr><td>Golang</td><td>TBD</td></tr>
 <tr><td>Python</td><td>TBD</td></tr>
 </table>
+</td><td style="vertical-align:top">
+Statements:<br><br>
+
+<table border=1>
+<tr><td>Type</td><td>State</td></tr>
+<tr><td>Select</td><td>yes</td></tr>
+<tr><td>Insert</td><td>yes</td></tr>
+<tr><td>Update</td><td>yes</td></tr>
+<tr><td>Delete</td><td>yes</td></tr>
+<tr><td>Upsert</td><td>yes</td></tr>
+<tr><td>Joins</td><td>TBD</td></tr>
+<tr><td>Group/Sum</td><td>TBD</td></tr>
+</table>
 </td><td>
+</td></tr></table>
 
 * Prepared Statements (optional,where applicable)
 * Maximum Brand Independance
@@ -52,8 +66,6 @@ Supported languages:<br><br>
 * Open Source
 * Type Safety
 * Business Support Available
-
-</td></tr></table>
 
 ## Usage <a name="Usage"></a>
 
