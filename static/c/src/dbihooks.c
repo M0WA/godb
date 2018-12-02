@@ -72,7 +72,9 @@ int dbi_disconnect_hook(struct _DBHandle *dbh) {
 
 int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	int skip_autoincrement = 0;
 	if(dbh->config.dbi.type == DBI_TYPE_POSTGRES) {
@@ -82,7 +84,7 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
 
-	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stmtbuf);
+	dbh->dbi.result = dbi_conn_query(dbh->dbi.conn,stringbuf_get(&stmtbuf));
 	if(!dbh->dbi.result) {
 		rc = 1;
 		const char* errmsg = 0;
@@ -91,8 +93,7 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 		goto DBI_INSERT_EXIT; }
 
 DBI_INSERT_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(dbh->dbi.result) {
 		dbi_result_free(dbh->dbi.result); }
 	return rc;

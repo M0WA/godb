@@ -381,8 +381,62 @@ int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s)
 	return 1;
 }
 
+static int postgres_upsert_raw(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+	PGresult *res = 0;
+
+	if(postgres_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf)) {
+		rc = 1;
+		goto POSTGRES_UPSERT_RAW_EXIT; }
+
+	res = PQexec(dbh->postgres.conn, stmtbuf);
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
+		rc = 1;
+		PQclear(res);
+		goto POSTGRES_UPSERT_RAW_EXIT; }
+
+POSTGRES_UPSERT_RAW_EXIT:
+	if(res) {
+		PQclear(res); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
+static int postgres_upsert_prepared(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
+	int rc = 0;
+	char *stmtbuf = 0;
+	PGresult *res = 0;
+
+	if(postgres_upsert_stmt_string(s, postgres_values_specifier, &stmtbuf)) {
+		rc = 1;
+		goto POSTGRES_UPSERT_RAW_EXIT; }
+
+	/*
+	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
+		rc = 1;
+		PQclear(res);
+		goto POSTGRES_UPDATE_PREPARED_EXIT; }
+	*/
+
+POSTGRES_UPSERT_RAW_EXIT:
+	if(res) {
+		PQclear(res); }
+	if(stmtbuf) {
+		free(stmtbuf); }
+	return rc;
+}
+
 int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
-	//int postgres_upsert_stmt_string(const UpsertStmt *const s, char** sql)
+	if(dbh->config.postgres.preparedstatements) {
+		return postgres_upsert_prepared(dbh,s);
+	} else {
+		return postgres_upsert_raw(dbh,s);
+	}
 	return 1;
 }
 

@@ -5,12 +5,13 @@
 #include "helper.h"
 #include "where.h"
 #include "logger.h"
+#include "stringbuf.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, char** sql, int skip_autoincrement) {
+int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql, int skip_autoincrement) {
 	char fmt[] = "INSERT INTO %s (%s) VALUES %s";
 	char *colnames = 0;
 	char *values = 0;
@@ -40,7 +41,7 @@ INSERT_STMT_STRING_EXIT:
 	return rc;
 }
 
-int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, char** sql) {
+int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, struct _StringBuf *sql) {
 	const char fmt[] = "SELECT %s FROM %s %s %s %s";
 	char *colnames = 0;
 	char *where = 0;
@@ -76,7 +77,7 @@ SELECT_STMT_STRING_EXIT:
 	return rc;
 }
 
-int delete_stmt_string(const DeleteStmt *const s, WhereSpecifier wherespec, char** sql) {
+int delete_stmt_string(const DeleteStmt *const s, WhereSpecifier wherespec, struct _StringBuf *sql) {
 	const char fmt[] = "DELETE FROM %s %s %s";
 	char *where = 0;
 	int rc = 0;
@@ -100,7 +101,7 @@ DELETE_STMT_STRING_EXIT:
 	return rc;
 }
 
-int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereSpecifier wherespec, char** sql, int skip_autoincrement) {
+int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereSpecifier wherespec, struct _StringBuf *sql, int skip_autoincrement) {
 	const char fmt[] = "UPDATE %s SET %s %s %s";
 	char *where = 0;
 	char *values = 0;

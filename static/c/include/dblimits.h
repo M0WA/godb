@@ -7,3 +7,5 @@
 
 #define MAX_BIND_COLS 32
 #define POSTGRES_BIND_BUF 255
+
+#define SQL_STMT_ALLOC_BLOCK 1024

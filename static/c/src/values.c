@@ -4,6 +4,7 @@
 #include "helper.h"
 
 #include <alloca.h>
+#include <stdio.h>
 
 static int insert_values_string(const struct _DBColumnDef *def, size_t ncols, ValueSpecifier spec, const void* const*const values,char** sql,size_t *serial,int skip_autoincrement) {
 	size_t tmpserial = 1;

@@ -14,6 +14,7 @@
 #include "mysqlbind.h"
 #include "selectresult.h"
 #include "values.h"
+#include "stringbuf.h"
 
 int mysql_initlib_hook() {
 	if (!mysql_thread_safe()) {
@@ -97,26 +98,27 @@ int mysql_disconnect_hook(struct _DBHandle *dbh) {
 
 static int mysql_insert_raw(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf,0) ) {
 		rc = 1;
 		goto MYSQL_INSERT_RAW_EXIT; }
 
-	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_real_query(dbh->mysql.conn, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_INSERT_RAW_EXIT;	}
 
 MYSQL_INSERT_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
@@ -137,7 +139,7 @@ static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt 
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_INSERT_PREPARED_EXIT;
 	}
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
@@ -166,9 +168,7 @@ MYSQL_INSERT_PREPARED_EXIT:
 	if(dbh->mysql.stmt) {
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;}
-	if(stmtbuf) {
-		free(stmtbuf); }
-
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -183,26 +183,29 @@ int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 
 static int mysql_delete_raw(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_DELETE_RAW_EXIT; }
 
-	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_real_query(dbh->mysql.conn, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_DELETE_RAW_EXIT;	}
 
 MYSQL_DELETE_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int mysql_delete_prepared(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
+
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
@@ -219,7 +222,7 @@ static int mysql_delete_prepared(struct _DBHandle *dbh,const struct _DeleteStmt 
 		rc = 1;
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_DELETE_PREPARED_EXIT; }
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
@@ -234,11 +237,10 @@ static int mysql_delete_prepared(struct _DBHandle *dbh,const struct _DeleteStmt 
 		goto MYSQL_DELETE_PREPARED_EXIT; }
 
 MYSQL_DELETE_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
 	if(dbh->mysql.stmt) {
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;}
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -252,14 +254,16 @@ int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 }
 
 static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult *res) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT; }
 
-	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_real_query(dbh->mysql.conn, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT;	}
@@ -276,14 +280,15 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 		goto MYSQL_SELECT_RAW_EXIT;}
 
 MYSQL_SELECT_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult *res) {
-	char *stmtbuf = 0;
 	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
@@ -300,7 +305,7 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		rc = 1;
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_SELECT_PREPARED_EXIT; }
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
@@ -320,8 +325,7 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		goto MYSQL_SELECT_PREPARED_EXIT;}
 
 MYSQL_SELECT_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
@@ -418,26 +422,28 @@ int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 
 static int mysql_update_raw(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_RAW_EXIT; }
 
-	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_real_query(dbh->mysql.conn, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_UPDATE_RAW_EXIT;	}
 
 MYSQL_UPDATE_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,&stmtbuf,1) ) {
 		rc = 1;
@@ -459,7 +465,7 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 		rc = 1;
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_UPDATE_PREPARED_EXIT; }
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
@@ -474,8 +480,7 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
 MYSQL_UPDATE_PREPARED_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	if(dbh->mysql.stmt) {
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;}
@@ -493,27 +498,30 @@ int mysql_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 
 static int mysql_upsert_raw(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if( mysql_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_RAW_EXIT;
 	}
 
-	if( mysql_real_query(dbh->mysql.conn, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_real_query(dbh->mysql.conn, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_WARN("mysql_real_query(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_UPSERT_RAW_EXIT;	}
 
 MYSQL_UPSERT_RAW_EXIT:
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 
 static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
 	int rc = 0;
-	char *stmtbuf = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
@@ -535,7 +543,7 @@ static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt 
 		LOG_WARN("mysql_stmt_init: is null");
 		goto MYSQL_UPSERT_PREPARED_EXIT;
 	}
-	if( mysql_stmt_prepare(dbh->mysql.stmt, stmtbuf, strlen(stmtbuf)) ) {
+	if( mysql_stmt_prepare(dbh->mysql.stmt, stringbuf_get(&stmtbuf), stringbuf_strlen(&stmtbuf)) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOGF_WARN("mysql_stmt_prepare: %s",mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
@@ -564,8 +572,7 @@ MYSQL_UPSERT_PREPARED_EXIT:
 	if(dbh->mysql.stmt) {
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;}
-	if(stmtbuf) {
-		free(stmtbuf); }
+	stringbuf_destroy(&stmtbuf);
 	return rc;
 }
 

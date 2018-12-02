@@ -6,6 +6,9 @@
 #include "where.h"
 #include "values.h"
 
+struct _UniqKey;
+struct _StringBuf;
+
 #define DESTROY_STMT(somestmt) where_destroy(&((somestmt)->where));
 
 typedef struct _OrderBy {
@@ -42,11 +45,14 @@ typedef struct _UpdateStmt {
 typedef struct _UpsertStmt {
 	const struct _DBColumnDef *defs;
 	size_t ncols;
+	const struct _UniqKey *const *uniqs;
+	size_t nuniq;
+	const struct _DBColumnDef *prikey;
 	const void *const*const* valbuf;
 	size_t nrows;
 } UpsertStmt;
 
-int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, char** sql, int skip_autoincrement);
-int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, char** sql);
-int select_stmt_string(const SelectStmt *const, WhereSpecifier where, char** sql);
-int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, char** sql, int skip_autoincrement);
+int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, struct _StringBuf *sql, int skip_autoincrement);
+int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, struct _StringBuf *sql);
+int select_stmt_string(const SelectStmt *const, WhereSpecifier where, struct _StringBuf *sql);
+int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, struct _StringBuf *sql, int skip_autoincrement);

@@ -42,14 +42,14 @@ int append_string(const char *src, char** dest) {
 	size_t newsize = 1;
 	if(!*dest) {
 		newsize += strlen(src);
-		*dest = malloc(sizeof(newsize));
+		*dest = malloc(sizeof(char) * newsize);
 		if(!*dest) {
 			return 1; }
 		*(dest[0]) = 0;
 	} else {
 		char *tmp = 0;
 		newsize += strlen(src) + strlen(*dest);
-		tmp = realloc((*dest),newsize);
+		tmp = realloc((*dest),sizeof(char) * newsize);
 		if(!tmp) {
 			return 1; }
 		*dest = tmp;

@@ -275,13 +275,9 @@ insert rows into exampledb.exampletable:
 		LOG_FATAL(1,"bulk insert failed"); }
 
 select rows from exampledb.exampletable include where clause:
-
-	TABLE_STRUCT(exampledb,exampletable,tbl);
 	
 	SelectStmt stmt;
-	memset(&stmt,0,sizeof(SelectStmt));
-	stmt.defs = tbl.dbtbl.def->cols;
-	stmt.ncols = tbl.dbtbl.def->ncols;
+	selectstmt_exampledb_exampletable(&stmt);
 	
 	char test[] = "test";
 	
@@ -289,7 +285,7 @@ select rows from exampledb.exampletable include where clause:
 	memset(&cond,0,sizeof(struct _WhereCondition));
 	cond.cond = WHERE_EQUAL;
 	cond.type = WHERE_COND;
-	cond.def = &(tbl.dbtbl.def->cols[1]);
+	cond.def = &(stmt->defs[1]);
 	cond.values = (const void*[]){&test};
 	cond.cnt = 1;
 	
@@ -344,7 +340,8 @@ update rows from exampledb.exampletable:
 
 delete rows from exampledb.exampletable including where clause:
 
-	TABLE_STRUCT(exampledb,exampletable,tbl);
+	DeleteStmt stmt;
+	deletestmt_exampledb_exampletable(&stmt);
 	
 	int id = 10;
 	
@@ -352,13 +349,9 @@ delete rows from exampledb.exampletable including where clause:
 	memset(&cond,0,sizeof(struct _WhereCondition));
 	cond.cond = WHERE_NOT_EQUAL;
 	cond.type = WHERE_COND;
-	cond.def = &(tbl.dbtbl.def->cols[0]);
+	cond.def = &(stmt.def->cols[0]);
 	cond.values = (const void*[]){&id};
 	cond.cnt = 1;
-	
-	DeleteStmt stmt;
-	memset(&stmt,0,sizeof(DeleteStmt));
-	stmt.def = tbl.dbtbl.def;
 	
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"exampledb.exampletable: cannot append where stmt"); }

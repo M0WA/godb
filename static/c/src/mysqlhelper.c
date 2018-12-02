@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "helper.h"
 #include "statements.h"
+#include "keys.h"
 
 #include <time.h>
 #include <string.h>
@@ -67,11 +68,39 @@ int mysql_string_to_tm(const char *val, struct tm *t) {
 	return 0;
 }
 
-int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, char** sql) {
-	char fmt[] = "INSERT INTO %s (%s) VALUES(%s) ON DUPLICATE KEY UPDATE %s";
+static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf *sql) {
+	if(!s->prikey) {
+		LOG_WARN("no primary key found");
+		return 1;
+	}
+	if( append_string(s->prikey->name,sql) ||
+	    append_string(" = LAST_INSERT_ID(",sql) ||
+		append_string(s->prikey->name,sql) ||
+		append_string(")",sql)
+	){
+		return 1;
+	}
+	for(size_t col = 0; col < s->ncols; col++) {
+		if( strcmp(s->defs[col].name,s->prikey->name) == 0) {
+			continue; }
+		if(append_string(",",sql)) {
+			return 1; }
+		if ( append_string(s->defs[col].name,sql) ||
+			append_string(" = VALUES(",sql) ||
+			append_string(s->defs[col].name,sql) ||
+			append_string(")",sql)
+		){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql) {
+	char fmt[] = "INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s";
 	char *colnames = 0;
-	char *where = 0;
 	char *values = 0;
+	char *updatekeys = 0;
 	int rc = 0;
 
 	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
@@ -83,20 +112,25 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
-	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table);
+	if( mysql_upsert_key_string(s, &updatekeys) ) {
+		rc = 1;
+		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
+
+	size_t lenStmt = 1 + (values ? strlen(values) : 0) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table) + (updatekeys ? strlen(updatekeys) : 0);
 	*sql = malloc(lenStmt);
 	if(!*sql) {
-		return 1; }
-	sprintf(*sql,fmt,s->defs->table,colnames,(values ? values : ""));
+		rc = 1;
+		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
+	sprintf(*sql,fmt,s->defs->table,colnames,(values ? values : ""),(updatekeys ? updatekeys : ""));
 	LOGF_DEBUG("statement: %s",*sql);
 
 MYSQL_UPSERT_STMT_STRING_EXIT:
 	if(colnames) {
 		free(colnames); }
-	if(where) {
-		free(where); }
 	if(values) {
 		free(values); }
+	if(updatekeys) {
+		free(updatekeys); }
 	return rc;
 }
 

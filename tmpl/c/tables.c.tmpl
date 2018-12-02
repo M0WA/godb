@@ -6,16 +6,20 @@
 #include "db.h"
 #include "column.h"
 #include "table.h"
+#include "statements.h"
+#include "keys.h"
 {{ $td := . }}{{ range $db := .L.Databases }}
 const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := $db.Tables }}
 
-/* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
+/* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */{{ $nuniq := len $tbl.UniqueKeys }}
 
+// {{ $db.Name }}.{{ $tbl.Name }}: column names
 const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}";{{ range $col := $tbl.Columns }}
 const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{/* columns */}}
 
-static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $col := $tbl.Columns }}
-	(struct _DBColumnDef){ 
+// {{ $db.Name }}.{{ $tbl.Name }}: column definitions
+const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $col := $tbl.Columns }}
+	(struct _DBColumnDef) { 
 		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
 		.name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }},
 		.table = c_{{ $db.Name }}_{{ $tbl.Name }},
@@ -24,24 +28,70 @@ static const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{
 		.autoincrement = {{ if $col.AutoIncrement }}1{{ else }}0{{ end }},
 		.notnull = {{ if $col.NotNull }}1{{ else }}0{{ end }},
 		.notsigned = {{ if $col.Unsigned }}1{{ else }}0{{ end }},
-	}, {{ end }}{{/* columns */}}
+	},{{ end }}{{/* columns */}}
 };
+{{ range $i,$col := $tbl.Columns }}
+const struct _DBColumnDef *const coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} = &(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $i }}]);{{ end }}{{/* columns */}}
 
-static const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
+// {{ $db.Name }}.{{ $tbl.Name }}: table definition
+const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
 	.name = c_{{ $db.Name }}_{{ $tbl.Name }},
 	.database = c_{{ $db.Name }},
 	.cols = (const struct _DBColumnDef*)&coldefs_{{ $db.Name }}_{{ $tbl.Name }},
 	.ncols = {{ len $tbl.Columns }},
 };
+{{ if gt $nuniq 0 }}{{ range $uniq := $tbl.UniqueKeys }}
+// {{ $db.Name }}.{{ $tbl.Name }}: unique keys
+const char *const uniqcol_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}}[] = { {{ range $uniqcol := $uniq.Columns }}
+	c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $uniqcol }}, {{ end }}{{/* unique columns */}}
+};
 
+const struct _UniqKey uniq_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}} = {
+	.ncols = {{ len $uniq.Columns }},
+	.cols = uniqcol_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}},
+};
+{{ end }}{{/* unique key */}}
+const struct _UniqKey *const uniq_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $uniq := $tbl.UniqueKeys }}
+	&uniq_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}}, {{ end }}{{/* unique keys */}}
+};
+{{ end }}{{/* endif */}}
+// {{ $db.Name }}.{{ $tbl.Name }}: create/initialize table structure
 void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl) {
 	tbl->tbl.def = &def_{{ $db.Name }}_{{ $tbl.Name }};
-	//tbl->tbl.bytepos = &bytepos_{{ $db.Name }}_{{ $tbl.Name }};
 	memset(&(tbl->tbl.valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
-{{ range $col := $tbl.Columns }}
-	tbl->tbl.colptr.{{ $col.Name }} = 0;
-{{ end }}{{/* columns */}}
+	{{ range $col := $tbl.Columns }}
+	tbl->tbl.colptr.{{ $col.Name }} = 0;{{ end }}{{/* columns */}}
+
 	tbl->tbl.p_colptr = &(tbl->tbl.colptr);
+	tbl->tbl.primarykey = coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $tbl.PrimaryKey.Column }}; {{ if gt $nuniq 0 }}
+	tbl->tbl.uniquekeys = uniq_{{ $db.Name }}_{{ $tbl.Name }};
+	tbl->tbl.nunique = {{ $nuniq }};{{ else }}
+	tbl->tbl.uniquekeys = 0;
+	tbl->tbl.nunique = 0;{{ end }}{{/* endif */}}
 }
 
+// {{ $db.Name }}.{{ $tbl.Name }}: initialize upsert statement
+void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt* s) {
+	memset(s,0,sizeof(struct _UpsertStmt));
+	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
+	s->ncols = {{ len $tbl.Columns }}; {{ if gt $nuniq 0 }}
+	s->uniqs = uniq_{{ $db.Name }}_{{ $tbl.Name }};
+	s->nuniq = {{ $nuniq }}; {{ else }}
+	s->uniqs = 0;
+	s->nuniq = 0;{{ end }}{{/* endif */}}
+	s->prikey = coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $tbl.PrimaryKey.Column }};
+}
+
+// {{ $db.Name }}.{{ $tbl.Name }}: initialize delete statement
+void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt* s) {
+	memset(s,0,sizeof(struct _DeleteStmt));
+	s->def = &def_{{ $db.Name }}_{{ $tbl.Name }};
+}
+
+// {{ $db.Name }}.{{ $tbl.Name }}: initialize select statement
+void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt* s) {
+	memset(s,0,sizeof(struct _SelectStmt));
+	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
+	s->ncols = {{ len $tbl.Columns }};
+}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
