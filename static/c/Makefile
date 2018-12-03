@@ -82,7 +82,7 @@ $(BUILDTYPEFLAGS) $(GPROFCFLAGS) $(INCLUDES) $(TESTCFLAGS) \
 $(MYSQLCFLAGS) $(POSTGRESCFLAGS) $(DBICFLAGS) \
 $(MYSQLHELPERCFLAGS) $(POSTGRESHELPERCFLAGS)
 
-.PHONY: all clean test testbin testrun valgrind gprof
+.PHONY: all clean test testbin testrun valgrind gprof mtrace
 
 default_target: all
 all: $(LIBNAME).so
