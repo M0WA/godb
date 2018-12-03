@@ -2,7 +2,8 @@
 
 GoDB's main goal is to abstract code from your database manufacturer while giving a strong binding to the actual database structure.
 It is written with a strong consideration of limited resources like memory and cpu power to be "big-data ready".
-Think of it as an advanced version of the well known libdbi.
+Think of it as an advanced version of the well known libdbi with the main difference that you do not have to write __any__ SQL in your code.
+All SQL is generated for you by the GoDB framework. 
 
 For more information visit the GoDB [homepage](https://go-db.net) and the offical [github](https://github.com/M0WA/GoDB) page.
 
@@ -384,3 +385,6 @@ delete rows from exampledb.exampletable including where clause:
 Please file either a bugreport, feature- or pull-request on the offical [github](https://github.com/M0WA/GoDB) page.
 
 ### With GoDB I cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="brandfeatures"></a>
+The advantages of the GoDB framework are that you gain complete database brand independency for your code as well as an increased security.
+There is use cases where the performance of a brand-specific feature is more relevant than brand independency. In such a case, GoDB is not what
+you are looking for.
