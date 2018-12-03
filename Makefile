@@ -4,7 +4,7 @@ TMPL_DIR=tmpl
 GENERATED_DIR=generated
 LIBS_DIR=libs
 
-.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean preparetest test valgrind gprof
+.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean preparetest test valgrind gprof mtrace
 
 default_target: all
 
