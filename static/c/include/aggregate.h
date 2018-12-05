@@ -4,15 +4,16 @@
 
 struct _DBColumnDef;
 
-typedef struct _DBGroupByClause {
+typedef enum _DBAggregateType {
+	DBAGGREGATE_INVALID = 0,
+
+	DBAGGREGATE_SUM,
+	DBAGGREGATE_AVG,
+
+	DBAGGREGATE_MAX,
+} DBAggregateType;
+
+typedef struct _GroupByClause {
 	const struct _DBColumnDef *cols;
 	size_t ncols;
-} DBGroupByClause;
-
-typedef struct _DBSumAggregate {
-	const struct _DBColumnDef *col;
-} DBSumAggregate;
-
-typedef struct _DBAverageAggregate {
-	const struct _DBColumnDef *col;
-} DBAverageAggregate;
+} GroupByClause;

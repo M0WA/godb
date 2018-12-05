@@ -42,8 +42,8 @@ function check_param() {
 function init_mysql() {
 	echo -n "connecting to mysql as root, "
 SQLSTMT="
-INSERT INTO complexdb1.complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'bla',10.10,NOW()); \
-INSERT INTO complexdb1.complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'bla',10.10,NOW(),10); \
+INSERT INTO complexdb1.complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
+INSERT INTO complexdb1.complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
 DROP USER IF EXISTS '$DBUSER'@'$DBHOST'; \
 CREATE USER '$DBUSER'@'$DBHOST' IDENTIFIED BY '$DBPASS'; \
 GRANT ALL ON *.* TO '$DBUSER'@'$DBHOST'; \
@@ -61,8 +61,8 @@ GRANT ALL ON TABLE complextable1 TO $DBUSER; \
 GRANT ALL ON TABLE complextable2 TO $DBUSER; \
 GRANT ALL ON SEQUENCE complextable1_id_seq TO $DBUSER; \
 GRANT ALL ON SEQUENCE complextable2_id_seq TO $DBUSER; \
-INSERT INTO complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'bla',10.10,NOW()); \
-INSERT INTO complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'bla',10.10,NOW(),10); \
+INSERT INTO complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
+INSERT INTO complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
 "
 	( echo "DROP DATABASE IF EXISTS complexdb1; " && cat $SQLDIR/postgre/* && echo "$SQLSTMT" ) | sudo -u postgres psql -U postgres -d postgres
 }

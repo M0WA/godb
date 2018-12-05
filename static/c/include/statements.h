@@ -5,6 +5,8 @@
 #include "table.h"
 #include "where.h"
 #include "values.h"
+#include "aggregate.h"
+#include "order.h"
 
 struct _UniqKey;
 struct _StringBuf;
@@ -25,8 +27,7 @@ typedef struct _SelectStmt {
 	const struct _DBColumnDef *defs;
 	size_t ncols;
 	struct _WhereClause where;
-	const struct _DBColumnDef *groupby;
-	size_t ngroups;
+	struct _GroupByClause groupby;
 	size_t limit[2];
 } SelectStmt;
 

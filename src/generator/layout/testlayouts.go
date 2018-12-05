@@ -40,7 +40,7 @@ func singleOneTableLayout(tbl string)string{
             datatype: string
             notnull: false
             size: 255
-            defaultvalue: ""            
+            defaultvalue: ""
           - name: testint
             datatype: int
             notnull: true
@@ -104,7 +104,7 @@ func oneTableFields()([]Column) {
 
 func oneTableTables()([]Table) {
 	return []Table{
-		Table{ Name: "simpletable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } },		
+		Table{ Name: "simpletable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } },
 	}
 }
 
@@ -143,15 +143,28 @@ func ComplexLayout(db string)(string) {
               - ID
               - testint
 `
+	t3 := singleOneTableLayout("complextable3") + `
+          - name: testuniq
+            datatype: string
+            notnull: false
+            autoincrement: false
+            size: 64
+            defaultvalue: ""
+            unsigned: true
+        uniquekeys:
+          - columns:
+              - testuniq
+`
+
 	return `---
 databases:
   - name: ` + db + `
-    tables:`+ t1 + t2
+    tables:`+ t1 + t2 +t3
 }
 
 func complexTables(db string)([]Table) {
 	t1 := Table{ Name: "complextable1", Columns: oneTableFields(), PrimaryKey: PrimaryKey{ Column: "ID" }, MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" } }
-	
+
 	f := ForeignKey{
 		Column: "testfk",
 		RefColumn: "ID",
@@ -161,7 +174,7 @@ func complexTables(db string)([]Table) {
 	u := UniqueKey{
 		Columns: []string{"ID","testint"},
 	}
-	
+
 	dfk := "0"
 	c := oneTableFields()
 	c = append(c, Column{
@@ -173,14 +186,35 @@ func complexTables(db string)([]Table) {
 			DefaultValue: &dfk,
 			Unsigned: true,
 	})
-	
-	t2 := Table{ 
-		Name: "complextable2", 
-		Columns: c, 
+	t2 := Table{
+		Name: "complextable2",
+		Columns: c,
 		PrimaryKey: PrimaryKey{ Column: "ID" },
 		ForeignKeys: []ForeignKey{ f },
 		UniqueKeys: []UniqueKey{ u },
-		MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" }, 
+		MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" },
 	}
-	return []Table{ t1, t2 }
+
+	u2 := UniqueKey{
+		Columns: []string{"testuniq"},
+	}
+	duk2 := ""
+	c2 := oneTableFields()
+	c2 = append(c2, Column{
+			Name: "testuniq",
+			DataType: STRING.String(),
+			NotNull: false,
+			Size: 64,
+			AutoIncrement: false,
+			DefaultValue: &duk2,
+			Unsigned: true,
+	})
+	t3 := Table{
+		Name: "complextable3",
+		Columns: c2,
+		PrimaryKey: PrimaryKey{ Column: "ID" },
+		UniqueKeys: []UniqueKey{ u2 },
+		MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" },
+	}
+	return []Table{ t1, t2, t3 }
 }

@@ -17,15 +17,15 @@
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 static void test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} upsert");
-	
+
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
 }
 
 static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} update");
-	
+
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	
+
 	int id = 10;
 
 	struct _WhereCondition cond;
@@ -35,29 +35,29 @@ static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	cond.def = &(tbl.dbtbl.def->cols[0]);
 	cond.values = (const void*[]){&id};
 	cond.cnt = 1;
-	
+
 	double testfloat = 11.11;
 	UpdateStmt stmt;
 	memset(&stmt,0,sizeof(UpdateStmt));
 	stmt.defs = &(tbl.dbtbl.def->cols[4]);
 	stmt.ncols = 1;
 	stmt.valbuf = (const void*[]){&testfloat};
-	
+
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
-		
+
 	if(update_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while update"); }
-	
+
 	DESTROY_STMT(&stmt);
 }
 
 static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} delete");
-		
+
 	DeleteStmt stmt;
 	deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
-	
+
 	int id = 10;
 
 	struct _WhereCondition cond;
@@ -67,13 +67,13 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	cond.def = &(stmt.def->cols[0]);
 	cond.values = (const void*[]){&id};
 	cond.cnt = 1;
-		
+
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
-	
+
 	if(delete_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while delete"); }
-	
+
 	DESTROY_STMT(&stmt);
 }
 
@@ -120,7 +120,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	memset(&res,0,sizeof(res));
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
-	
+
 	while( (rc = fetch_db(dbh,&res)) > 0){
 		char *buf = 0;
 		dump_selectresult(&res,&buf);
@@ -128,7 +128,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 			LOGF_DEBUG("%s",buf);
 			free(buf); }
 		test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(&res);
-		rowcount++;	
+		rowcount++;
 	}
 	LOGF_DEBUG("fetched %lu rows",rowcount);
 	if(rc != 0 || rowcount != 4) {
@@ -138,8 +138,20 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	destroy_selectresult(&res);
 }
 
+int serial{{ $db.Name }}{{ $tbl.Name }} = 0;
+
 static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
-	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.DataType "string" }};
+	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.Name "testuniq" }};
+	char tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}[200] = {0};
+	time_t t;
+	struct tm *tmp;
+	t = time(NULL);
+	tmp = localtime(&t);
+	strftime(tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}, sizeof(tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}), "%F %T", tmp);
+	snprintf(t{{ $col.Name }}, sizeof(t{{ $col.Name }}),"%s %d",tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }},serial{{ $db.Name }}{{ $tbl.Name }});
+	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
+	serial{{ $db.Name }}{{ $tbl.Name }}++;
+	{{ else if eq $col.DataType "string" }};
 	sprintf(t{{ $col.Name }},"test");
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
 	{{ else if eq $col.DataType "datetime" }};
@@ -157,7 +169,8 @@ static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }
 static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
 	if( !tbl->tbl.colptr.{{ $col.Name }} ) {
 	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }
-	{{ if eq $col.DataType "datetime" }}
+	{{ if eq $col.Name "testuniq" }}
+	{{ else if eq $col.DataType "datetime" }}
 	if (tbl->tbl.colptr.{{ $col.Name }}->tm_year < 100 || tbl->tbl.colptr.{{ $col.Name }}->tm_year > 1000) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid datetime value: %lu-%lu-%lu",tbl->tbl.colptr.{{ $col.Name }}->tm_year,tbl->tbl.colptr.{{ $col.Name }}->tm_mon,tbl->tbl.colptr.{{ $col.Name }}->m_day); }
 	{{ else if eq $col.DataType "string" }}
@@ -249,14 +262,14 @@ static void test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}() {
 
 static void test_table_uniq_{{ $db.Name }}_{{ $tbl.Name }}() {
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }} unique keys");
-	
+
 	UpsertStmt stmt;
 	upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
-	
+
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
 	if( tbl.tbl.nunique != stmt.nuniq || stmt.nuniq != {{ len $tbl.UniqueKeys }} ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key count (%zu,%zu,%d)",tbl.tbl.nunique,stmt.nuniq,{{ len $tbl.UniqueKeys }}); }
-		
+
 	for(size_t uk = 0; uk < stmt.nuniq; uk++) {
 		if( tbl.tbl.uniquekeys[uk]->ncols != stmt.uniqs[uk]->ncols ) {
 			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key column count"); }
@@ -289,12 +302,14 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 
 void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
+	LOG_DEBUG("checking table {{ $db.Name }}");
 	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}
+	LOG_DEBUG("all tables for {{ $db.Name }}: SUCCESS");{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }
 

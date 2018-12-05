@@ -236,7 +236,7 @@ int main(int argc,char** argv) {
 
 	for(DBTypes i = DB_TYPE_INVALID + 1; i < DB_TYPE_MAX; i++) {
 		const char *dbtypestr = dbtype_to_string(i);
-		LOGF_DEBUG("checking db type %s",dbtypestr);
+		LOGF_DEBUG("======================== checking db type %s =========================",dbtypestr);
 
 		switch(i) {
 #ifndef _DISABLE_MYSQL
@@ -289,7 +289,7 @@ int main(int argc,char** argv) {
 			LOG_FATAL(1,"invalid dbtype");
 			break;
 		}
-
+		LOGF_DEBUG("======================== checking db type %s: SUCCESS =========================",dbtypestr);
 	}
 
 	exit_dblib();

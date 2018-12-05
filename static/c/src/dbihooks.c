@@ -261,8 +261,22 @@ DBI_UPDATE_EXIT:
 }
 
 int dbi_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
-	//int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const UpsertStmt *const s, char** sql);
-	return 1;
+	int rc = 0;
+
+	StringBuf stmtbuf;
+	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
+
+	if(dbi_upsert_stmt_string(dbh,s,&stmtbuf)) {
+		rc = 1;
+		goto DBI_UPSERT_EXIT;
+	}
+
+DBI_UPSERT_EXIT:
+	stringbuf_destroy(&stmtbuf);
+	if(dbh->dbi.result) {
+		dbi_result_free(dbh->dbi.result);
+		dbh->dbi.result = 0; }
+	return rc;
 }
 
 #endif
