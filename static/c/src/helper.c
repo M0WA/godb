@@ -7,12 +7,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols,int skip_autoincrement) {
+char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols) {
 	size_t string_size = 0;
 	char* buf = 0;
 	for(size_t i = 0; i < ncols; i++) {
-		if(cols[i].autoincrement && skip_autoincrement) {
-			continue; }
 		string_size += strlen(cols[i].name);
 		string_size++; //comma
 	}
@@ -25,8 +23,6 @@ char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols,i
 
 	size_t printedCols = 0;
 	for(size_t i = 0; i < ncols; i++) {
-		if(cols[i].autoincrement && skip_autoincrement) {
-			continue; }
 		if(printedCols != 0) {
 			strcat(buf,","); }
 		strcat(buf,cols[i].name);

@@ -101,7 +101,7 @@ static int mysql_insert_raw(struct _DBHandle *dbh,const struct _InsertStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf,0) ) {
+	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_INSERT_RAW_EXIT; }
 
@@ -129,7 +129,7 @@ static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt 
 			goto MYSQL_INSERT_PREPARED_EXIT; }
 	}
 
-	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf,0) ) {
+	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_INSERT_PREPARED_EXIT; }
 
@@ -426,7 +426,7 @@ static int mysql_update_raw(struct _DBHandle *dbh,const struct _UpdateStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_RAW_EXIT; }
 
@@ -445,7 +445,7 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_PREPARED_EXIT; }
 

@@ -107,12 +107,12 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&updatekeys,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
+	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT;	}
 
-	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, 0) ) {
+	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 

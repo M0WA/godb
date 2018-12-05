@@ -16,6 +16,14 @@
 #include <time.h>
 #include <alloca.h>
 
+int postgres_raw_value_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial) {
+	if(def->autoincrement) {
+		return stringbuf_append(sql,"DEFAULT");
+	} else {
+		return values_generic_value_specifier(def,value,sql,serial);
+	}
+	return 1;
+}
 
 int postgres_time_to_tm(const char *val, struct tm *t) {
 	memset(t, 0, sizeof(struct tm));
@@ -138,12 +146,12 @@ WHERE NOT EXISTS \
 	stringbuf_init(&where_update,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&where_insert,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames(s->defs,s->ncols, 0);
+	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
 		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
 
-	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, 0) ) {
+	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0) ) {
 		rc = 1;
 		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
 

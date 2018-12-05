@@ -7,7 +7,7 @@
 #include <alloca.h>
 #include <stdio.h>
 
-static int insert_values_string(const struct _DBColumnDef *def, size_t ncols, ValueSpecifier spec, const void* const*const values,struct _StringBuf *sql,size_t *serial,int skip_autoincrement) {
+static int insert_values_string(const struct _DBColumnDef *def, size_t ncols, ValueSpecifier spec, const void* const*const values,struct _StringBuf *sql,size_t *serial) {
 	size_t tmpserial = 1;
 	size_t *realserial = serial ? serial : &tmpserial;
 
@@ -15,8 +15,6 @@ static int insert_values_string(const struct _DBColumnDef *def, size_t ncols, Va
 		return 1; }
 	size_t printedCols = 0;
 	for(size_t i = 0; i < ncols; i++) {
-		if(def[i].autoincrement && skip_autoincrement) {
-			continue; }
 		if(printedCols && stringbuf_append(sql,",")) {
 			return 1; }
 		spec(&(def[i]),values[i],sql,realserial);
@@ -29,14 +27,14 @@ static int insert_values_string(const struct _DBColumnDef *def, size_t ncols, Va
 	return 0;
 }
 
-int insert_values_row_string(const struct _DBColumnDef *def, size_t ncols, ValueSpecifier spec, const void * const* const* const values, size_t nrows,struct _StringBuf *sql, size_t *serial,int skip_autoincrement) {
+int insert_values_row_string(const struct _DBColumnDef *def, size_t ncols, ValueSpecifier spec, const void * const* const* const values, size_t nrows,struct _StringBuf *sql, size_t *serial) {
 	size_t tmpserial = 1;
 	size_t *realserial = serial ? serial : &tmpserial;
 
 	for(size_t i = 0; i < nrows; i++) {
 		if(i && stringbuf_append(sql,",")) {
 			return 1;}
-		insert_values_string(def,ncols,spec,values[i],sql,realserial,skip_autoincrement);
+		insert_values_string(def,ncols,spec,values[i],sql,realserial);
 	}
 	return 0;
 }
@@ -53,11 +51,9 @@ int values_generic_value_specifier(const struct _DBColumnDef *def,const void *va
 	return 0;
 }
 
-int update_values_string(const struct _DBColumnDef *def, size_t ncols,ValueSpecifier spec, const void * const* values,struct _StringBuf *sql,size_t *serial,int skip_autoincrement) {
+int update_values_string(const struct _DBColumnDef *def, size_t ncols,ValueSpecifier spec, const void * const* values,struct _StringBuf *sql,size_t *serial) {
 	size_t printed = 0;
 	for(size_t col = 0; col < ncols; col++) {
-		if(skip_autoincrement && def[col].autoincrement) {
-			continue; }
 		if(printed && stringbuf_append(sql,",")) {
 			return 1;}
 		if(stringbuf_append(sql,def[col].name)) {

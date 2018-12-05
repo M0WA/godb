@@ -91,7 +91,7 @@ static int postgres_insert_raw(struct _DBHandle *dbh,struct _InsertStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf, 1) ) {
+	if( insert_stmt_string(s,postgres_raw_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_RAW_EXIT; }
 
@@ -119,7 +119,7 @@ static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf,1) ) {
+	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_PREPARED_EXIT; }
 
@@ -327,7 +327,7 @@ static int postgres_update_raw(struct _DBHandle *dbh,struct _UpdateStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_RAW_EXIT; }
 
@@ -363,7 +363,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
-	if( update_stmt_string(s,postgres_values_specifier,postgres_where_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,postgres_values_specifier,postgres_where_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 

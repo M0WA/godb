@@ -8,6 +8,7 @@
 #include "statements.h"
 #include "selectresult.h"
 #include "dbihelper.h"
+#include "postgreshelper.h"
 #include "values.h"
 #include "stringbuf.h"
 
@@ -28,12 +29,16 @@ int dbi_exitlib_hook() {
 int dbi_create_hook(struct _DBHandle *dbh) {
 	dbh->dbi.result = 0;
 	switch(dbh->config.dbi.type) {
+#ifndef _DISABLE_MYSQL
 	case DBI_TYPE_MYSQL:
 		dbh->dbi.conn = dbi_conn_new_r("mysql", dbiinst);
 		break;
+#endif
+#ifndef _DISABLE_POSTGRES
 	case DBI_TYPE_POSTGRES:
 		dbh->dbi.conn = dbi_conn_new_r("pgsql", dbiinst);
 		break;
+#endif
 	default:
 		LOG_WARN("invalid dbi type");
 		return 1;
@@ -77,11 +82,11 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	int skip_autoincrement = 0;
+	ValueSpecifier spec = values_generic_value_specifier;
 	if(dbh->config.dbi.type == DBI_TYPE_POSTGRES) {
-		skip_autoincrement = 1;	}
+		spec = postgres_raw_value_specifier; }
 
-	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf,skip_autoincrement) ) {
+	if( insert_stmt_string(s,spec,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
 
@@ -240,7 +245,7 @@ int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf,1) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_UPDATE_EXIT; }
 

@@ -53,7 +53,7 @@ typedef struct _UpsertStmt {
 	size_t nrows;
 } UpsertStmt;
 
-int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, struct _StringBuf *sql, int skip_autoincrement);
+int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, struct _StringBuf *sql);
 int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, struct _StringBuf *sql);
 int select_stmt_string(const SelectStmt *const, WhereSpecifier where, struct _StringBuf *sql);
-int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, struct _StringBuf *sql, int skip_autoincrement);
+int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, struct _StringBuf *sql);

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql, int skip_autoincrement) {
+int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql) {
 	char fmt[] = "INSERT INTO %s (%s) VALUES %s";
 	char *colnames = 0;
 	int rc = 0;
@@ -20,12 +20,12 @@ int insert_stmt_string(const InsertStmt *const s, ValueSpecifier valspec, struct
 	StringBuf values;
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames(s->defs,s->ncols, skip_autoincrement);
+	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
 		goto INSERT_STMT_STRING_EXIT;	}
 
-	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0, skip_autoincrement) ) {
+	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0) ) {
 		rc = 1;
 		goto INSERT_STMT_STRING_EXIT; }
 
@@ -52,7 +52,7 @@ int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, stru
 	StringBuf where;
 	stringbuf_init(&where,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames(s->defs,s->ncols,0);
+	colnames = comma_concat_colnames(s->defs,s->ncols);
 	if(!colnames) {
 		rc = 1;
 		goto SELECT_STMT_STRING_EXIT;	}
@@ -109,7 +109,7 @@ DELETE_STMT_STRING_EXIT:
 	return rc;
 }
 
-int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereSpecifier wherespec, struct _StringBuf *sql, int skip_autoincrement) {
+int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereSpecifier wherespec, struct _StringBuf *sql) {
 	const char fmt[] = "UPDATE %s SET %s %s %s";
 	int rc = 0;
 	size_t serial = 1;
@@ -118,7 +118,7 @@ int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereS
 	stringbuf_init(&where,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 
-	if( update_values_string(s->defs, s->ncols, valspec, s->valbuf, &values, &serial, skip_autoincrement) ) {
+	if( update_values_string(s->defs, s->ncols, valspec, s->valbuf, &values, &serial) ) {
 		rc = 1;
 		goto UPDATE_STMT_STRING_EXIT;	}
 
