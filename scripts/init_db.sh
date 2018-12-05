@@ -13,7 +13,7 @@ DBPASS=
 SQLDIR=generated/sql
 
 function usage() {
-	echo "$0 -U <user> [ -P <pass> -H <host> -T <dbtype> -D <sqldir> ]"
+	echo "$0 -U <user> [ -P <pass> -H <host> -T <dbtype> -D <sql> ]"
 	echo "	-U <user>: user to create"
 	echo "	-P <pass>: password for created user, read from stdin if unspecified"
 	echo "	-H <host>: hostname/ip of database server (default: $DBHOST)"
@@ -44,12 +44,13 @@ function init_mysql() {
 SQLSTMT="
 INSERT INTO complexdb1.complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
 INSERT INTO complexdb1.complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
+INSERT INTO complexdb1.complextable3 (ID,testint,teststr,testfloat,testdate,testuniq) VALUES(10,10,'test',10.10,NOW(),'10'); \
 DROP USER IF EXISTS '$DBUSER'@'$DBHOST'; \
 CREATE USER '$DBUSER'@'$DBHOST' IDENTIFIED BY '$DBPASS'; \
 GRANT ALL ON *.* TO '$DBUSER'@'$DBHOST'; \
 FLUSH PRIVILEGES; \
 "
-	( echo "DROP DATABASE IF EXISTS complexdb1; " && cat $SQLDIR/mysql/* && echo "$SQLSTMT" ) | mysql -uroot -p
+	( echo "DROP DATABASE IF EXISTS complexdb1; " && cat $SQLDIR/mysql/* && echo "$SQLSTMT" ) | mysql
 }
 
 function init_postgres() {
@@ -63,6 +64,8 @@ GRANT ALL ON SEQUENCE complextable1_id_seq TO $DBUSER; \
 GRANT ALL ON SEQUENCE complextable2_id_seq TO $DBUSER; \
 INSERT INTO complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
 INSERT INTO complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
+INSERT INTO complextable3 (ID,testint,teststr,testfloat,testdate,testuniq) VALUES(10,10,'test',10.10,NOW(),'10'); \
+INSERT INTO complextable3 (ID,testint,teststr,testfloat,testdate,testuniq) VALUES(DEFAULT,10,'test',10.10,NOW(),'11'); \
 "
 	( echo "DROP DATABASE IF EXISTS complexdb1; " && cat $SQLDIR/postgre/* && echo "$SQLSTMT" ) | sudo -u postgres psql -U postgres -d postgres
 }
