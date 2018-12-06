@@ -14,11 +14,37 @@
 #include "logger.h"
 #include "keys.h"
 
+
+static int serial = 0;
+
 {{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
 static void test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	if(strcmp("{{ $tbl.Name }}","complextable3") != 0)  {
+		return; }
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} upsert");
 
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+
+	double testfloat = 12.12;
+	char testuniq[10];
+	size_t tmp = (serial == 11 ? 9 : serial - 1);
+	snprintf(testuniq,10,"%zu",tmp);
+
+	const void *const values[2] = { &testuniq, &testfloat };
+	const void *const *const c_vals = (const void *const *const)&values;
+
+	struct _DBColumnDef defs[2];	
+	defs[0] = tbl.dbtbl.def->cols[5]; //testuniq
+	defs[1] = tbl.dbtbl.def->cols[4]; //testfloat
+
+	UpsertStmt stmt;
+	upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
+	stmt.defs = defs;
+	stmt.ncols = 2;
+	stmt.valbuf = &c_vals;
+	
+	if(upsert_db(dbh,&stmt)) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while upsert"); }
 }
 
 static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
@@ -138,19 +164,13 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	destroy_selectresult(&res);
 }
 
-int serial{{ $db.Name }}{{ $tbl.Name }} = 0;
-
 static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
 	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.Name "testuniq" }};
-	char tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}[200] = {0};
-	time_t t;
-	struct tm *tmp;
-	t = time(NULL);
-	tmp = localtime(&t);
-	strftime(tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}, sizeof(tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }}), "%F %T", tmp);
-	snprintf(t{{ $col.Name }}, sizeof(t{{ $col.Name }}),"%s %d",tmp{{ $db.Name }}{{ $tbl.Name }}{{ $col.Name }},serial{{ $db.Name }}{{ $tbl.Name }});
+	snprintf(t{{ $col.Name }}, sizeof(t{{ $col.Name }}),"%d",serial);
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
-	serial{{ $db.Name }}{{ $tbl.Name }}++;
+	serial++;
+	if(serial == 10) {
+		serial++; }
 	{{ else if eq $col.DataType "string" }};
 	sprintf(t{{ $col.Name }},"test");
 	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
@@ -198,9 +218,11 @@ static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} multi row insert");
 	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl2);
+	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl3);
 	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl2);
+	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl3);
 
-	DBTable* rows[2] = { &(tbl.dbtbl), &(tbl2.dbtbl) };
+	DBTable* rows[2] = { &(tbl2.dbtbl), &(tbl3.dbtbl) };
 	const struct _DBTable *const*const rowp = (const struct _DBTable *const*const)&rows;
 	if( insert_dbtable(dbh,rowp,2) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: multi table insert failed"); }
@@ -303,10 +325,6 @@ void test_tables_static() { {{ $td := . }}{{ range $db := .L.Databases }}
 
 void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases }}
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
-	
-	if(strcmp("complextable3","{{ $tbl.Name }}")  == 0) {
-		return; }
-
 	LOG_DEBUG("checking table {{ $db.Name }}");
 	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
