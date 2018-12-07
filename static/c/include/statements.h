@@ -7,20 +7,20 @@
 #include "values.h"
 #include "aggregate.h"
 #include "order.h"
+#include "join.h"
 
 struct _UniqKey;
 struct _StringBuf;
 
 #define DESTROY_STMT(somestmt) where_destroy(&((somestmt)->where));
 
-typedef struct _OrderBy {
-} OrderBy;
-
 typedef struct _InsertStmt {
 	const struct _DBColumnDef *defs;
 	size_t ncols;
 	const void *const*const* valbuf;
 	size_t nrows;
+	struct _JoinClause *joins;
+	size_t njoins;
 } InsertStmt;
 
 typedef struct _SelectStmt {
@@ -28,6 +28,8 @@ typedef struct _SelectStmt {
 	size_t ncols;
 	struct _WhereClause where;
 	struct _GroupByClause groupby;
+	struct _JoinClause *joins;
+	size_t njoins;
 	size_t limit[2];
 } SelectStmt;
 
@@ -40,6 +42,8 @@ typedef struct _UpdateStmt {
 	const struct _DBColumnDef *defs;
 	size_t ncols;
 	const void *const* valbuf;
+	struct _JoinClause *joins;
+	size_t njoins;
 	struct _WhereClause where;
 } UpdateStmt;
 

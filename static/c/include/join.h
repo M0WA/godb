@@ -13,6 +13,7 @@ typedef enum _DBJoinType {
 
 struct _DBTableDef;
 struct _DBColumnDef;
+struct _StringBuf;
 
 typedef struct _JoinClause {
 	DBJoinType type;
@@ -21,3 +22,5 @@ typedef struct _JoinClause {
 	const struct _DBTableDef  *right;
 	const struct _DBColumnDef *rightcol;
 } JoinClause;
+
+int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf);
