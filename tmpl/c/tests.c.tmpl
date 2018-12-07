@@ -42,6 +42,7 @@ static void test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	stmt.defs = defs;
 	stmt.ncols = 2;
 	stmt.valbuf = &c_vals;
+	stmt.nrows = 1;
 	
 	if(upsert_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while upsert"); }
