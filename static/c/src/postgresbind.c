@@ -15,7 +15,7 @@ static int postgres_where_comp(const struct _WhereComposite *comp, PostgresParam
 		if( postgres_where(comp->where[i],param) ) {
 			return 1; }
 	}
-	return 1;
+	return 0;
 }
 
 static int postgres_where_cond(const struct _WhereCondition *cond, PostgresParamWrapper *param) {

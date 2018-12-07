@@ -55,7 +55,7 @@ static int postgres_upsert_where_string(const UpsertStmt *const s, const char *p
 			printed++;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 static int postgres_upsert_set_string(const UpsertStmt *const s, const char *prefix, ValueSpecifier valspec, struct _StringBuf *sql) {
@@ -110,7 +110,7 @@ int postgres_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspe
 WITH %s \
   (%s) \
 AS \
-  (VALUES (%s)), \
+  (VALUES %s), \
 %s AS \
 ( \
   UPDATE %s %s \
