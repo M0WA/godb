@@ -4,7 +4,7 @@ TMPL_DIR=tmpl
 GENERATED_DIR=generated
 LIBS_DIR=libs
 
-.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean preparetest test valgrind gprof mtrace
+.PHONY: all generate generator cleangenerator testgenerator cleanlibs lib copylib clean preparetest test valgrind gprof mtrace test_clib test_golang
 
 default_target: all
 
@@ -62,8 +62,17 @@ preparetest:
 	$(MAKE) copylib
 	
 test:
+	$(MAKE) test_clib
+	$(MAKE) test_golang
+
+test_clib:
 	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) test )
+	$(MAKE) clean
+	
+test_golang:
+	$(MAKE) preparetest
+	( cd $(LIBS_DIR)/golang && GOPATH=$(PWD)/$(LIBS_DIR)/golang go test godb )
 	$(MAKE) clean
 	
 valgrind:
