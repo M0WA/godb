@@ -64,16 +64,16 @@ preparetest:
 test:
 	$(MAKE) test_clib
 	$(MAKE) test_golang
+	$(MAKE) clean
 
 test_clib:
 	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) test )
-	$(MAKE) clean
 	
 test_golang:
 	$(MAKE) preparetest
-	( cd $(LIBS_DIR)/golang && GOPATH=$(PWD)/$(LIBS_DIR)/golang go test godb )
-	$(MAKE) clean
+	( cd $(LIBS_DIR)/c && $(MAKE) )
+	( cd $(LIBS_DIR)/golang && GOPATH=$(PWD)/$(LIBS_DIR)/golang LD_LIBRARY_PATH=$(PWD)/$(LIBS_DIR)/c go test godb )
 	
 valgrind:
 	$(MAKE) preparetest

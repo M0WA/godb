@@ -9,7 +9,9 @@
 struct _DBHandle;
 typedef struct _DBHandle DBHandle;
 struct _DBConfig;
+typedef struct _DBConfig DBConfig;
 struct _DBCredentials;
+typedef struct _DBCredentials DBCredentials;
 
 struct _DBTable;
 struct _DBTableDef;

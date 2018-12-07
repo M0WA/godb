@@ -6,5 +6,5 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 export GOPATH=""
 export GOPATH="$(go env GOPATH):${DIR}"
 
-#export CGO_LDFLAGS="-L${DIR}/lib/Database -lDatabase -L${DIR}/lib/Tools -lTools -lmysqlclient -lpq -lssl -lpcre -lhunspell -lmagic -licudata -licuuc -licui18n -lcrypt -lcrypto -lm -lpthread -lz -lxml2 -lz"
-#export CGO_CFLAGS="-I${DIR}/lib/Tools/include -I${DIR}/lib/Database/src -I${DIR}/lib/Database/generated -I${DIR}/lib/Database/MySQL -I${DIR}/lib/Database/PostgreSQL"
+export CGO_LDFLAGS="-L${DIR}/libs/c -lDB"
+export CGO_CFLAGS="-I${DIR}/libs/c/include"
