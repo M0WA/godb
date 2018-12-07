@@ -80,7 +80,7 @@ void set_loglevel(LogLevel lvl) {
 	logger->lvl = lvl;
 }
 
-void _logf(LogLevel lvl,const char *filename, const size_t line,const char* __restrict fmt,...) {
+void _logf(LogLevel lvl,const char *filename, const size_t line,const char *function,const char* __restrict fmt,...) {
 	if(initLogger()) {
 		return;	}
 	if(lvl < logger->lvl) {
@@ -94,14 +94,14 @@ void _logf(LogLevel lvl,const char *filename, const size_t line,const char* __re
 	va_end( arglist );
 
 	if(lvl >= LOGLVL_ERROR) {
-		fprintf(logger->fp," [%s:%zu]",filename,line); }
+		fprintf(logger->fp," [in %s() at %s:%zu]",function,filename,line); }
 
 	fprintf(logger->fp,"\n");
 	fflush(logger->fp);
 }
 
-void _log(LogLevel lvl,const char *filename, const size_t line,const char* __restrict msg) {
-	_logf(lvl,filename,line,msg);
+void _log(LogLevel lvl,const char *filename, const size_t line,const char *function,const char* __restrict msg) {
+	_logf(lvl,filename,line,function,msg);
 }
 
 void logger_end() {
