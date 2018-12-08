@@ -28,43 +28,43 @@
 
 #ifdef ENABLE_MYSQL_CRED
 static const DBCredentials mysql_creds = (DBCredentials) {
-	.host = "localhost",
-	.port = 3306,
-	.name = "complexdb1",
-	.user = "myuser",
-	.pass = "mypass",
+	.Host = "localhost",
+	.Port = 3306,
+	.Name = "complexdb1",
+	.User = "myuser",
+	.Pass = "mypass",
 };
 #endif
 
 #ifdef ENABLE_POSTGRES_CRED
 static const DBCredentials postgres_creds = (DBCredentials) {
-	.host = "localhost",
-	.port = 5432,
-	.name = "complexdb1",
-	.user = "myuser",
-	.pass = "mypass",
+	.Host = "localhost",
+	.Port = 5432,
+	.Name = "complexdb1",
+	.User = "myuser",
+	.Pass = "mypass",
 };
 #endif
 
 #ifndef _DISABLE_MYSQL
 static DBConfig mysql_conf = (DBConfig) {
-	.type = DB_TYPE_MYSQL,
-	.mysql.compression = 1,
-	.mysql.autoreconnect = 1,
-	.mysql.preparedstatements = 1,
+	.Type = DB_TYPE_MYSQL,
+	.Mysql.Compression = 1,
+	.Mysql.Autoreconnect = 1,
+	.Mysql.Preparedstatements = 1,
 };
 #endif
 #ifndef _DISABLE_POSTGRES
 static DBConfig postgres_conf = (DBConfig) {
-	.type = DB_TYPE_POSTGRES,
-	.postgres.preparedstatements = 0,
+	.Type = DB_TYPE_POSTGRES,
+	.Postgres.Preparedstatements = 0,
 };
 #endif
 #ifndef _DISABLE_DBI
 #include "dbitypes.h"
 static DBConfig dbi_conf = (DBConfig) {
-	.type = DB_TYPE_DBI,
-    .dbi.type = DBI_TYPE_INVALID,
+	.Type = DB_TYPE_DBI,
+    .Dbi.Type = DBI_TYPE_INVALID,
 };
 #endif
 
@@ -242,20 +242,20 @@ int main(int argc,char** argv) {
 #ifndef _DISABLE_MYSQL
 		case DB_TYPE_MYSQL:
 			LOG_DEBUG("checking mysql raw statements");
-			mysql_conf.mysql.preparedstatements = 0;
+			mysql_conf.Mysql.Preparedstatements = 0;
 			test(&mysql_conf,&mysql_creds);
 			LOG_DEBUG("checking mysql prepared statements");
-			mysql_conf.mysql.preparedstatements = 1;
+			mysql_conf.Mysql.Preparedstatements = 1;
 			test(&mysql_conf,&mysql_creds);
 			break;
 #endif
 #ifndef _DISABLE_POSTGRES
 		case DB_TYPE_POSTGRES:
 			LOG_DEBUG("checking postgres raw statements");
-			postgres_conf.postgres.preparedstatements = 0;
+			postgres_conf.Postgres.Preparedstatements = 0;
 			test(&postgres_conf,&postgres_creds);
 			LOG_DEBUG("checking postgres prepared statements");
-			postgres_conf.postgres.preparedstatements = 1;
+			postgres_conf.Postgres.Preparedstatements = 1;
 			test(&postgres_conf,&postgres_creds);
 			break;
 #endif
@@ -267,14 +267,14 @@ int main(int argc,char** argv) {
 					LOG_DEBUG("checking dbi mysql");
 				{
 					DBConfig ctmp = dbi_conf;
-					ctmp.dbi.type = DBI_TYPE_MYSQL;
+					ctmp.Dbi.Type = DBI_TYPE_MYSQL;
 					test(&ctmp,&mysql_creds);
 				}
 				case DBI_TYPE_POSTGRES:
 					LOG_DEBUG("checking dbi postgres");
 				{
 					DBConfig ctmp = dbi_conf;
-					ctmp.dbi.type = DBI_TYPE_POSTGRES;
+					ctmp.Dbi.Type = DBI_TYPE_POSTGRES;
 					test(&ctmp,&postgres_creds);
 				}
 					break;
