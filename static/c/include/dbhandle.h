@@ -1,50 +1,51 @@
 #pragma once
 
 #include "dblimits.h"
+#include "dbtypes.h"
 
 struct _DBHandle;
 typedef struct _DBHandle DBHandle;
 
 typedef struct _DBCredentials {
-	char host[MAX_DB_HOST];
-	unsigned short port;
-	char name[MAX_DB_NAME];
-	char user[MAX_DB_USER];
-	char pass[MAX_DB_PASS];
+	char Host[MAX_DB_HOST];
+	unsigned short Port;
+	char Name[MAX_DB_NAME];
+	char User[MAX_DB_USER];
+	char Pass[MAX_DB_PASS];
 } DBCredentials;
 
 #ifndef _DISABLE_MYSQL
 typedef struct _MySQLConfig {
-	int autoreconnect;
-	int compression;
-	int preparedstatements;
+	int Autoreconnect;
+	int Compression;
+	int Preparedstatements;
 } MySQLConfig;
 #endif
 
 #ifndef _DISABLE_POSTGRES
 typedef struct _PostgresConfig {
-	int preparedstatements;
+	int Preparedstatements;
 } PostgresConfig;
 #endif
 
 #ifndef _DISABLE_DBI
 #include "dbitypes.h"
 typedef struct _DBIConfig {
-	DBIType type;
+	DBIType Type;
 } DBIConfig;
 #endif
 
 typedef struct _DBConfig {
-	DBTypes type;
+	DBTypes Type;
 	union {
 #ifndef _DISABLE_MYSQL
-		struct _MySQLConfig mysql;
+		struct _MySQLConfig Mysql;
 #endif
 #ifndef _DISABLE_POSTGRES
-		struct _PostgresConfig postgres;
+		struct _PostgresConfig Postgres;
 #endif
 #ifndef _DISABLE_DBI
-		struct _DBIConfig dbi;
+		struct _DBIConfig Dbi;
 #endif
 	};
 } DBConfig;

@@ -29,3 +29,7 @@ func NewDBConf(dbtype DBType)(DBConfig,error) {
 	c.dbtype = dbtype
 	return c,nil
 }
+
+func (c *DBConfigImpl)ToNative()(*C.DBConfig) {
+	return nil
+}

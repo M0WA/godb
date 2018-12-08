@@ -19,32 +19,32 @@
 #include <string.h>
 
 static int init_db_credentials(struct _DBHandle *dbh,const struct _DBCredentials *cred) {
-	if(!cred->host || strlen(cred->host) > (MAX_DB_HOST - 1) ) {
+	if(!cred->Host || strlen(cred->Host) > (MAX_DB_HOST - 1) ) {
 		LOG_ERROR("hostname too long");
 		return 0;
 	}
-	if(!cred->port) {
+	if(!cred->Port) {
 		LOG_ERROR("invalid port");
 		return 0;
 	}
-	if(!cred->name || strlen(cred->name) > (MAX_DB_NAME - 1) ) {
+	if(!cred->Name || strlen(cred->Name) > (MAX_DB_NAME - 1) ) {
 		LOG_ERROR("database name too long");
 		return 0;
 	}
-	if(!cred->user || strlen(cred->user) > (MAX_DB_USER - 1) ) {
+	if(!cred->User || strlen(cred->User) > (MAX_DB_USER - 1) ) {
 		LOG_ERROR("username too long");
 		return 0;
 	}
-	if(!cred->pass || strlen(cred->pass) > (MAX_DB_PASS - 1) ) {
+	if(!cred->Pass || strlen(cred->Pass) > (MAX_DB_PASS - 1) ) {
 		LOG_ERROR("password too long");
 		return 0;
 	}
 
-	dbh->cred.port = cred->port;
-	strncpy( dbh->cred.host, cred->host, MAX_DB_HOST );
-	strncpy( dbh->cred.name, cred->name, MAX_DB_NAME );
-	strncpy( dbh->cred.user, cred->user, MAX_DB_USER );
-	strncpy( dbh->cred.pass, cred->pass, MAX_DB_PASS );
+	dbh->cred.Port = cred->Port;
+	strncpy( dbh->cred.Host, cred->Host, MAX_DB_HOST );
+	strncpy( dbh->cred.Name, cred->Name, MAX_DB_NAME );
+	strncpy( dbh->cred.User, cred->User, MAX_DB_USER );
+	strncpy( dbh->cred.Pass, cred->Pass, MAX_DB_PASS );
 	return 0;
 }
 
@@ -86,7 +86,7 @@ DBHandle *create_dbhandle(const struct _DBConfig *conf) {
 	memset(dbh,0,sizeof(DBHandle));
 	dbh->config = *conf;
 
-	switch(dbh->config.type) {
+	switch(dbh->config.Type) {
 #ifndef _DISABLE_MYSQL
 	case DB_TYPE_MYSQL:
 		REGISTER_HOOKS(dbh,mysql);

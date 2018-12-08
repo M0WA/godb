@@ -46,15 +46,15 @@ int postgres_connect_hook(struct _DBHandle *dbh) {
 	}
 
 	char port[6] = {0};
-	sprintf(port,"%d",dbh->cred.port);
+	sprintf(port,"%d",dbh->cred.Port);
 	dbh->postgres.conn = PQsetdbLogin(
-			dbh->cred.host,
+			dbh->cred.Host,
 			port,
 			"", //options
 			"", //tty
-			dbh->cred.name,
-			dbh->cred.user,
-			dbh->cred.pass );
+			dbh->cred.Name,
+			dbh->cred.User,
+			dbh->cred.Pass );
 	if(!dbh->postgres.conn) {
 		LOG_WARN("postgres handle failed to initalize");
 		return 1;
@@ -143,7 +143,7 @@ POSTGRES_INSERT_PREPARED_EXIT:
 }
 
 int postgres_insert_hook(struct _DBHandle *dbh,struct _InsertStmt const*const s) {
-	if(dbh->config.postgres.preparedstatements) {
+	if(dbh->config.Postgres.Preparedstatements) {
 		return postgres_insert_prepared(dbh,s);
 	} else {
 		return postgres_insert_raw(dbh,s);
@@ -209,7 +209,7 @@ POSTGRES_DELETE_PREPARED_EXIT:
 }
 
 int postgres_delete_hook(struct _DBHandle *dbh,struct _DeleteStmt const*const s) {
-	if(dbh->config.postgres.preparedstatements) {
+	if(dbh->config.Postgres.Preparedstatements) {
 		return postgres_delete_prepared(dbh,s);
 	} else {
 		return postgres_delete_raw(dbh,s);
@@ -286,7 +286,7 @@ POSTGRES_SELECT_PREPARED_EXIT:
 }
 
 int postgres_select_hook(struct _DBHandle *dbh,struct _SelectStmt const*const s,struct _SelectResult *res) {
-	if(dbh->config.postgres.preparedstatements) {
+	if(dbh->config.Postgres.Preparedstatements) {
 		return postgres_select_prepared(dbh,s,res);
 	} else {
 		return postgres_select_raw(dbh,s,res);
@@ -382,7 +382,7 @@ POSTGRES_UPDATE_PREPARED_EXIT:
 }
 
 int postgres_update_hook(struct _DBHandle *dbh,struct _UpdateStmt const*const s) {
-	if(dbh->config.postgres.preparedstatements) {
+	if(dbh->config.Postgres.Preparedstatements) {
 		return postgres_update_prepared(dbh,s);
 	} else {
 		return postgres_update_raw(dbh,s);
@@ -443,7 +443,7 @@ POSTGRES_UPSERT_RAW_EXIT:
 }
 
 int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
-	if(dbh->config.postgres.preparedstatements) {
+	if(dbh->config.Postgres.Preparedstatements) {
 		return postgres_upsert_prepared(dbh,s);
 	} else {
 		return postgres_upsert_raw(dbh,s);

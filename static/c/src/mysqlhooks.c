@@ -53,21 +53,21 @@ int mysql_connect_hook(struct _DBHandle *dbh) {
 	}
 
 	my_bool one = 1;
-	if(dbh->config.mysql.autoreconnect) {
+	if(dbh->config.Mysql.Autoreconnect) {
 		mysql_options(dbh->mysql.conn,MYSQL_OPT_RECONNECT,(const char*)&one); }
-	if(dbh->config.mysql.compression) {
+	if(dbh->config.Mysql.Compression) {
 		mysql_options(dbh->mysql.conn,MYSQL_OPT_COMPRESS, (const char*)&one); }
 
 	dbh->mysql.conn = mysql_real_connect(
 			dbh->mysql.conn,
-			dbh->cred.host,
-			dbh->cred.user,
-			dbh->cred.pass,
-			dbh->cred.name,
-			dbh->cred.port,
+			dbh->cred.Host,
+			dbh->cred.User,
+			dbh->cred.Pass,
+			dbh->cred.Name,
+			dbh->cred.Port,
 			NULL,
 			CLIENT_MULTI_STATEMENTS |
-			(dbh->config.mysql.compression ? CLIENT_COMPRESS : 0) |
+			(dbh->config.Mysql.Compression ? CLIENT_COMPRESS : 0) |
 			CLIENT_IGNORE_SIGPIPE );
 
 	if(!dbh->mysql.conn) {
@@ -173,7 +173,7 @@ MYSQL_INSERT_PREPARED_EXIT:
 }
 
 int mysql_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_insert_prepared(dbh,s);
 	} else {
 		return mysql_insert_raw(dbh,s);
@@ -245,7 +245,7 @@ MYSQL_DELETE_PREPARED_EXIT:
 }
 
 int mysql_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_delete_prepared(dbh,s);
 	} else {
 		return mysql_delete_raw(dbh,s);
@@ -330,7 +330,7 @@ MYSQL_SELECT_PREPARED_EXIT:
 }
 
 int mysql_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,struct _SelectResult *res) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_select_prepared(dbh,s,res);
 	} else {
 		return mysql_select_raw(dbh,s,res);
@@ -412,7 +412,7 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 }
 
 int mysql_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_fetch_prepared(dbh,res);
 	} else {
 		return mysql_fetch_raw(dbh,res);
@@ -488,7 +488,7 @@ MYSQL_UPDATE_PREPARED_EXIT:
 }
 
 int mysql_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_update_prepared(dbh,s);
 	} else {
 		return mysql_update_raw(dbh,s);
@@ -577,7 +577,7 @@ MYSQL_UPSERT_PREPARED_EXIT:
 }
 
 int mysql_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
-	if(dbh->config.mysql.preparedstatements) {
+	if(dbh->config.Mysql.Preparedstatements) {
 		return mysql_upsert_prepared(dbh,s);
 	} else {
 		return mysql_upsert_raw(dbh,s);

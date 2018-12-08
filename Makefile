@@ -73,7 +73,7 @@ test_clib:
 test_golang:
 	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) )
-	( cd $(LIBS_DIR)/golang && GOPATH=$(PWD)/$(LIBS_DIR)/golang LD_LIBRARY_PATH=$(PWD)/$(LIBS_DIR)/c go test godb )
+	( cd $(LIBS_DIR)/golang && LIBS_DIR=$(PWD)/$(LIBS_DIR) VERBOSE=1 make test )
 	
 valgrind:
 	$(MAKE) preparetest

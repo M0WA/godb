@@ -28,7 +28,7 @@ int dbi_exitlib_hook() {
 
 int dbi_create_hook(struct _DBHandle *dbh) {
 	dbh->dbi.result = 0;
-	switch(dbh->config.dbi.type) {
+	switch(dbh->config.Dbi.Type) {
 #ifndef _DISABLE_MYSQL
 	case DBI_TYPE_MYSQL:
 		dbh->dbi.conn = dbi_conn_new_r("mysql", dbiinst);
@@ -55,10 +55,10 @@ int dbi_destroy_hook(struct _DBHandle* dbh) {
 }
 
 int dbi_connect_hook(struct _DBHandle *dbh) {
-    dbi_conn_set_option(dbh->dbi.conn, "host", dbh->cred.host /* dbh->config.port */);
-    dbi_conn_set_option(dbh->dbi.conn, "username", dbh->cred.user);
-    dbi_conn_set_option(dbh->dbi.conn, "password", dbh->cred.pass);
-    dbi_conn_set_option(dbh->dbi.conn, "dbname", dbh->cred.name);
+    dbi_conn_set_option(dbh->dbi.conn, "host", dbh->cred.Host /* dbh->config.port */);
+    dbi_conn_set_option(dbh->dbi.conn, "username", dbh->cred.User);
+    dbi_conn_set_option(dbh->dbi.conn, "password", dbh->cred.Pass);
+    dbi_conn_set_option(dbh->dbi.conn, "dbname", dbh->cred.Name);
     dbi_conn_set_option(dbh->dbi.conn, "encoding", "UTF-8");
 
     int connerr = dbi_conn_connect(dbh->dbi.conn);
@@ -83,7 +83,7 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	ValueSpecifier spec = values_generic_value_specifier;
-	if(dbh->config.dbi.type == DBI_TYPE_POSTGRES) {
+	if(dbh->config.Dbi.Type == DBI_TYPE_POSTGRES) {
 		spec = postgres_raw_value_specifier; }
 
 	if( insert_stmt_string(s,spec,&stmtbuf) ) {
