@@ -16,17 +16,17 @@ clean:
 
 lib:
 	GOPATH=$(LIBS_DIR)/golang \
-	CGO_LDFLAGS="-L${LIBS_DIR}/c/bin -lDB" \
+	CGO_LDFLAGS="-L${LIBS_DIR}/c/src/.libs -lDB" \
 	CGO_CFLAGS="-I${LIBS_DIR}/c/include" \
-	LD_LIBRARY_PATH=$(LIBS_DIR)/c/bin \
+	LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs \
 	$(GO) build $(BUILDPARAM) godb
 
 test:
 	VERBOSE=1 $(MAKE) lib
 	GOPATH=$(LIBS_DIR)/golang \
-	CGO_LDFLAGS="-L${LIBS_DIR}/c/bin -lDB" \
+	CGO_LDFLAGS="-L${LIBS_DIR}/c/src/.libs -lDB" \
 	CGO_CFLAGS="-I${LIBS_DIR}/c/include" \
-	LD_LIBRARY_PATH=$(LIBS_DIR)/c/bin \
+	LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs \
 	$(GO) test godb
 	$(MAKE) clean
 

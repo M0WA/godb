@@ -1,14 +1,15 @@
-copylib:
-	if [ ! -d $(LIBS_DIR) ]; then mkdir -p $(LIBS_DIR); fi
-	cp -r static/* $(LIBS_DIR)
-	cp -r $(GENERATED_DIR)/* $(LIBS_DIR)
+copy_libs:
+	$(MAKE) copy_clib
+	$(MAKE) copy_golib
 
-lib:
-	$(MAKE) copylib
-	( cd $(LIBS_DIR)/c && autoreconf -i && aclocal && automake && ./configure && make )
-#	( cd $(LIBS_DIR)/c && $(MAKE) )
+libs:
+	$(MAKE) copy_libs
+	$(MAKE) clib
+	$(MAKE) golib
 	
-cleanlibs:
-	rm -rf $(LIBS_DIR) >/dev/null 2>&1
+clean_libs:
+	$(MAKE) clean_clib
+	$(MAKE) clean_golib
+	if [ -d $(LIBS_DIR) ]; then $(RM) -rf $(LIBS_DIR); fi
 
-.PHONY: cleanlibs lib copylib
+.PHONY: libs copy_libs clean_libs

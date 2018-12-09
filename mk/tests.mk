@@ -1,43 +1,31 @@
-preparetest:
-	$(MAKE) clean
-	$(MAKE) cleanlibs
-	$(MAKE) generator
+generate_testlib:
 	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
-	$(MAKE) copylib
+	$(MAKE) copy_libs
 	
 test:
-	$(MAKE) test_generator
-	$(MAKE) test_clib
-	$(MAKE) test_golang
 	$(MAKE) clean
-
-test_generator:
-	( cd src && $(MAKE) test )
-	
-test_golang:
-	$(MAKE) preparetest
-	( cd $(LIBS_DIR)/c && $(MAKE) )
-	( cd $(LIBS_DIR)/golang && LIBS_DIR=$(PWD)/$(LIBS_DIR) VERBOSE=1 make test )
-
-test_clib:
-	$(MAKE) preparetest
-	( cd $(LIBS_DIR)/c && $(MAKE) test )
-
+	$(MAKE) generator
+	$(MAKE) test_generator
+	$(MAKE) generate_testlib
+	$(MAKE) test_clib
+	$(MAKE) golib
+	$(MAKE) test_golib
+	$(MAKE) clean
 
 # debugging/verbose testing for c lib
 valgrind:
-	$(MAKE) preparetest
+	$(MAKE) generate_testlib
 	( cd $(LIBS_DIR)/c && $(MAKE) valgrind )
 	$(MAKE) clean
 	
 gprof:
-	$(MAKE) preparetest
+	$(MAKE) generate_testlib
 	( cd $(LIBS_DIR)/c && $(MAKE) gprof )
 	$(MAKE) clean
 	
 mtrace:
-	$(MAKE) preparetest
+	$(MAKE) generate_testlib
 	( cd $(LIBS_DIR)/c && $(MAKE) mtrace )
 	$(MAKE) clean
 
-.PHONY: preparetest test valgrind gprof mtrace test_generator test_clib test_golang
+.PHONY: generate_testlib test valgrind gprof mtrace
