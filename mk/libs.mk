@@ -5,7 +5,8 @@ copylib:
 
 lib:
 	$(MAKE) copylib
-	( cd $(LIBS_DIR)/c && $(MAKE) )
+	( cd $(LIBS_DIR)/c && autoreconf -i && aclocal && automake && ./configure && make )
+#	( cd $(LIBS_DIR)/c && $(MAKE) )
 	
 cleanlibs:
 	rm -rf $(LIBS_DIR) >/dev/null 2>&1
