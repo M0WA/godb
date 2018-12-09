@@ -1,7 +1,5 @@
-.PHONY: cleanlibs lib copylib
-
 copylib:
-	-mkdir -p $(LIBS_DIR)
+	if [ ! -d $(LIBS_DIR) ]; then mkdir -p $(LIBS_DIR); fi
 	cp -r static/* $(LIBS_DIR)
 	cp -r $(GENERATED_DIR)/* $(LIBS_DIR)
 
@@ -11,3 +9,5 @@ lib:
 	
 cleanlibs:
 	rm -rf $(LIBS_DIR) >/dev/null 2>&1
+
+.PHONY: cleanlibs lib copylib

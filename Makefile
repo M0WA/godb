@@ -4,9 +4,6 @@ TMPL_DIR=tmpl
 GENERATED_DIR=generated
 LIBS_DIR=libs
 
-
-.PHONY: all clean
-
 default_target: all
 
 all:
@@ -14,9 +11,11 @@ all:
 	$(MAKE) lib
 
 clean:
-	rm -rf $(GENERATED_DIR) >/dev/null 2>&1
 	$(MAKE) cleanlibs
+	$(MAKE) cleangenerator
 
-include generator.mk
-include libs.mk
-include tests.mk
+include mk/generator.mk
+include mk/libs.mk
+include mk/tests.mk
+
+.PHONY: all clean

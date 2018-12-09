@@ -1,5 +1,3 @@
-.PHONY: preparetest test valgrind gprof mtrace test_generator test_clib test_golang
-
 preparetest:
 	$(MAKE) clean
 	$(MAKE) cleanlibs
@@ -41,3 +39,5 @@ mtrace:
 	$(MAKE) preparetest
 	( cd $(LIBS_DIR)/c && $(MAKE) mtrace )
 	$(MAKE) clean
+
+.PHONY: preparetest test valgrind gprof mtrace test_generator test_clib test_golang

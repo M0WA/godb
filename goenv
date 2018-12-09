@@ -6,5 +6,5 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 export GOPATH=""
 export GOPATH="$(go env GOPATH):${DIR}"
 
-export CGO_LDFLAGS="-L${DIR}/libs/c -lDB"
+export CGO_LDFLAGS="-L${DIR}/libs/c/bin -lDB"
 export CGO_CFLAGS="-I${DIR}/libs/c/include"

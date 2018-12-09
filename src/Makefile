@@ -2,12 +2,10 @@ ifeq ($(BIN_DIR),"")
 BIN_DIR=../bin
 endif
 
-.PHONY: all clean test
-
 default_target: all
 
 all:
-	-mkdir $(BIN_DIR)
+	if [ ! -d $(BIN_DIR) ]; then mkdir $(BIN_DIR); fi
 	go get gopkg.in/yaml.v1
 	go build generator/layout
 	go build generator/dml
@@ -19,10 +17,13 @@ clean:
 	go clean generator/dml
 	go clean generator/ddl
 	go clean generator
-	rm $(BIN_DIR)/generator
+	if [ -f $(BIN_DIR) ]; then $(RM) $(BIN_DIR)/generator; fi
 
 test:
+	echo $(CGO_CFLAGS)
 	go test generator/layout
 	go test generator/dml
 	go test generator/ddl
 	go test generator
+
+.PHONY: all clean test

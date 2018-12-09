@@ -1,3 +1,18 @@
+TARGET      := libDB
+
+SRCDIR      := src
+INCDIR      := include
+BUILDDIR    := obj
+TARGETDIR   := bin
+SRCEXT      := c
+DEPEXT      := d
+OBJEXT      := o
+
+SOURCES     := $(wildcard $(SRCDIR)/*.c)
+OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
+
+include settings.mk
+
 ifeq ($(DISABLE_POSTGRES),1)
 ifeq ($(DISABLE_MYSQL),1)
 ifeq ($(DISABLE_DBI),1)
@@ -6,130 +21,44 @@ endif
 endif
 endif
 
-LIBNAME=libDB
-OBJPATH=obj
-INCLUDES=-I ./include
+include tests.mk
 
-GDB=
+all: directories
+	$(MAKE) $(TARGET).so
+	$(MAKE) $(TARGET).a
 
-TESTCFLAGS=
-ifeq ($(TEST),1)
-TESTCFLAGS=-D_DB_TEST_VERSION
-endif
+remake: cleaner all
 
-ifeq ($(DISABLE_MYSQL),1)
-MYSQLCFLAGS=-D_DISABLE_MYSQL
-MYSQLLDFLAGS=
-ENABLE_MYSQLHELPER = 0
-else
-MYSQLCFLAGS=
-MYSQLLDFLAGS=-lmysqlclient
-ENABLE_MYSQLHELPER = 1
-endif
-
-ifeq ($(DISABLE_POSTGRES),1)
-POSTGRESCFLAGS=-D_DISABLE_POSTGRES
-POSTGRESLDFLAGS=
-ENABLE_POSTGRESHELPER = 0
-else
-POSTGRESCFLAGS=
-POSTGRESLDFLAGS=-lpq
-ENABLE_POSTGRESHELPER = 1
-endif
-
-ifeq ($(DISABLE_DBI),1)
-DBICFLAGS=-D_DISABLE_DBI
-DBILDFLAGS=
-else
-DBICFLAGS=
-DBILDFLAGS=-ldbi
-ENABLE_POSTGRESHELPER = 1
-ENABLE_MYSQLHELPER = 1
-endif
-
-POSTGRESHELPERCFLAGS=
-ifeq ($(ENABLE_POSTGRESHELPER),1)
-POSTGRESHELPERCFLAGS=-D_ENABLE_POSTGRESHELPER
-endif
-
-MYSQLHELPERCFLAGS=
-ifeq ($(ENABLE_MYSQLHELPER),1)
-MYSQLHELPERCFLAGS=-D_ENABLE_MYSQLHELPER
-endif
-
-HDRS = $(wildcard */*.h)
-SRCS = $(wildcard */*.c)
-OBJS = $(SRCS:.c=.o)
-DEPS = $(OBJS:.o=.d)
-
-ifeq ($(DEBUG),1)
-GDB=gdb
-BUILDTYPEFLAGS=-ggdb -O0 -D_GODB_DEBUG
-LIBNAME:=$(LIBNAME)Debug
-else
-BUILDTYPEFLAGS=-g -O2 -Werror
-GDB=
-endif
-
-GPROFCFLAGS=
-ifeq ($(GPROF),1)
-GPROFCFLAGS=-pg
-endif
-
-LDFLAGS=$(MYSQLLDFLAGS) $(POSTGRESLDFLAGS) $(DBILDFLAGS)
-CFLAGS =-Wall -fPIC -D_REENTRANT -pthread -D_XOPEN_SOURCE -D_GNU_SOURCE \
-$(BUILDTYPEFLAGS) $(GPROFCFLAGS) $(INCLUDES) $(TESTCFLAGS) \
-$(MYSQLCFLAGS) $(POSTGRESCFLAGS) $(DBICFLAGS) \
-$(MYSQLHELPERCFLAGS) $(POSTGRESHELPERCFLAGS)
-
-.PHONY: all clean test testbin testrun valgrind gprof mtrace
-
-default_target: all
-all: $(LIBNAME).so
+directories:
+	if [ ! -d $(TARGETDIR) ]; then mkdir -p $(TARGETDIR); fi
+	if [ ! -d $(TARGETDIR) ]; then mkdir -p $(BUILDDIR); fi
 
 clean:
-	@find . -name "*.o"  -delete
-	@find . -name "*.d"  -delete
-	@find . -name "*.a"  -delete
-	@find . -name "*.so" -delete
-	-rm gmon.out
+	@$(RM) -rf $(BUILDDIR)
 
-test:
-	TEST=1 $(MAKE) testbin
-	$(MAKE) testrun
+cleaner: clean
+	@$(RM) -rf $(TARGETDIR)
 
-testbin:
-	$(MAKE) clean
-	TEST=1 $(MAKE) all
-	$(CC) $(CFLAGS) -D_DB_TEST_VERSION -o test $(OBJS) $(LDFLAGS)
 
-testrun:
-	$(GDB) ./test
+#Pull in dependency info for *existing* .o files
+-include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
 
-valgrind:
-	DEBUG=1 $(MAKE) testbin
-	valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all -v ./test
+#Link shared object
+$(TARGET).so: $(OBJECTS)
+	$(CC) -shared -o $(TARGETDIR)/$(TARGET).so $^ $(LIB)
 
-gprof:
-	GPROF=1 $(MAKE) testbin
-	./test
-	gprof test | less
-	rm gmon.out
+#Link static lib
+$(TARGET).a: $(OBJECTS)
+	ar rs $(TARGETDIR)/$(TARGET).a $^
 
-mtrace:
-	$(MAKE) testbin
-	MALLOC_TRACE=mtrace.log ./test
-	less mtrace.log
-	rm mtrace.log
+#Compile
+$(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	@$(CC) $(CFLAGS) $(INCDEP) -MM $(SRCDIR)/$*.$(SRCEXT) > $(BUILDDIR)/$*.$(DEPEXT)
+	@cp -f $(BUILDDIR)/$*.$(DEPEXT) $(BUILDDIR)/$*.$(DEPEXT).tmp
+	@sed -e 's|.*:|$(BUILDDIR)/$*.$(OBJEXT):|' < $(BUILDDIR)/$*.$(DEPEXT).tmp > $(BUILDDIR)/$*.$(DEPEXT)
+	@sed -e 's/.*://' -e 's/\\$$//' < $(BUILDDIR)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(BUILDDIR)/$*.$(DEPEXT)
+	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
 
-$(LIBNAME).so: $(patsubst %.c, %.o, $(OBJS))
-	$(CC) $(CFLAGS) -shared -o $(LIBNAME).so $(OBJS) $(LDFLAGS)
-
-$(LIBNAME).a: $(patsubst %.c, %.o, $(OBJS))
-	ar rs $(MAIN).a $^
-
--include $(DEPS)
-
-.c.o:
-	$(CC) $(CFLAGS) -MP -MMD -c $^ -o $@
-
+.PHONY: all remake clean cleaner
