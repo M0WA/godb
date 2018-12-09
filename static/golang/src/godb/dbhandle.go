@@ -19,7 +19,7 @@ type DBHandle struct {
 	creds *C.DBCredentials
 }
 
-func New(conf DBConfig)(DBHandler,error) {
+func NewDBHandle(conf DBConfig)(DBHandler,error) {
 	dbh := new(DBHandle)
 	dbh.conf = conf.ToNative()
 	if dbh.dbh = C.create_dbhandle(dbh.conf); dbh.dbh == nil {
