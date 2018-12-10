@@ -9,8 +9,8 @@ $(LIBS_DIR)/c/configure:
 
 copy_clib:
 	if [ ! -d $(LIBS_DIR)/c ]; then mkdir -p $(LIBS_DIR)/c; fi
-	cp -r static/c/* $(LIBS_DIR)/c/
-	cp -r $(GENERATED_DIR)/c/* $(LIBS_DIR)/c/
+	rsync -crq static/c/* $(LIBS_DIR)/c/
+	rsync -crq $(GENERATED_DIR)/c/* $(LIBS_DIR)/c/
 
 clean_clib:
 	if [ -d $(LIBS_DIR)/c ]; then $(RM) -rf $(LIBS_DIR)/c; fi
