@@ -4,7 +4,7 @@ golib:
 copy_golib:
 	if [ ! -d $(LIBS_DIR)/golang ]; then mkdir -p $(LIBS_DIR)/golang; fi
 	cp -r static/golang/* $(LIBS_DIR)/golang/
-#	cp -r $(GENERATED_DIR)/golang/* $(LIBS_DIR)/golang/
+	cp -r $(GENERATED_DIR)/golang/* $(LIBS_DIR)/golang/
 
 clean_golib:
 	if [ -d $(LIBS_DIR)/golang ]; then $(RM) -rf $(LIBS_DIR)/golang; fi

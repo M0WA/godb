@@ -28,6 +28,5 @@ test:
 	CGO_CFLAGS="-I${LIBS_DIR}/c/include" \
 	LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs \
 	$(GO) test godb
-	$(MAKE) clean
 
 .PHONY: all lib test clean

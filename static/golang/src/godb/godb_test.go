@@ -14,7 +14,7 @@ func getCredentials()(DBCredentials) {
 	return creds
 }
 
-func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandle) {
+func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandler) {
 	dbh, err := NewDBHandle(conf)
 	if err != nil {
 		t.Fatal(err.Error())
