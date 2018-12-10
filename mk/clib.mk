@@ -1,3 +1,5 @@
+# this file contains all targets concerning the c-library of the GoDB framework
+
 clib:
 	$(MAKE) $(LIBS_DIR)/c/configure
 	( cd $(LIBS_DIR)/c && ./configure && $(MAKE) )

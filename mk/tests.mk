@@ -1,3 +1,5 @@
+# this file contains wrapper and helper targets for tests of the GoDB framework
+
 generate_testlib:
 	bin/./generator -l | bin/./generator -o $(GENERATED_DIR) -t $(TMPL_DIR)
 	$(MAKE) copy_libs

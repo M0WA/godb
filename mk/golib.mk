@@ -1,3 +1,5 @@
+# this file contains all targets concerning the golang-library of the GoDB framework
+
 golib:
 #	$(MAKE) copy_golib
 

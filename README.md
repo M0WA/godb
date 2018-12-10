@@ -18,6 +18,7 @@ For more information visit the GoDB [homepage](https://go-db.net) and the offica
 4. [API](#API)
     1. [YAML Format](#YamlFormat)
     2. [C](#CLib)
+    3. [Golang](#Golang)
 5. [FAQ](#FAQ)
     1. [I found a bug, missing a feature or have a patch](#bugs)
     2. [Missing brand-specific features](#brandfeatures)
@@ -103,7 +104,7 @@ reset the example database manually (without user initialization):
     # for postgresql databases
     cat generated/sql/postgre/* | sudo -u postgres psql -U postgres
 
-test library:
+run all tests:
 
 	make test
 
@@ -378,6 +379,8 @@ delete rows from exampledb.exampletable including where clause:
 		LOG_FATAL(1,"exampledb.exampletable: error while delete"); }
 	
 	DESTROY_STMT(&stmt);
+
+### Golang <a name="Golang"></a>
 
 ## FAQ <a name="FAQ"></a>
 

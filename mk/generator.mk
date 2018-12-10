@@ -1,3 +1,5 @@
+# this file contains all targets concerning the code generator of the GoDB framework
+
 generator:
 	( cd src && BIN_DIR=$(PWD)/bin $(MAKE) )
 
