@@ -16,10 +16,67 @@ type golangTmplData struct {
 	ll layout.Layouter
 }
 
+func (g *golangTmplData)Imports()string {
+	import_time := false; 
+	for _,db := range g.L.Databases {
+		for _,tb := range db.Tables {
+			for _,col := range tb.Columns {
+				if col.DataType == "datetime" {
+					import_time = true
+				}
+			}
+		}
+	}
+	
+	s := "import ( \n"
+	if(import_time) {
+		s += "\t\"time\"\n"
+	}
+	s += ")\n"
+	
+	return s
+}
+
+func (*golangTmplData)DataType(c *layout.Column)(string) {
+	d, err := layout.ParseDataType(c.DataType)
+	if err != nil {
+		return "invalid"
+	}
+	switch d {
+		case layout.DATETIME:
+			return "time.Time" 
+		case layout.INT:
+			unsigned := ""
+			if c.Unsigned {
+				unsigned = "u" 
+			}
+			if c.Size == 16 {
+				return unsigned + "int16"
+			} else if c.Size == 32 || c.Size == 0 {
+				return unsigned + "int32"
+			} else if c.Size == 64 {
+				return unsigned + "int64"
+			} else {
+				return "invalid"
+			}
+		case layout.FLOAT:
+			return "float64 "
+		case layout.STRING:
+			return "string"
+		default:
+			return "invalid"
+	}
+}
+
+func (g *golangTmplData)DataVar(c *layout.Column, varname string)(string) {
+	return varname + " " + g.DataType(c)
+}
+
 func (*golangGenerator)processTemplate(t *golangTmplData,out string,name string,tmpl string)error {
 	var err error
 	h := template.New(name + ".tmpl")
     h.Funcs(template.FuncMap{"ToUpper": strings.ToUpper})
+    h.Funcs(template.FuncMap{"ToLower": strings.ToLower})
     
 	if h,err = h.ParseFiles(tmpl + "/" + name + ".tmpl"); err != nil {
 		return err

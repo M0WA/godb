@@ -12,6 +12,6 @@ clean_golib:
 	if [ -d $(LIBS_DIR)/golang ]; then $(RM) -rf $(LIBS_DIR)/golang; fi
 
 test_golib:
-	( cd $(LIBS_DIR)/golang && LIBS_DIR=$(PWD)/$(LIBS_DIR) VERBOSE=1 make test )
+	( cd $(LIBS_DIR)/golang && LIBS_DIR=$(PWD)/$(LIBS_DIR) make test )
 
 .PHONY: golib copy_golib clean_golib test_golang
