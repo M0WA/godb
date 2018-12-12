@@ -382,6 +382,48 @@ delete rows from exampledb.exampletable including where clause:
 
 ### Golang <a name="Golang"></a>
 
+create database connection
+
+	func getCredentials()(DBCredentials) {
+		creds := NewDBCredentials()
+		creds.SetHost("localhost")
+		creds.SetPort(3306)
+		creds.SetName("complexdb1")
+		creds.SetUser("myuser")
+		creds.SetPass("mypass")
+		return creds
+	}
+	
+	func getConfig()(DBConfig) {	
+		conf,err := NewDBConf(MYSQL)
+		if err != nil {
+			return nil
+		}
+		return conf
+	}
+	
+	func getConnection()(DBHandle) {
+		dbh, err := NewDBHandle(getConfig())
+		if err != nil {
+			return nil
+		}
+		if err = dbh.Connect(getCredentials()); err != nil {
+			return nil
+		}
+		return dbh
+	}
+
+insert rows into exampledb.exampletable:
+
+	tbl := New_exampledb_exampletable()
+	tbl.Set_teststr("test")
+	tbl.Set_testfloat(11.12)
+	tbl.Set_testint(10)
+	tbl.Set_testdate(time.Now())
+	if err := Insert_exampledb_exampletable(dbh,tbl); err != nil {
+		return nil
+	}
+
 ## FAQ <a name="FAQ"></a>
 
 ### I found a bug, missing a feature or have a patch <a name="bugs"></a>
