@@ -100,7 +100,7 @@ func (g *golangGenerator)Generate(l layout.Layouter,out string, tmpl string)erro
 	t.L = l.Layout()
 	t.ll = l
 	
-	if err := g.processTemplate(t,cd,"tableinterfaces.go",tmpl + "/golang/src/godb"); err != nil {
+	if err := g.processTemplate(t,cd,"tables.go",tmpl + "/golang/src/godb"); err != nil {
 		return err
 	}
 	return nil

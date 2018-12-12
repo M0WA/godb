@@ -1,16 +1,22 @@
 package godb
 
+/* ==============================================================
+   this is generated code, changes will be overwritten
+   ============================================================== */
+
 {{ $td := . }}{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
-/*  ==============================================================
-	table {{ $db.Name }}.{{ $tbl.Name }}
-    ============================================================== */
+/* ==============================================================
+   table {{ $db.Name }}.{{ $tbl.Name }}
+   ============================================================== */
 type {{ $db.Name }}_{{ $tbl.Name }} interface { {{ range $col := $tbl.Columns }}
 	Get_{{ $col.Name }}()*{{ $td.DataType $col }}
-	Set_{{ $col.Name }}(*{{ $td.DataType $col }}){{ end }}{{/* columns */}}
+	Set_{{ $col.Name }}(*{{ $td.DataType $col }})
+	IsSet_{{ $col.Name }}()bool{{ end }}{{/* columns */}}
 }
 
 type {{ $db.Name }}_{{ $tbl.Name }}_impl struct { {{ range $col := $tbl.Columns }}
-	{{ ToLower $col.Name }} *{{ $td.DataType $col }}{{ end }}{{/* columns */}}
+	{{ ToLower $col.Name }} *{{ $td.DataType $col }}
+	isSet_{{ $col.Name }} bool{{ end }}{{/* columns */}}
 }
 
 func New_{{ $db.Name }}_{{ $tbl.Name }}(){{ $db.Name }}_{{ $tbl.Name }} {
@@ -26,5 +32,9 @@ func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(val *{{ $td.Dat
 		t.{{ ToLower $col.Name }} = new({{ $td.DataType $col }})
 	}
 	*(t.{{ ToLower $col.Name }}) = *val
+}
+
+func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)IsSet_{{ $col.Name }}()bool {
+	return t.isSet_{{ $col.Name }}
 }
 {{ end }}{{/* columns */}}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
