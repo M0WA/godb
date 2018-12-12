@@ -4,37 +4,103 @@ package godb
    this is generated code, changes will be overwritten
    ============================================================== */
 
+// #include <db.h>
+// #include <table.h>
+// #include <tables.h>
+// #include <statements.h>
+// #include <time.h>
+import "C"
+
+import (
+	"errors"
+)
 {{ $td := . }}{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ==============================================================
    table {{ $db.Name }}.{{ $tbl.Name }}
    ============================================================== */
+   
+/*
+	{{ $db.Name }}_{{ $tbl.Name }} is an interface to access data/columns of {{ $db.Name }}.{{ $tbl.Name }} table
+*/
 type {{ $db.Name }}_{{ $tbl.Name }} interface { {{ range $col := $tbl.Columns }}
 	Get_{{ $col.Name }}()*{{ $td.DataType $col }}
-	Set_{{ $col.Name }}(*{{ $td.DataType $col }})
-	IsSet_{{ $col.Name }}()bool{{ end }}{{/* columns */}}
+	Set_{{ $col.Name }}({{ $td.DataType $col }}){{ end }}{{/* columns */}}
+	ToNative()*C.{{ $db.Name }}_{{ $tbl.Name }}
+	ToNativeDBTable()*C.DBTable
 }
 
-type {{ $db.Name }}_{{ $tbl.Name }}_impl struct { {{ range $col := $tbl.Columns }}
-	{{ ToLower $col.Name }} *{{ $td.DataType $col }}
-	isSet_{{ $col.Name }} bool{{ end }}{{/* columns */}}
+type {{ $db.Name }}_{{ $tbl.Name }}_impl struct {
+	tbl *C.{{ $db.Name }}_{{ $tbl.Name }}
 }
 
+/*
+	New_{{ $db.Name }}_{{ $tbl.Name }} creates a new instance of a {{ $db.Name }}_{{ $tbl.Name }} interface
+*/
 func New_{{ $db.Name }}_{{ $tbl.Name }}(){{ $db.Name }}_{{ $tbl.Name }} {
-	return new({{ $db.Name }}_{{ $tbl.Name }}_impl)
+	t := new({{ $db.Name }}_{{ $tbl.Name }}_impl)
+	t.tbl = new(C.{{ $db.Name }}_{{ $tbl.Name }})
+	C._create_{{ $db.Name }}_{{ $tbl.Name }}(t.tbl)
+	return t
+}
+
+/*
+	Insert_{{ $db.Name }}_{{ $tbl.Name }} inserts one or more rows into {{ $db.Name }}.{{ $tbl.Name }}
+*/
+func Insert_{{ $db.Name }}_{{ $tbl.Name }}(dbh DBHandle, row {{ $db.Name }}_{{ $tbl.Name }})error {
+	dbtbl := row.ToNativeDBTable()
+	if C.insert_dbtable(dbh.ToNative(),&dbtbl,1) != 0 {
+		return errors.New("error while insert")
+	}
+	return nil
+}
+
+func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)ToNative()*C.{{ $db.Name }}_{{ $tbl.Name }} {
+	return t.tbl
+}
+
+func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)ToNativeDBTable()*C.DBTable {
+	return C.get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(t.ToNative())
 }
 {{ range $col := $tbl.Columns }}
+/*
+	Get_{{ $col.Name }} implements {{ $db.Name }}_{{ $tbl.Name }} interface
+*/
 func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Get_{{ $col.Name }}()*{{ $td.DataType $col }} {
-	return t.{{ ToLower $col.Name }}
-}
-
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(val *{{ $td.DataType $col }}){
-	if t.{{ ToLower $col.Name }} == nil {
-		t.{{ ToLower $col.Name }} = new({{ $td.DataType $col }})
+	v := C.{{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(t.ToNative())
+	if v == nil {
+		return nil
 	}
-	*(t.{{ ToLower $col.Name }}) = *val
+{{ if eq $col.DataType "string" }}
+	str := C.GoString(v)
+	return &str
+{{ else if eq $col.DataType "datetime" }}
+	timestamp := C.mktime(v)
+	tm := time.Unix(int64(timestamp), 0)
+	return &tm
+{{ else if eq $col.DataType "float" }}
+	f := {{ $td.DataType $col }}(*v)
+	return &f
+{{ else if eq $col.DataType "int" }}
+	i := {{ $td.DataType $col }}(*v)
+	return &i
+{{ end }}
 }
 
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)IsSet_{{ $col.Name }}()bool {
-	return t.isSet_{{ $col.Name }}
+/*
+	Set_{{ $col.Name }} implements {{ $db.Name }}_{{ $tbl.Name }} interface
+*/
+func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(v {{ $td.DataType $col }}){
+{{ if eq $col.DataType "datetime" }}
+	tmp := C.long(v.Unix())
+	tm := new(C.struct_tm)
+	tm = C.gmtime_r(&tmp, tm)
+	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tm)
+{{ else if eq $col.DataType "string" }}
+	tmp := C.CString(v)
+	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tmp)
+{{ else }}
+	tmp := {{ $td.CGoType $col }}(v)
+	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), &tmp)
+{{ end }}
 }
 {{ end }}{{/* columns */}}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

@@ -25,6 +25,9 @@ type DBConfigImpl struct {
 	native C.DBConfig
 }
 
+/*
+	NewDBConf creates a DBConfig interface for a given type dbtype
+*/
 func NewDBConf(dbtype DBType)(DBConfig,error) {
 	c := new(DBConfigImpl)
 	switch dbtype {
@@ -40,6 +43,9 @@ func NewDBConf(dbtype DBType)(DBConfig,error) {
 	return c,nil
 }
 
+/*
+	ToNative implements DBConfig interface
+*/
 func (c *DBConfigImpl)ToNative()(*C.DBConfig) {
 	return &c.native
 }

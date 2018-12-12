@@ -75,7 +75,7 @@ void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl)
 }
 
 // {{ $db.Name }}.{{ $tbl.Name }}: initialize upsert statement
-void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt* s) {
+void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt *s) {
 	memset(s,0,sizeof(struct _UpsertStmt));
 	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
 	s->ncols = {{ len $tbl.Columns }}; {{ if gt $nuniq 0 }}
@@ -87,15 +87,35 @@ void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt* s) {
 }
 
 // {{ $db.Name }}.{{ $tbl.Name }}: initialize delete statement
-void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt* s) {
+void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt *s) {
 	memset(s,0,sizeof(struct _DeleteStmt));
 	s->def = &def_{{ $db.Name }}_{{ $tbl.Name }};
 }
 
 // {{ $db.Name }}.{{ $tbl.Name }}: initialize select statement
-void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt* s) {
+void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt *s) {
 	memset(s,0,sizeof(struct _SelectStmt));
 	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
 	s->ncols = {{ len $tbl.Columns }};
 }
+
+const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
+	return &(t->dbtbl);
+}
+{{ range $col := $tbl.Columns }}
+void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t, const {{ $td.PtrVar $col $col.Name }}) {
+	if( !{{ $col.Name }} ) {
+		SET_COLUMN_NULL(*t,{{ $col.Name }});
+	} else { {{ if eq $col.DataType "string" }}
+		SET_COLUMN_STRING(*t,{{ $col.Name }},{{ $col.Name }});{{ else if eq $col.DataType "datetime" }}
+		SET_COLUMN_TM(*t,{{ $col.Name }},*{{ $col.Name }});{{ else if eq $col.DataType "float" }}
+		SET_COLUMN(*t,{{ $col.Name }},*{{ $col.Name }});{{ else if eq $col.DataType "int" }}
+		SET_COLUMN(*t,{{ $col.Name }},*{{ $col.Name }});{{ end }}
+	}
+}
+
+const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
+	return t->tbl.colptr.{{ $col.Name }};
+}
+{{ end }}{{/* columns */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

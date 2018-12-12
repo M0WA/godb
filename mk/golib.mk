@@ -9,7 +9,7 @@ copy_golib:
 	rsync -crq $(GENERATED_DIR)/golang/* $(LIBS_DIR)/golang/
 
 clean_golib:
-	if [ -d $(LIBS_DIR)/golang ]; then $(RM) -rf $(LIBS_DIR)/golang; fi
+	if [ -d $(LIBS_DIR)/golang ]; then $(RM) -r $(LIBS_DIR)/golang; fi
 
 test_golib:
 	( cd $(LIBS_DIR)/golang && LIBS_DIR=$(PWD)/$(LIBS_DIR) $(MAKE) test )

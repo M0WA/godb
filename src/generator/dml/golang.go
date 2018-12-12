@@ -37,6 +37,37 @@ func (g *golangTmplData)Imports()string {
 	return s
 }
 
+func (*golangTmplData)CGoType(c *layout.Column)(string) {
+	d, err := layout.ParseDataType(c.DataType)
+	if err != nil {
+		return "invalid"
+	}
+	switch d {
+		case layout.DATETIME:
+			return "time.Time" 
+		case layout.INT:
+			unsigned := ""
+			if c.Unsigned {
+				unsigned = "u" 
+			}
+			if c.Size == 16 {
+				return "C." + unsigned + "short"
+			} else if c.Size == 32 || c.Size == 0 {
+				return "C." + unsigned + "long"
+			} else if c.Size == 64 {
+				return "C." + unsigned + "longlong"
+			} else {
+				return "invalid"
+			}
+		case layout.FLOAT:
+			return "C.double "
+		case layout.STRING:
+			return "C.CString"
+		default:
+			return "invalid"
+	}
+}
+
 func (*golangTmplData)DataType(c *layout.Column)(string) {
 	d, err := layout.ParseDataType(c.DataType)
 	if err != nil {
@@ -60,7 +91,7 @@ func (*golangTmplData)DataType(c *layout.Column)(string) {
 				return "invalid"
 			}
 		case layout.FLOAT:
-			return "float64 "
+			return "float64"
 		case layout.STRING:
 			return "string"
 		default:

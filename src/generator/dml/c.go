@@ -48,35 +48,40 @@ func (*cTmplData)DataVar(c *layout.Column, varname string)(string) {
 	}
 }
 
-func (*cTmplData)PtrVar(c *layout.Column, varname string)(string) {
+func (*cTmplData)PtrType(c *layout.Column)(string) {
 	d, err := layout.ParseDataType(c.DataType)
 	if err != nil {
 		return "invalid"
 	}
 	switch d {
 		case layout.DATETIME:
-			return "struct tm* " + varname 
+			return "struct tm*"
 		case layout.INT:
 			unsigned := ""
 			if c.Unsigned {
-				unsigned = "unsigned " 
+				unsigned = "unsigned "
 			}
 			if c.Size == 16 {
-				return unsigned + "short *" + varname
+				return unsigned + "short *"
 			} else if c.Size == 32 || c.Size == 0 {
-				return unsigned + "long *" + varname
+				return unsigned + "long *"
 			} else if c.Size == 64 {
-				return unsigned + "long long *" + varname
+				return unsigned + "long long *"
 			} else {
 				return "invalid"
 			}
 		case layout.FLOAT:
-			return "double* " + varname
+			return "double* "
 		case layout.STRING:
-			return "const char* " + varname;
+			return "char* "
 		default:
 			return "invalid"
 	}
+}
+
+func (t *cTmplData)PtrVar(c *layout.Column, varname string)(string) {
+	typestr := t.PtrType(c)
+	return typestr + " " + varname
 }
 
 func (td *cTmplData)SizeOf(c *layout.Column)(string) {

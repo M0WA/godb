@@ -13,7 +13,7 @@ copy_clib:
 	rsync -crq $(GENERATED_DIR)/c/* $(LIBS_DIR)/c/
 
 clean_clib:
-	if [ -d $(LIBS_DIR)/c ]; then $(RM) -rf $(LIBS_DIR)/c; fi
+	if [ -d $(LIBS_DIR)/c ]; then $(RM) -r $(LIBS_DIR)/c; fi
 
 testbin_clib:
 	$(MAKE) $(LIBS_DIR)/c/configure

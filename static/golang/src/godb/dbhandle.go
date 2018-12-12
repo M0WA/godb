@@ -8,19 +8,31 @@ import (
 	"errors"
 )
 
-type DBHandler interface {
-	Connect(DBCredentials)(error)
-	Disconnect()(error)
+type DBHandle interface {
+	/*
+		Connect connects to a database using given credentials
+	*/
+	Connect(DBCredentials)error
+	
+	/*
+		Disconnect disconnects from a connected database
+	*/
+	Disconnect()error
+	
+	ToNative()*C.DBHandle
 }
 
-type DBHandle struct {
+type DBHandleImpl struct {
 	conf *C.DBConfig
 	dbh  *C.DBHandle
 	creds *C.DBCredentials
 }
 
-func NewDBHandle(conf DBConfig)(DBHandler,error) {
-	dbh := new(DBHandle)
+/*
+	NewDBHandle creates a DBHandle interface with the given DBConfig conf
+*/
+func NewDBHandle(conf DBConfig)(DBHandle,error) {
+	dbh := new(DBHandleImpl)
 	dbh.conf = conf.ToNative()
 	if dbh.dbh = C.create_dbhandle(dbh.conf); dbh.dbh == nil {
 		return nil,errors.New("could not create db handle")
@@ -28,7 +40,10 @@ func NewDBHandle(conf DBConfig)(DBHandler,error) {
 	return dbh,nil
 }
 
-func (dbh *DBHandle)Connect(creds DBCredentials)(error) {
+/*
+	Connect implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Connect(creds DBCredentials)error {
 	dbh.creds = creds.ToNative()
 	if C.connect_db(dbh.dbh,dbh.creds) != 0 {
 		return errors.New("could not connect to database")
@@ -36,10 +51,17 @@ func (dbh *DBHandle)Connect(creds DBCredentials)(error) {
 	return nil
 }
 
-func (dbh *DBHandle)Disconnect()(error) {
+/*
+	Disconnect implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Disconnect()error {
 	if C.disconnect_db(dbh.dbh) != 0 {
 		return errors.New("could not connect to database")
 	}
 	dbh.creds = nil
 	return nil
+}
+
+func (dbh *DBHandleImpl)ToNative()*C.DBHandle {
+	return dbh.dbh
 }

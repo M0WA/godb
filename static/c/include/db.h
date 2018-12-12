@@ -61,28 +61,28 @@ void destroy_dbtable(struct _DBTable** tbl);
 /* columns */
 
 #define SET_COLUMN(var,colname,val) { \
-	if(! var.tbl.colptr.colname ) { \
-		var.tbl.colptr.colname = &var.tbl.valbuf.colname; } \
-	*(var.tbl.colptr.colname) = val; \
+	if(! (var).tbl.colptr.colname ) { \
+		(var).tbl.colptr.colname = &(var).tbl.valbuf.colname; } \
+	*((var).tbl.colptr.colname) = (val); \
 }
 
 #define SET_COLUMN_STRING(var,colname,val) { \
-	if(! var.tbl.colptr.colname ) { \
-		var.tbl.colptr.colname = (char*)&var.tbl.valbuf.colname; } \
-	size_t l = sizeof(var.tbl.valbuf.colname) - 1; \
-	if(strlen(val) < l) { \
-		l = strlen(val); } \
-	memcpy(var.tbl.valbuf.colname, val, l ); \
-	var.tbl.valbuf.colname[l] = 0; \
+	if(! (var).tbl.colptr.colname ) { \
+		(var).tbl.colptr.colname = (char*)&(var).tbl.valbuf.colname; } \
+	size_t l = sizeof((var).tbl.valbuf.colname) - 1; \
+	if(strlen((val)) < l) { \
+		l = strlen((val)); } \
+	memcpy((var).tbl.valbuf.colname, (val), l ); \
+	(var).tbl.valbuf.colname[l] = 0; \
 }
 
 #define SET_COLUMN_TM(var,colname,tval) { \
-	if(! var.tbl.colptr.colname ) { \
-		var.tbl.colptr.colname = &var.tbl.valbuf.colname; } \
-	memcpy(&var.tbl.valbuf.colname, &tval, sizeof(struct tm) ); \
+	if(! (var).tbl.colptr.colname ) { \
+		(var).tbl.colptr.colname = &(var).tbl.valbuf.colname; } \
+	memcpy(&(var).tbl.valbuf.colname, &(tval), sizeof(struct tm) ); \
 }
 
 #define SET_COLUMN_NULL(var,colname) { \
-	if( var.tbl.colptr.colname ) { \
-		var.tbl.colptr.colname = 0; } \
+	if( (var).tbl.colptr.colname ) { \
+		(var).tbl.colptr.colname = 0; } \
 }

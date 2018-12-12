@@ -6,11 +6,11 @@ package godb
 import "C"
 
 type DBCredentials interface {
-	GetHost()(string)
-	GetPort()(uint16)
-	GetUser()(string)
-	GetPass()(string)
-	GetName()(string)
+	GetHost()string
+	GetPort()uint16
+	GetUser()string
+	GetPass()string
+	GetName()string
 	
 	SetHost(string)
 	SetPort(uint16)
@@ -18,38 +18,38 @@ type DBCredentials interface {
 	SetPass(string)
 	SetName(string)
 	
-	ToNative()(*C.DBCredentials)
+	ToNative()*C.DBCredentials
 }
 
 type DBCredentialsImpl struct {
 	native C.DBCredentials
 }
 
-func NewDBCredentials()(DBCredentials) {
+func NewDBCredentials()DBCredentials {
 	c := new(DBCredentialsImpl)
 	return c
 }
 
-func (c *DBCredentialsImpl)ToNative()(*C.DBCredentials) {
+func (c *DBCredentialsImpl)ToNative()*C.DBCredentials {
 	return &c.native
 }
-func (c *DBCredentialsImpl)GetHost()(string) {
+func (c *DBCredentialsImpl)GetHost()string {
 	return C.GoString(C.dbcreds_get_host(&c.native))
 }
 
-func (c *DBCredentialsImpl)GetPort()(uint16) {
+func (c *DBCredentialsImpl)GetPort()uint16 {
 	return uint16(c.native.Port)
 }
 
-func (c *DBCredentialsImpl)GetUser()(string) {
+func (c *DBCredentialsImpl)GetUser()string {
 	return C.GoString(C.dbcreds_get_user(&c.native))
 }
 
-func (c *DBCredentialsImpl)GetPass()(string) {
+func (c *DBCredentialsImpl)GetPass()string {
 	return C.GoString(C.dbcreds_get_pass(&c.native))
 }
 
-func (c *DBCredentialsImpl)GetName()(string) {
+func (c *DBCredentialsImpl)GetName()string {
 	return C.GoString(C.dbcreds_get_name(&c.native))
 }
 

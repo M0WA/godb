@@ -36,7 +36,7 @@ typedef struct _{{ $db.Name }}_{{ $tbl.Name }}_impl {
 	const struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} *p_colptr;
 	struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} colptr;
 	struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} valbuf;
-	const struct _UniqKey *const * uniquekeys;
+	const struct _UniqKey *const *uniquekeys;
 	size_t nunique;
 	const struct _DBColumnDef *primarykey;
 } {{ $db.Name }}_{{ $tbl.Name }}_impl;
@@ -48,6 +48,8 @@ typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
 	struct _{{ $db.Name }}_{{ $tbl.Name }}_impl tbl;
 } {{ $db.Name }}_{{ $tbl.Name }};
 #pragma pack(pop)
+
+const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t);
 
 // {{ $db.Name }}.{{ $tbl.Name }}: allocate a new initialized datastructure
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
@@ -63,4 +65,7 @@ void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt* s);
 
 // {{ $db.Name }}.{{ $tbl.Name }}: initializes select statement
 void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt* s);
+{{ range $col := $tbl.Columns }}
+void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl, const {{ $td.PtrVar $col $col.Name }});
+const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *tbl);{{ end }}{{/* columns */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
