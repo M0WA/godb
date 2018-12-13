@@ -3,8 +3,16 @@ package godb
 import (
     "testing"
     "time"
-    "fmt"
 )
+
+type testTable interface {
+	TestInsert(*testing.T,DBHandle)
+	TestDelete(*testing.T,DBHandle)
+}
+
+type complextable1Test struct { }
+type complextable2Test struct { }
+type complextable3Test struct { }
 
 func getCredentials()(DBCredentials) {
 	creds := NewDBCredentials()
@@ -27,15 +35,50 @@ func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandle) {
 	return dbh
 }
 
-func testComplexTable1(t *testing.T, dbh DBHandle) {
+func (*complextable1Test)TestDelete(t *testing.T, dbh DBHandle) {
+}
+
+func (*complextable1Test)TestInsert(t *testing.T, dbh DBHandle) {
 	tbl := New_complexdb1_complextable1()
 	tbl.Set_teststr("test")
 	tbl.Set_testfloat(11.12)
 	tbl.Set_testint(10)
 	tbl.Set_testdate(time.Now())
 	
-	fmt.Println()
 	if err := Insert_complexdb1_complextable1(dbh,tbl); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func (*complextable2Test)TestDelete(t *testing.T, dbh DBHandle) {
+}
+
+func (*complextable2Test)TestInsert(t *testing.T, dbh DBHandle) {
+	tbl := New_complexdb1_complextable2()
+	tbl.Set_teststr("test")
+	tbl.Set_testfloat(11.12)
+	tbl.Set_testint(10)
+	tbl.Set_testdate(time.Now())
+	tbl.Set_testfk(10)
+	
+	if err := Insert_complexdb1_complextable2(dbh,tbl); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func (*complextable3Test)TestDelete(t *testing.T, dbh DBHandle) {
+
+}
+
+func (*complextable3Test)TestInsert(t *testing.T, dbh DBHandle) {
+	tbl := New_complexdb1_complextable3()
+	tbl.Set_teststr("test")
+	tbl.Set_testfloat(11.12)
+	tbl.Set_testint(10)
+	tbl.Set_testdate(time.Now())
+	tbl.Set_testuniq("30")
+	
+	if err := Insert_complexdb1_complextable3(dbh,tbl); err != nil {
 		t.Fatal(err.Error())
 	}
 }
@@ -51,7 +94,15 @@ func TestGoDB(t *testing.T) {
 	}
 	
 	dbh := getConnection(t,creds,conf)
-	testComplexTable1(t, dbh)
+	
+	tests := []testTable {
+		new(complextable1Test),
+		new(complextable2Test),
+		new(complextable3Test),
+	}
+	for _,tc := range tests {
+		tc.TestInsert(t,dbh)
+	}
 	
 	if err = dbh.Disconnect(); err != nil {
 		t.Fatal(err.Error())

@@ -36,7 +36,6 @@ db.c \
 dbihelper.c \
 dbihooks.c \
 dbtypes.c \
-golanghelper.c \
 helper.c \
 join.c \
 logger.c \

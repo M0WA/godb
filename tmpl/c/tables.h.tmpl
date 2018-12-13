@@ -49,8 +49,6 @@ typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
 } {{ $db.Name }}_{{ $tbl.Name }};
 #pragma pack(pop)
 
-const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t);
-
 // {{ $db.Name }}.{{ $tbl.Name }}: allocate a new initialized datastructure
 {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
 

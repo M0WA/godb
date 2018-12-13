@@ -1,15 +1,31 @@
 package godb
-
+{{ $td := . }}
 /* ==============================================================
    this is generated code, changes will be overwritten
    ============================================================== */
 
-// #include <db.h>
-// #include <table.h>
-// #include <tables.h>
-// #include <statements.h>
-// #include <time.h>
-// #include <stdlib.h>
+/*
+#define _XOPEN_SOURCE 
+#define _GNU_SOURCE
+
+#include <db.h>
+#include <table.h>
+#include <tables.h>
+#include <statements.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
+static const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
+	return &(t->dbtbl);
+} 
+
+static DeleteStmt *alloc_deletestmt_{{ $db.Name }}_{{ $tbl.Name }}() {
+	DeleteStmt *s = calloc(1,sizeof(DeleteStmt));
+	deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(s);
+	return s;
+} {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+*/
 import "C"
 
 import (
@@ -17,7 +33,7 @@ import (
 	"unsafe"
 	"runtime"
 )
-{{ $td := . }}{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
+{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ==============================================================
    table {{ $db.Name }}.{{ $tbl.Name }}
    ============================================================== */
