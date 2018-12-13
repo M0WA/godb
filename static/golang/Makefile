@@ -27,6 +27,6 @@ test:
 	CGO_LDFLAGS="-L${LIBS_DIR}/c/src/.libs -lDB" \
 	CGO_CFLAGS="-I${LIBS_DIR}/c/include" \
 	LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs \
-	GODEBUG=cgocheck=0 $(GO) test godb
+	$(GO) test godb
 
 .PHONY: all lib test clean

@@ -12,9 +12,13 @@ typedef enum _LogLevel {
 	MAX_LOGLEVEL
 } LogLevel;
 
+typedef void(*LogFunc)(LogLevel lvl,const char *filename, const size_t line,const char *function,const char* __restrict fmt,...);
+
 void logger_end();
 void set_logfile(FILE *f);
 void set_loglevel(LogLevel lvl);
+void set_logfunc(LogFunc log);
+const char* loglevelToString(LogLevel lvl);
 
 #define LOG_DEBUG(msg)       _log (LOGLVL_DEBUG,__FILE__,__LINE__,__func__,msg);
 #define LOG_INFO(msg)        _log (LOGLVL_INFO,__FILE__,__LINE__,__func__,msg);

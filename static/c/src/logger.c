@@ -19,7 +19,9 @@ char warnLogLvl[]    = "WARN ";
 char errorLogLvl[]   = "ERROR";
 char invalidLogLvl[] = "N/A  ";
 
-static const char* loglevelToString(LogLevel lvl) {
+LogFunc logfunc = _logf;
+
+const char* loglevelToString(LogLevel lvl) {
 	switch(lvl) {
 	case LOGLVL_DEBUG:
 		return debugLogLvl;
@@ -67,6 +69,10 @@ static void printPrefix(LogLevel lvl) {
 	fprintf(logger->fp,"[%s][%s] ",pszTimeString,ll);
 }
 
+void set_logfunc(LogFunc log) {
+	logfunc = log;
+}
+
 void set_logfile(FILE *f) {
 	if(initLogger()) {
 		return;	}
@@ -101,7 +107,7 @@ void _logf(LogLevel lvl,const char *filename, const size_t line,const char *func
 }
 
 void _log(LogLevel lvl,const char *filename, const size_t line,const char *function,const char* __restrict msg) {
-	_logf(lvl,filename,line,function,msg);
+	logfunc(lvl,filename,line,function,msg);
 }
 
 void logger_end() {
