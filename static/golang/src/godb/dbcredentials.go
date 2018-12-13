@@ -3,7 +3,12 @@ package godb
 // #include <db.h>
 // #include <dbhandle.h>
 // #include <golanghelper.h>
+// #include <stdlib.h>
 import "C"
+
+import (
+	"unsafe"
+)
 
 type DBCredentials interface {
 	GetHost()string
@@ -54,7 +59,9 @@ func (c *DBCredentialsImpl)GetName()string {
 }
 
 func (c *DBCredentialsImpl)SetHost(host string) {
-	C.dbcreds_set_name(&c.native,C.CString(host))
+	h := C.CString(host)
+	C.dbcreds_set_name(&c.native,h)
+	C.free(unsafe.Pointer(h))
 }
 
 func (c *DBCredentialsImpl)SetPort(port uint16) {
@@ -62,13 +69,19 @@ func (c *DBCredentialsImpl)SetPort(port uint16) {
 }
 
 func (c *DBCredentialsImpl)SetUser(user string) {
-	C.dbcreds_set_user(&c.native,C.CString(user))
+	u := C.CString(user)
+	C.dbcreds_set_user(&c.native,u)
+	C.free(unsafe.Pointer(u))
 }
 
 func (c *DBCredentialsImpl)SetPass(pass string) {
-	C.dbcreds_set_pass(&c.native,C.CString(pass))
+	p := C.CString(pass)
+	C.dbcreds_set_pass(&c.native,p)
+	C.free(unsafe.Pointer(p))
 }
 
 func (c *DBCredentialsImpl)SetName(name string) {
-	C.dbcreds_set_name(&c.native,C.CString(name))
+	n := C.CString(name)
+	C.dbcreds_set_name(&c.native,n)
+	C.free(unsafe.Pointer(n))
 }

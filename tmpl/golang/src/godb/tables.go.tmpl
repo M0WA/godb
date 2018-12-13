@@ -9,10 +9,13 @@ package godb
 // #include <tables.h>
 // #include <statements.h>
 // #include <time.h>
+// #include <stdlib.h>
 import "C"
 
 import (
 	"errors"
+	"unsafe"
+	"runtime"
 )
 {{ $td := . }}{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ==============================================================
@@ -38,9 +41,15 @@ type {{ $db.Name }}_{{ $tbl.Name }}_impl struct {
 */
 func New_{{ $db.Name }}_{{ $tbl.Name }}(){{ $db.Name }}_{{ $tbl.Name }} {
 	t := new({{ $db.Name }}_{{ $tbl.Name }}_impl)
-	t.tbl = new(C.{{ $db.Name }}_{{ $tbl.Name }})
-	C._create_{{ $db.Name }}_{{ $tbl.Name }}(t.tbl)
+	t.tbl = C.alloc_{{ $db.Name }}_{{ $tbl.Name }}()	
+	runtime.SetFinalizer(t, free_{{ $db.Name }}_{{ $tbl.Name }})
 	return t
+}
+
+func free_{{ $db.Name }}_{{ $tbl.Name }}(tbl *{{ $db.Name }}_{{ $tbl.Name }}_impl) {
+	if tbl.tbl != nil {
+		C.free(unsafe.Pointer(tbl.tbl))
+	}
 }
 
 /*
@@ -98,6 +107,7 @@ func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(v {{ $td.DataTy
 {{ else if eq $col.DataType "string" }}
 	tmp := C.CString(v)
 	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tmp)
+	C.free(unsafe.Pointer(tmp))
 {{ else }}
 	tmp := {{ $td.CGoType $col }}(v)
 	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), &tmp)

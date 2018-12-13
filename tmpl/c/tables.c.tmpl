@@ -74,6 +74,12 @@ void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl)
 	tbl->tbl.nunique = 0;{{ end }}{{/* endif */}}
 }
 
+{{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}() {
+	{{ $db.Name }}_{{ $tbl.Name }} *tbl = malloc(sizeof({{ $db.Name }}_{{ $tbl.Name }}));
+	_create_{{ $db.Name }}_{{ $tbl.Name }}(tbl);
+	return tbl;
+}
+
 // {{ $db.Name }}.{{ $tbl.Name }}: initialize upsert statement
 void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt *s) {
 	memset(s,0,sizeof(struct _UpsertStmt));
