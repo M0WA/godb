@@ -35,7 +35,20 @@ func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandle) {
 	return dbh
 }
 
-func (*complextable1Test)TestDelete(t *testing.T, dbh DBHandle) {
+func (ct *complextable1Test)TestDelete(t *testing.T, dbh DBHandle) {
+	stmt := NewDeleteStmt_complexdb1_complextable1()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable1_ID(),WhereNotEqual(),ifval)
+	
+	if err := dbh.Delete(stmt); err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 func (*complextable1Test)TestInsert(t *testing.T, dbh DBHandle) {
@@ -51,6 +64,19 @@ func (*complextable1Test)TestInsert(t *testing.T, dbh DBHandle) {
 }
 
 func (*complextable2Test)TestDelete(t *testing.T, dbh DBHandle) {
+	stmt := NewDeleteStmt_complexdb1_complextable2()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable2_ID(),WhereNotEqual(),ifval)
+	
+	if err := dbh.Delete(stmt); err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 func (*complextable2Test)TestInsert(t *testing.T, dbh DBHandle) {
@@ -67,7 +93,19 @@ func (*complextable2Test)TestInsert(t *testing.T, dbh DBHandle) {
 }
 
 func (*complextable3Test)TestDelete(t *testing.T, dbh DBHandle) {
-
+	stmt := NewDeleteStmt_complexdb1_complextable3()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable3_ID(),WhereNotEqual(),ifval)
+	
+	if err := dbh.Delete(stmt); err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 func (*complextable3Test)TestInsert(t *testing.T, dbh DBHandle) {
@@ -99,6 +137,9 @@ func TestGoDB(t *testing.T) {
 		new(complextable1Test),
 		new(complextable2Test),
 		new(complextable3Test),
+	}
+	for _,tc := range tests {
+		tc.TestDelete(t,dbh)
 	}
 	for _,tc := range tests {
 		tc.TestInsert(t,dbh)

@@ -104,7 +104,11 @@ void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt *s) {
 	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
 	s->ncols = {{ len $tbl.Columns }};
 }
-{{ range $col := $tbl.Columns }}
+{{ range $colidx,$col := $tbl.Columns }}
+const struct _DBColumnDef *{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}() {
+	return &coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $colidx }}];
+}
+
 void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t, const {{ $td.PtrVar $col $col.Name }}) {
 	if( !{{ $col.Name }} ) {
 		SET_COLUMN_NULL(*t,{{ $col.Name }});

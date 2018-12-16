@@ -9,6 +9,8 @@ package godb
 #include <table.h>
 #include <tables.h>
 #include <statements.h>
+#include <column.h>
+
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -66,6 +68,15 @@ func free_{{ $db.Name }}_{{ $tbl.Name }}(tbl *{{ $db.Name }}_{{ $tbl.Name }}_imp
 }
 
 /*
+	NewDeleteStmt_{{ $db.Name }}_{{ $tbl.Name }} allocates and initializes a delete statement for rows of {{ $db.Name }}.{{ $tbl.Name }}
+*/
+func NewDeleteStmt_{{ $db.Name }}_{{ $tbl.Name }}()DeleteStmt {
+	s := NewDeleteStmt()	
+	C.deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(s.ToNative())
+	return s
+}
+
+/*
 	Insert_{{ $db.Name }}_{{ $tbl.Name }} inserts one or more rows into {{ $db.Name }}.{{ $tbl.Name }}
 */
 func Insert_{{ $db.Name }}_{{ $tbl.Name }}(dbh DBHandle, row {{ $db.Name }}_{{ $tbl.Name }})error {
@@ -84,6 +95,13 @@ func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)ToNativeDBTable()*C.DBTable {
 	return C.get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(t.ToNative())
 }
 {{ range $col := $tbl.Columns }}
+/*
+	Def_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} returns the definition of the column {{ $col.Name }}
+*/
+func Def_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}()*C.DBColumnDef {
+	return C.{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}();
+}
+
 /*
 	Get_{{ $col.Name }} implements {{ $db.Name }}_{{ $tbl.Name }} interface
 */

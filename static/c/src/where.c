@@ -10,43 +10,47 @@
 static void where_cond_destroy(struct _WhereCondition *c) {
 }
 
-static void where_comp_destroy(struct _WhereComposite *comp) {
+static void where_comp_destroy(struct _WhereComposite *comp, WhereConditionFreeFunc cond) {
 	if(!comp) {
 		return; }
 
 	if(comp->where) {
 		for(size_t i = 0; i < comp->cnt; i++) {
-			where_destroy(comp->where[i]);
+			where_destroy_free(comp->where[i],cond);
 		}
 		free(comp->where);
 		comp->where = 0;
 	}
 }
 
-static void where_stmt_destroy(union _WhereStmt *s) {
+static void where_stmt_destroy(union _WhereStmt *s, WhereConditionFreeFunc cond) {
 	if(!s) {
 		return;	}
 
 	switch(s->cond.type) {
 	case WHERE_COND:
-		where_cond_destroy(&s->cond);
+		cond(&s->cond);
 		break;
 	case WHERE_COMP:
-		where_comp_destroy(&s->comp);
+		where_comp_destroy(&s->comp,cond);
 		break;
 	default:
 		return;
 	}
 }
 
-void where_destroy(struct _WhereClause *clause) {
+void where_destroy_free(struct _WhereClause *clause, WhereConditionFreeFunc cond) {
 	if(!clause||!clause->cnt||!clause->stmts) {
 		return;	}
 	for(size_t i = 0; i < clause->cnt; i++) {
-		where_stmt_destroy(clause->stmts[i]);
+		where_stmt_destroy(clause->stmts[i],cond);
 	}
 	free(clause->stmts);
 	clause->stmts = 0;
+}
+
+void where_destroy(struct _WhereClause *clause) {
+	where_destroy_free(clause,where_cond_destroy);
 }
 
 int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause) {

@@ -2,6 +2,7 @@ package godb
 
 // #include <db.h>
 // #include <dbhandle.h>
+// #include <statements.h>
 import "C"
 
 import (
@@ -19,11 +20,12 @@ type DBHandle interface {
 	*/
 	Disconnect()error
 	
+	Delete(DeleteStmt)error
+	
 	ToNative()*C.DBHandle
 }
 
 type DBHandleImpl struct {
-	conf *C.DBConfig
 	dbh  *C.DBHandle
 	creds *C.DBCredentials
 }
@@ -33,8 +35,7 @@ type DBHandleImpl struct {
 */
 func NewDBHandle(conf DBConfig)(DBHandle,error) {
 	dbh := new(DBHandleImpl)
-	dbh.conf = conf.ToNative()
-	if dbh.dbh = C.create_dbhandle(dbh.conf); dbh.dbh == nil {
+	if dbh.dbh = C.create_dbhandle(conf.ToNative()); dbh.dbh == nil {
 		return nil,errors.New("could not create db handle")
 	}
 	return dbh,nil
@@ -59,6 +60,13 @@ func (dbh *DBHandleImpl)Disconnect()error {
 		return errors.New("could not connect to database")
 	}
 	dbh.creds = nil
+	return nil
+}
+
+func (dbh *DBHandleImpl)Delete(stmt DeleteStmt)error {
+	if C.delete_db(dbh.dbh,stmt.ToNative()) != 0 {
+		return errors.New("could not delete")
+	}
 	return nil
 }
 

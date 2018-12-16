@@ -64,6 +64,7 @@ void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt* s);
 // {{ $db.Name }}.{{ $tbl.Name }}: initializes select statement
 void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt* s);
 {{ range $col := $tbl.Columns }}
+const struct _DBColumnDef *{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}();
 void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl, const {{ $td.PtrVar $col $col.Name }});
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *tbl);{{ end }}{{/* columns */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
