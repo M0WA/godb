@@ -424,6 +424,22 @@ insert rows into exampledb.exampletable:
 		return nil
 	}
 
+delete rows from exampledb.exampletable:
+
+	stmt := NewDeleteStmt_exampledb_exampletable()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_exampledb_exampletable_ID(),WhereNotEqual(),ifval)
+	
+	if err := dbh.Delete(stmt); err != nil {
+		t.Fatal(err.Error())
+	}
+
 ## FAQ <a name="FAQ"></a>
 
 ### I found a bug, missing a feature or have a patch <a name="bugs"></a>
