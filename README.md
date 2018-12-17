@@ -464,6 +464,8 @@ select rows from exampledb.exampletable:
 			return nil
 		} else if row == nil {		
 			break
+		} else {
+			// do something with row
 		}
 	}
 
