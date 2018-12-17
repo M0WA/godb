@@ -474,7 +474,7 @@ select rows from exampledb.exampletable:
 ### I found a bug, missing a feature or have a patch <a name="bugs"></a>
 Please file either a bugreport, feature- or pull-request on the offical [github](https://github.com/M0WA/GoDB) page.
 
-### With GoDB I cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="brandfeatures"></a>
+### GoDB cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="brandfeatures"></a>
 The advantages of the GoDB framework are that you gain complete database brand independency for your code as well as an increased security.
 There is use cases where the performance of a brand-specific feature is more relevant than brand independency. In such a case, GoDB is not what
 you are looking for.
