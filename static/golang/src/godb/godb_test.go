@@ -15,10 +15,20 @@ type complextable1Test struct { }
 type complextable2Test struct { }
 type complextable3Test struct { }
 
-func getCredentials()(DBCredentials) {
+func getMySQLCredentials()(DBCredentials) {
 	creds := NewDBCredentials()
 	creds.SetHost("localhost")
 	creds.SetPort(3306)
+	creds.SetName("complexdb1")
+	creds.SetUser("myuser")
+	creds.SetPass("mypass")
+	return creds
+}
+
+func getPostgresCredentials()(DBCredentials) {
+	creds := NewDBCredentials()
+	creds.SetHost("localhost")
+	creds.SetPort(5432)
 	creds.SetName("complexdb1")
 	creds.SetUser("myuser")
 	creds.SetPass("mypass")
@@ -67,25 +77,31 @@ func (*complextable1Test)testInsert(t *testing.T, dbh DBHandle) {
 func (*complextable1Test)testSelect(t *testing.T, dbh DBHandle) {
 	stmt := NewSelectStmt_complexdb1_complextable1()
 	
-	vals := []uint16 { 10 }
+	vals := []uint16 { 0 }
 	ifval := make([]interface{}, len(vals))
 	for i,v := range vals {
 		ifval[i] = v 
 	}
 	
-	stmt.Where().AppendCondition(Def_complexdb1_complextable1_ID(),WhereEqual(),ifval)
+	stmt.Where().AppendCondition(Def_complexdb1_complextable1_ID(),WhereNotEqual(),ifval)
 	
 	res,err := dbh.Select(stmt)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	
+	rows := 0
 	for {
 		if row,err := res.Next(dbh); err != nil {
 			t.Fatal(err.Error())
 		} else if row == nil {
 			break
 		}
+		rows++
+	}
+	
+	if rows != 2 {
+		t.Fatal("invalid row count in select")
 	}
 }
 
@@ -119,7 +135,34 @@ func (*complextable2Test)testInsert(t *testing.T, dbh DBHandle) {
 }
 
 func (*complextable2Test)testSelect(t *testing.T, dbh DBHandle) {
+	stmt := NewSelectStmt_complexdb1_complextable2()
 	
+	vals := []uint16 { 0 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable2_ID(),WhereNotEqual(),ifval)
+	
+	res,err := dbh.Select(stmt)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	
+	rows := 0
+	for {
+		if row,err := res.Next(dbh); err != nil {
+			t.Fatal(err.Error())
+		} else if row == nil {
+			break
+		}
+		rows++
+	}
+	
+	if rows != 2 {
+		t.Fatal("invalid row count in select")
+	}
 }
 
 func (*complextable3Test)testDelete(t *testing.T, dbh DBHandle) {
@@ -152,33 +195,81 @@ func (*complextable3Test)testInsert(t *testing.T, dbh DBHandle) {
 }
 
 func (*complextable3Test)testSelect(t *testing.T, dbh DBHandle) {
+	stmt := NewSelectStmt_complexdb1_complextable3()
 	
+	vals := []uint16 { 0 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable3_ID(),WhereNotEqual(),ifval)
+	
+	res,err := dbh.Select(stmt)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	
+	rows := 0
+	for {
+		if row,err := res.Next(dbh); err != nil {
+			t.Fatal(err.Error())
+		} else if row == nil {
+			break
+		}
+		rows++
+	}
+	
+	if rows != 2 {
+		t.Fatal("invalid row count in select")
+	}
+}
+
+type ConfigCreds struct {
+	conf DBConfig
+	creds DBCredentials
+}
+
+func getDBConfigs(t *testing.T)map[DBType]ConfigCreds {
+	confs := make(map[DBType]ConfigCreds,0)
+	
+	mysql,err := NewDBConfig(MYSQL)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	confs[MYSQL] = ConfigCreds{ mysql, getMySQLCredentials() }
+	
+	postgres,err := NewDBConfig(POSTGRES)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	confs[POSTGRES] = ConfigCreds{ postgres, getPostgresCredentials() }
+	
+	return confs
 }
 
 func TestGoDB(t *testing.T) {
 	SetLogDebug()
 	//SetLogFunc()
 	
-	creds := getCredentials()
-	conf,err := NewDBConf(MYSQL)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	confs := getDBConfigs(t)
 	
-	dbh := getConnection(t,creds,conf)
-	
-	tests := []testTable {
-		new(complextable1Test),
-		new(complextable2Test),
-		new(complextable3Test),
-	}
-	for _,tc := range tests {
-		tc.testDelete(t,dbh)
-		tc.testInsert(t,dbh)
-		tc.testSelect(t,dbh)
-	}
-	
-	if err = dbh.Disconnect(); err != nil {
-		t.Fatal(err.Error())
+	for _,cc := range confs {
+		dbh := getConnection(t,cc.creds,cc.conf)
+		
+		tests := []testTable {
+			new(complextable1Test),
+			new(complextable2Test),
+			new(complextable3Test),
+		}
+		for _,tc := range tests {
+			tc.testDelete(t,dbh)
+			tc.testInsert(t,dbh)
+			tc.testSelect(t,dbh)
+		}
+		
+		if err := dbh.Disconnect(); err != nil {
+			t.Fatal(err.Error())
+		}
 	}
 }

@@ -26,9 +26,9 @@ type DBConfigImpl struct {
 }
 
 /*
-	NewDBConf creates a DBConfig interface for a given type dbtype
+	NewDBConfig creates a DBConfig interface for a given type dbtype
 */
-func NewDBConf(dbtype DBType)(DBConfig,error) {
+func NewDBConfig(dbtype DBType)(DBConfig,error) {
 	c := new(DBConfigImpl)
 	switch dbtype {
 		case MYSQL:

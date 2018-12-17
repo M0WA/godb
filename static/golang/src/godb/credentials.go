@@ -110,7 +110,7 @@ func (c *DBCredentialsImpl)GetName()string {
 
 func (c *DBCredentialsImpl)SetHost(host string) {
 	h := C.CString(host)
-	C.dbcreds_set_name(&c.native,h)
+	C.dbcreds_set_host(&c.native,h)
 	C.dbcreds_free_string(h)
 }
 
