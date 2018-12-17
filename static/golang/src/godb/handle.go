@@ -1,8 +1,11 @@
 package godb
 
-// #include <db.h>
-// #include <dbhandle.h>
-// #include <statements.h>
+/*
+#include <db.h>
+#include <dbhandle.h>
+#include <statements.h>
+#include <selectresult.h>
+*/
 import "C"
 
 import (
@@ -21,6 +24,7 @@ type DBHandle interface {
 	Disconnect()error
 	
 	Delete(DeleteStmt)error
+	Select(SelectStmt)(SelectResult,error)
 	
 	ToNative()*C.DBHandle
 }
@@ -61,6 +65,17 @@ func (dbh *DBHandleImpl)Disconnect()error {
 	}
 	dbh.creds = nil
 	return nil
+}
+
+/*
+	Select implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Select(stmt SelectStmt)(SelectResult,error) {
+	res := NewSelectResult()
+	if C.select_db(dbh.dbh,stmt.ToNative(),res.ToNative()) != 0 {
+		return nil,errors.New("could not select")
+	}
+	return res,nil
 }
 
 func (dbh *DBHandleImpl)Delete(stmt DeleteStmt)error {

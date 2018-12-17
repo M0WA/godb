@@ -48,11 +48,16 @@ static void dbcreds_set_pass(DBCredentials *creds, const char *pass) {
 	strncpy(creds->Pass,pass,MAX_DB_PASS);
 	creds->Pass[MAX_DB_PASS-1] = 0;
 }
+
+static void dbcreds_free_string(char *str) {
+	if(str) {
+		free(str);
+	}
+}
 */
 import "C"
 
 import (
-	"unsafe"
 )
 
 type DBCredentials interface {
@@ -106,7 +111,7 @@ func (c *DBCredentialsImpl)GetName()string {
 func (c *DBCredentialsImpl)SetHost(host string) {
 	h := C.CString(host)
 	C.dbcreds_set_name(&c.native,h)
-	C.free(unsafe.Pointer(h))
+	C.dbcreds_free_string(h)
 }
 
 func (c *DBCredentialsImpl)SetPort(port uint16) {
@@ -116,17 +121,17 @@ func (c *DBCredentialsImpl)SetPort(port uint16) {
 func (c *DBCredentialsImpl)SetUser(user string) {
 	u := C.CString(user)
 	C.dbcreds_set_user(&c.native,u)
-	C.free(unsafe.Pointer(u))
+	C.dbcreds_free_string(u)
 }
 
 func (c *DBCredentialsImpl)SetPass(pass string) {
 	p := C.CString(pass)
 	C.dbcreds_set_pass(&c.native,p)
-	C.free(unsafe.Pointer(p))
+	C.dbcreds_free_string(p)
 }
 
 func (c *DBCredentialsImpl)SetName(name string) {
 	n := C.CString(name)
 	C.dbcreds_set_name(&c.native,n)
-	C.free(unsafe.Pointer(n))
+	C.dbcreds_free_string(n)
 }

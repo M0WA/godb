@@ -14,22 +14,24 @@ package godb
 #include <stddef.h>
 #include <stdlib.h>
 
+static void tables_free_string(char *str) {
+	if(str) {
+		free(str);
+	}
+}
+
 {{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 static const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
 	return &(t->dbtbl);
-} 
-
-static DeleteStmt *alloc_deletestmt_{{ $db.Name }}_{{ $tbl.Name }}() {
-	DeleteStmt *s = calloc(1,sizeof(DeleteStmt));
-	deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(s);
-	return s;
-} {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+}
+static void free_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t) {
+ }
+{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 */
 import "C"
 
 import (
 	"errors"
-	"unsafe"
 	"runtime"
 )
 {{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
@@ -63,7 +65,7 @@ func New_{{ $db.Name }}_{{ $tbl.Name }}(){{ $db.Name }}_{{ $tbl.Name }} {
 
 func free_{{ $db.Name }}_{{ $tbl.Name }}(tbl *{{ $db.Name }}_{{ $tbl.Name }}_impl) {
 	if tbl.tbl != nil {
-		C.free(unsafe.Pointer(tbl.tbl))
+		C.free_{{ $db.Name }}_{{ $tbl.Name }}(tbl.tbl)
 	}
 }
 
@@ -73,6 +75,16 @@ func free_{{ $db.Name }}_{{ $tbl.Name }}(tbl *{{ $db.Name }}_{{ $tbl.Name }}_imp
 func NewDeleteStmt_{{ $db.Name }}_{{ $tbl.Name }}()DeleteStmt {
 	s := NewDeleteStmt()	
 	C.deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(s.ToNative())
+	return s
+}
+
+/*
+	NewSelectStmt_{{ $db.Name }}_{{ $tbl.Name }} allocates and initializes a select statement for rows of {{ $db.Name }}.{{ $tbl.Name }},
+	selecting all columns in that table
+*/
+func NewSelectStmt_{{ $db.Name }}_{{ $tbl.Name }}()SelectStmt {
+	s := NewSelectStmt()	
+	C.selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(s.ToNative())
 	return s
 }
 
@@ -137,8 +149,8 @@ func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(v {{ $td.DataTy
 	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tm)
 {{ else if eq $col.DataType "string" }}
 	tmp := C.CString(v)
+	defer C.tables_free_string(tmp)
 	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tmp)
-	C.free(unsafe.Pointer(tmp))
 {{ else }}
 	tmp := {{ $td.CGoType $col }}(v)
 	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), &tmp)

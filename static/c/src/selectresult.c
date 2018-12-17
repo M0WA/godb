@@ -48,7 +48,7 @@ int create_selectresult(const struct _DBColumnDef *defs,size_t ncols, struct _Se
 			res->row = 0;
 			LOG_WARN("invalid column size");
 			return 1; }
-		res->row[i] = calloc(colsize,1);
+		res->row[i] = calloc(1,colsize);
 	}
 	return 0;
 }

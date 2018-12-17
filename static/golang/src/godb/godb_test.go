@@ -6,8 +6,9 @@ import (
 )
 
 type testTable interface {
-	TestInsert(*testing.T,DBHandle)
-	TestDelete(*testing.T,DBHandle)
+	testInsert(*testing.T,DBHandle)
+	testDelete(*testing.T,DBHandle)
+	testSelect(*testing.T,DBHandle)
 }
 
 type complextable1Test struct { }
@@ -35,7 +36,7 @@ func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandle) {
 	return dbh
 }
 
-func (ct *complextable1Test)TestDelete(t *testing.T, dbh DBHandle) {
+func (ct *complextable1Test)testDelete(t *testing.T, dbh DBHandle) {
 	stmt := NewDeleteStmt_complexdb1_complextable1()
 	
 	vals := []uint16 { 10 }
@@ -51,7 +52,7 @@ func (ct *complextable1Test)TestDelete(t *testing.T, dbh DBHandle) {
 	}
 }
 
-func (*complextable1Test)TestInsert(t *testing.T, dbh DBHandle) {
+func (*complextable1Test)testInsert(t *testing.T, dbh DBHandle) {
 	tbl := New_complexdb1_complextable1()
 	tbl.Set_teststr("test")
 	tbl.Set_testfloat(11.12)
@@ -63,7 +64,32 @@ func (*complextable1Test)TestInsert(t *testing.T, dbh DBHandle) {
 	}
 }
 
-func (*complextable2Test)TestDelete(t *testing.T, dbh DBHandle) {
+func (*complextable1Test)testSelect(t *testing.T, dbh DBHandle) {
+	stmt := NewSelectStmt_complexdb1_complextable1()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_complexdb1_complextable1_ID(),WhereEqual(),ifval)
+	
+	res,err := dbh.Select(stmt)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	
+	for {
+		if row,err := res.Next(dbh); err != nil {
+			t.Fatal(err.Error())
+		} else if row == nil {
+			break
+		}
+	}
+}
+
+func (*complextable2Test)testDelete(t *testing.T, dbh DBHandle) {
 	stmt := NewDeleteStmt_complexdb1_complextable2()
 	
 	vals := []uint16 { 10 }
@@ -79,7 +105,7 @@ func (*complextable2Test)TestDelete(t *testing.T, dbh DBHandle) {
 	}
 }
 
-func (*complextable2Test)TestInsert(t *testing.T, dbh DBHandle) {
+func (*complextable2Test)testInsert(t *testing.T, dbh DBHandle) {
 	tbl := New_complexdb1_complextable2()
 	tbl.Set_teststr("test")
 	tbl.Set_testfloat(11.12)
@@ -92,7 +118,11 @@ func (*complextable2Test)TestInsert(t *testing.T, dbh DBHandle) {
 	}
 }
 
-func (*complextable3Test)TestDelete(t *testing.T, dbh DBHandle) {
+func (*complextable2Test)testSelect(t *testing.T, dbh DBHandle) {
+	
+}
+
+func (*complextable3Test)testDelete(t *testing.T, dbh DBHandle) {
 	stmt := NewDeleteStmt_complexdb1_complextable3()
 	
 	vals := []uint16 { 10 }
@@ -108,7 +138,7 @@ func (*complextable3Test)TestDelete(t *testing.T, dbh DBHandle) {
 	}
 }
 
-func (*complextable3Test)TestInsert(t *testing.T, dbh DBHandle) {
+func (*complextable3Test)testInsert(t *testing.T, dbh DBHandle) {
 	tbl := New_complexdb1_complextable3()
 	tbl.Set_teststr("test")
 	tbl.Set_testfloat(11.12)
@@ -119,6 +149,10 @@ func (*complextable3Test)TestInsert(t *testing.T, dbh DBHandle) {
 	if err := Insert_complexdb1_complextable3(dbh,tbl); err != nil {
 		t.Fatal(err.Error())
 	}
+}
+
+func (*complextable3Test)testSelect(t *testing.T, dbh DBHandle) {
+	
 }
 
 func TestGoDB(t *testing.T) {
@@ -139,10 +173,9 @@ func TestGoDB(t *testing.T) {
 		new(complextable3Test),
 	}
 	for _,tc := range tests {
-		tc.TestDelete(t,dbh)
-	}
-	for _,tc := range tests {
-		tc.TestInsert(t,dbh)
+		tc.testDelete(t,dbh)
+		tc.testInsert(t,dbh)
+		tc.testSelect(t,dbh)
 	}
 	
 	if err = dbh.Disconnect(); err != nil {

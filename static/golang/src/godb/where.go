@@ -211,6 +211,10 @@ func DestroyWhereClause(clause *C.WhereClause) {
 	C.free_where_clause(clause)
 }
 
+func WhereEqual()C.WhereCondOperator {
+	return C.WHERE_EQUAL
+}
+
 func WhereNotEqual()C.WhereCondOperator {
 	return C.WHERE_NOT_EQUAL
 }
