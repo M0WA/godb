@@ -437,7 +437,34 @@ delete rows from exampledb.exampletable:
 	stmt.Where().AppendCondition(Def_exampledb_exampletable_ID(),WhereNotEqual(),ifval)
 	
 	if err := dbh.Delete(stmt); err != nil {
-		t.Fatal(err.Error())
+		return nil
+	}
+
+select rows from exampledb.exampletable:
+
+	stmt := NewSelectStmt_exampledb_exampletable()
+	
+	vals := []uint16 { 10 }
+	ifval := make([]interface{}, len(vals))
+	for i,v := range vals {
+		ifval[i] = v 
+	}
+	
+	stmt.Where().AppendCondition(Def_exampledb_exampletable_ID(),WhereEqual(),ifval)
+	
+	res,err := dbh.Select(stmt)
+	if err != nil {
+		return nil
+	}
+	
+	// fetching rows
+	for {
+		if row,err := res.Next(dbh); err != nil {
+			// error while fetching rows
+			return nil
+		} else if row == nil {		
+			break
+		}
 	}
 
 ## FAQ <a name="FAQ"></a>
