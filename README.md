@@ -395,7 +395,7 @@ create database connection
 	}
 	
 	func getConfig()(DBConfig) {	
-		conf,err := NewDBConf(MYSQL)
+		conf,err := NewDBConfig(MYSQL)
 		if err != nil {
 			return nil
 		}
