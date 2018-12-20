@@ -47,6 +47,34 @@ func getConnection(t *testing.T,creds DBCredentials, conf DBConfig)(DBHandle) {
 	return dbh
 }
 
+func checkResult(t *testing.T, dbh DBHandle, res SelectResult) {
+	rows := 0
+	for {
+		row,err := res.Next(dbh)
+		if err != nil {
+			t.Fatal(err.Error())
+		} else if row == nil {
+			break
+		}
+		
+		rowstr := ""
+		for idx := range row.Columns() {
+			v := row.GetByIndex(uint64(idx))
+			if v == nil {
+				t.Fatal("invalid column value")
+			}
+			tse := fmt.Sprintf("%v",v);
+			rowstr += " | " + tse
+		}
+		t.Log(rowstr)
+		rows++
+	}
+	
+	if rows != 2 {
+		t.Fatal("invalid row count in select")
+	}
+}
+
 func (ct *complextable1Test)testDelete(t *testing.T, dbh DBHandle) {
 	stmt := NewDeleteStmt_complexdb1_complextable1()
 	
@@ -91,31 +119,7 @@ func (*complextable1Test)testSelect(t *testing.T, dbh DBHandle) {
 		t.Fatal(err.Error())
 	}
 	
-	rows := 0
-	for {
-		row,err := res.Next(dbh)
-		if err != nil {
-			t.Fatal(err.Error())
-		} else if row == nil {
-			break
-		}
-		
-		rowstr := ""
-		for idx := range row.Columns() {
-			v := row.GetByIndex(uint64(idx))
-			if v == nil {
-				t.Fatal("invalid column value")
-			}
-			tse := fmt.Sprintf("%v",v);
-			rowstr += " | " + tse
-		}
-		t.Log(rowstr)
-		rows++
-	}
-	
-	if rows != 2 {
-		t.Fatal("invalid row count in select")
-	}
+	checkResult(t, dbh, res)
 }
 
 func (*complextable2Test)testDelete(t *testing.T, dbh DBHandle) {
@@ -163,19 +167,7 @@ func (*complextable2Test)testSelect(t *testing.T, dbh DBHandle) {
 		t.Fatal(err.Error())
 	}
 	
-	rows := 0
-	for {
-		if row,err := res.Next(dbh); err != nil {
-			t.Fatal(err.Error())
-		} else if row == nil {
-			break
-		}
-		rows++
-	}
-	
-	if rows != 2 {
-		t.Fatal("invalid row count in select")
-	}
+	checkResult(t, dbh, res)
 }
 
 func (*complextable3Test)testDelete(t *testing.T, dbh DBHandle) {
@@ -223,19 +215,7 @@ func (*complextable3Test)testSelect(t *testing.T, dbh DBHandle) {
 		t.Fatal(err.Error())
 	}
 	
-	rows := 0
-	for {
-		if row,err := res.Next(dbh); err != nil {
-			t.Fatal(err.Error())
-		} else if row == nil {
-			break
-		}
-		rows++
-	}
-	
-	if rows != 2 {
-		t.Fatal("invalid row count in select")
-	}
+	checkResult(t, dbh, res)
 }
 
 type ConfigCreds struct {

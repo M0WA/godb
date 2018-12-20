@@ -457,15 +457,24 @@ select rows from exampledb.exampletable:
 		return nil
 	}
 	
-	// fetching rows
+loop through result from select statement using 'res' from above:
+
 	for {
-		if row,err := res.Next(dbh); err != nil {
-			// error while fetching rows
-			return nil
-		} else if row == nil {		
-			break
-		} else {
-			// do something with row
+		row,err := res.Next(dbh)
+		if err != nil {
+			return
+		} else if row == nil {
+			return
+		}
+		
+		rowstr := ""
+		for idx := range row.Columns() {
+			v := row.GetByIndex(uint64(idx))
+			if v == nil {
+				return
+			}
+			tval := fmt.Sprintf("%v",v);
+			rowstr += " | " + tval
 		}
 	}
 
