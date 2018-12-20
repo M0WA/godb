@@ -136,7 +136,7 @@ For a reference have a look at Makefile located at the root of this repository.
 ### Language Libraries <a name="Library"></a>
 
 The other components are language specific libaries that are independently documented
-in <a href="#API>API</a>.
+in [API](#API).
 
 ## API <a name="API"></a>
 
