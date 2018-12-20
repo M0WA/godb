@@ -3,6 +3,7 @@ package godb
 import (
     "testing"
     "time"
+    "fmt"
 )
 
 type testTable interface {
@@ -92,11 +93,23 @@ func (*complextable1Test)testSelect(t *testing.T, dbh DBHandle) {
 	
 	rows := 0
 	for {
-		if row,err := res.Next(dbh); err != nil {
+		row,err := res.Next(dbh)
+		if err != nil {
 			t.Fatal(err.Error())
 		} else if row == nil {
 			break
 		}
+		
+		rowstr := ""
+		for idx := range row.Columns() {
+			v := row.GetByIndex(uint64(idx))
+			if v == nil {
+				t.Fatal("invalid column value")
+			}
+			tse := fmt.Sprintf("%v",v);
+			rowstr += " | " + tse
+		}
+		t.Log(rowstr)
 		rows++
 	}
 	
@@ -200,7 +213,7 @@ func (*complextable3Test)testSelect(t *testing.T, dbh DBHandle) {
 	vals := []uint16 { 0 }
 	ifval := make([]interface{}, len(vals))
 	for i,v := range vals {
-		ifval[i] = v 
+		ifval[i] = v
 	}
 	
 	stmt.Where().AppendCondition(Def_complexdb1_complextable3_ID(),WhereNotEqual(),ifval)

@@ -7,17 +7,6 @@
 #include <time.h>
 #include <string.h>
 
-const void* get_columnbuf_from_row(const struct _DBColumnDef *def,size_t colidx,const void *buf) {
-	const char *rc = (char*)buf;
-	for(size_t i = 0; i < colidx; i++) {
-		size_t colsize = get_column_bufsize(def);
-		if(!colsize) {
-			return 0;}
-		rc += colsize;
-	}
-	return rc;
-}
-
 size_t get_column_bufsize(const struct _DBColumnDef *col) {
 	switch(col->type) {
 	case COL_TYPE_STRING:

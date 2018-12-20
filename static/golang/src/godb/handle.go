@@ -23,7 +23,14 @@ type DBHandle interface {
 	*/
 	Disconnect()error
 	
+	/*
+		Delete executes a DeleteStmt
+	*/
 	Delete(DeleteStmt)error
+	
+	/*
+		Delete executes a SelectStmt and returns it's result
+	*/
 	Select(SelectStmt)(SelectResult,error)
 	
 	ToNative()*C.DBHandle
@@ -78,6 +85,9 @@ func (dbh *DBHandleImpl)Select(stmt SelectStmt)(SelectResult,error) {
 	return res,nil
 }
 
+/*
+	Delete implements DBHandle interface
+*/
 func (dbh *DBHandleImpl)Delete(stmt DeleteStmt)error {
 	if C.delete_db(dbh.dbh,stmt.ToNative()) != 0 {
 		return errors.New("could not delete")
