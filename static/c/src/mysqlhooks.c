@@ -123,8 +123,8 @@ static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
-	for(size_t row = 0; row < s->nrows; row++) {
-		if( mysql_values(s->defs,s->ncols,s->valbuf[row],&bind) ) {
+	for(size_t row = 0; row < s->dbtbl->rows.nrows; row++) {
+		if( mysql_values(s->dbtbl->def->cols,s->dbtbl->def->ncols,(const void * const* const)s->dbtbl->rows.buf[row],&bind) ) {
 			rc = 1;
 			goto MYSQL_INSERT_PREPARED_EXIT; }
 	}
@@ -145,7 +145,7 @@ static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt 
 		rc = 1;
 		goto MYSQL_INSERT_PREPARED_EXIT;
 	}
-	if( mysql_stmt_param_count(dbh->mysql.stmt) != (s->ncols * s->nrows) ) {
+	if( mysql_stmt_param_count(dbh->mysql.stmt) != (s->dbtbl->def->ncols * s->dbtbl->rows.nrows) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOG_WARN("mysql_stmt_param_count: invalid column count in prepared statement");
 		rc = 1;
@@ -274,7 +274,7 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT;	}
 
-	if( create_selectresult(s->defs,s->ncols,res) ) {
+	if( create_selectresult(s->def,res) ) {
 		LOG_WARN("create_selectresult(): could not create select stmt");
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT;}
@@ -319,7 +319,7 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
 
-	if( create_selectresult(s->defs,s->ncols,res) ) {
+	if( create_selectresult(s->def,res) ) {
 		LOG_WARN("create_selectresult(): could not create select stmt");
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT;}
@@ -353,8 +353,8 @@ static int mysql_fetch_raw(struct _DBHandle *dbh,struct _SelectResult *res) {
 	}
 	for(size_t col = 0; col < num_fields; col++) {
 		if(!row[col]) {
-			res->row[col] = 0;
-		} else if (	set_columnbuf_by_string(&(res->cols[col]),mysql_string_to_tm,res->row[col],row[col]) ) {
+			setnull_dbtable_columnbuf(&res->tbl, 0, col);
+		} else if (	set_columnbuf_by_string(&(res->tbl.def->cols[col]),mysql_string_to_tm,get_dbtable_columnbuf(&res->tbl, 0, col),row[col]) ) {
 			return -1;
 		}
 	}
@@ -367,8 +367,7 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 	unsigned long length[MAX_BIND_COLS];
 	MYSQL_TIME times[MAX_BIND_COLS];
 
-	if(!res || !res->ncols || !dbh || !dbh->mysql.stmt || res->ncols > MAX_BIND_COLS) {
-		destroy_selectresult(res);
+	if(!res || !dbh || !dbh->mysql.stmt || res->tbl.def->ncols > MAX_BIND_COLS) {
 		return -1;
 	}
 
@@ -376,16 +375,15 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 	memset(&is_null,0,sizeof(my_bool) * MAX_BIND_COLS);
 	memset(&length,0,sizeof(unsigned long) * MAX_BIND_COLS);
 
-	for(size_t i = 0; i < res->ncols; i++) {
-		if( mysql_datatype(&(res->cols[i]),&(bind[i].buffer_type)) ) {
-			destroy_selectresult(res);
+	for(size_t i = 0; i < res->tbl.def->ncols; i++) {
+		if( mysql_datatype(&(res->tbl.def->cols[i]),&(bind[i].buffer_type)) ) {
 			return -1; }
-		if(res->cols[i].type == COL_TYPE_DATETIME) {
+		if(res->tbl.def->cols[i].type == COL_TYPE_DATETIME) {
 			bind[i].buffer_length = sizeof(MYSQL_TIME);
 			bind[i].buffer = &times[i];
 		} else {
-			bind[i].buffer_length = get_column_bufsize(&(res->cols[i]));
-			bind[i].buffer = res->row[i];
+			bind[i].buffer_length = get_column_bufsize(&(res->tbl.def->cols[i]));
+			bind[i].buffer = get_dbtable_columnbuf(&res->tbl, 0, i);
 		}
 		bind[i].length = &(length[i]);
 		bind[i].is_null = &(is_null[i]);
@@ -394,18 +392,18 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 
 	if (mysql_stmt_bind_result(dbh->mysql.stmt, &(bind[0]))) {
 		LOGF_WARN("mysql_stmt_bind_result: %s", mysql_stmt_error(dbh->mysql.stmt));
-		destroy_selectresult(res);
 		return -1;
 	}
 	if ( mysql_stmt_fetch(dbh->mysql.stmt) ) {
-		destroy_selectresult(res);
 		mysql_stmt_close(dbh->mysql.stmt);
 		dbh->mysql.stmt = 0;
 		return 0;
 	}
-	for(size_t i = 0; i < res->ncols; i++) {
-		if(res->cols[i].type == COL_TYPE_DATETIME) {
-			mysql_tm(&times[i], res->row[i]);
+	for(size_t i = 0; i < res->tbl.def->ncols; i++) {
+		if(bind[i].is_null) {
+			setnull_dbtable_columnbuf(&res->tbl, 0, i);
+		} else if(res->tbl.def->cols[i].type == COL_TYPE_DATETIME) {
+			mysql_tm(&times[i], get_dbtable_columnbuf(&res->tbl, 0, i));
 		}
 	}
 	return 1;
@@ -452,7 +450,7 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
-	if( mysql_values(s->defs,s->ncols,s->valbuf,&bind) ) {
+	if( mysql_values(s->dbtbl->def->cols,s->dbtbl->def->ncols,(const void * const* const)s->dbtbl->rows.buf[0],&bind) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
@@ -526,8 +524,8 @@ static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt 
 	MySQLBindWrapper bind;
 	memset(&bind,0,sizeof(MySQLBindWrapper));
 
-	for(size_t row = 0; row < s->nrows; row++) {
-		if( mysql_values(s->defs,s->ncols,s->valbuf[row],&bind) ) {
+	for(size_t row = 0; row < s->dbtbl->rows.nrows; row++) {
+		if( mysql_values(s->dbtbl->def->cols,s->dbtbl->def->ncols,(const void * const* const)s->dbtbl->rows.buf[row],&bind) ) {
 			rc = 1;
 			goto MYSQL_UPSERT_PREPARED_EXIT; }
 	}
@@ -549,7 +547,7 @@ static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt 
 		rc = 1;
 		goto MYSQL_UPSERT_PREPARED_EXIT;
 	}
-	if( mysql_stmt_param_count(dbh->mysql.stmt) != (s->ncols * s->nrows) ) {
+	if( mysql_stmt_param_count(dbh->mysql.stmt) != (s->dbtbl->def->ncols * s->dbtbl->rows.nrows) ) {
 		LOGF_DEBUG("%s",stmtbuf);
 		LOG_WARN("mysql_stmt_param_count: invalid column count in prepared statement");
 		rc = 1;

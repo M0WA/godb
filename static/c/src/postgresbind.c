@@ -9,6 +9,7 @@
 #include "where.h"
 #include "helper.h"
 #include "stringbuf.h"
+#include "table.h"
 
 static int postgres_where_comp(const struct _WhereComposite *comp, PostgresParamWrapper *param) {
 	for(size_t i = 0; i < comp->cnt; i++) {
@@ -25,7 +26,7 @@ static int postgres_where_cond(const struct _WhereCondition *cond, PostgresParam
 
 	unsigned long buffer_length = get_column_bufsize(cond->def);
 	for(size_t i = 0,pos = 0; i < cond->cnt; i++, pos += buffer_length) {
-		if( postgres_param_append(cond->def,cond->values[i],param) ) {
+		if( postgres_param_append(cond->def,cond->values[i],1,param) ) {
 			return 1; }
 	}
 	return 0;
@@ -55,7 +56,7 @@ int postgres_where(const struct _WhereClause *clause,PostgresParamWrapper *param
 	return 0;
 }
 
-int postgres_param_append(const struct _DBColumnDef *col,const void *const val,PostgresParamWrapper *param) {
+int postgres_param_append(const struct _DBColumnDef *col,const void *const val, int isset,PostgresParamWrapper *param) {
 	switch(col->type) {
 	case COL_TYPE_STRING:
 		param->formats[param->nparam] = 0;
@@ -64,7 +65,7 @@ int postgres_param_append(const struct _DBColumnDef *col,const void *const val,P
 		break;
 	case COL_TYPE_INT:
 		param->formats[param->nparam] = 0;
-		if(col->autoincrement && !val) {
+		if(col->autoincrement && !isset) {
 			snprintf(param->buf[param->nparam],POSTGRES_BIND_BUF,"DEFAULT");
 		} else if( get_column_string(param->buf[param->nparam],POSTGRES_BIND_BUF,col,val) ) {
 			LOG_WARN("cannot convert to int");
@@ -99,13 +100,22 @@ int postgres_param_append(const struct _DBColumnDef *col,const void *const val,P
 	return 0;
 }
 
-int postgres_values(const struct _DBColumnDef *defs,size_t ncols,const void *const*const values,PostgresParamWrapper *param) {
-	for(size_t i = 0; i < ncols; i++) {
-		if(defs[i].autoincrement && !values[i]) {
+int postgres_values(const struct _DBTable *tbl,size_t row,PostgresParamWrapper *param) {
+	for(size_t col = 0; col < tbl->def->ncols; col++) {
+		if(tbl->def->cols[col].autoincrement && !tbl->rows.isset[row][col]) {
 			continue; }
-		if( postgres_param_append(&(defs[i]),values[i],param) ) {
-			return 1;
-		}
+		if( postgres_param_append(&(tbl->def->cols[col]),tbl->rows.buf[row][col],tbl->rows.isset[row][col],param) ) {
+			return 1; }
+	}
+	return 0;
+}
+
+int postgres_update_values(const struct _DBTable *tbl,size_t row,PostgresParamWrapper *param) {
+	for(size_t col = 0; col < tbl->def->ncols; col++) {
+		if(!tbl->rows.isset[row][col]) {
+			continue; }
+		if( postgres_param_append(&(tbl->def->cols[col]),tbl->rows.buf[row][col],tbl->rows.isset[row][col],param) ) {
+			return 1; }
 	}
 	return 0;
 }

@@ -30,7 +30,7 @@ const char* loglevelToString(LogLevel lvl);
 #define LOGF_ERROR(fmt, ...) _logf(LOGLVL_ERROR,__FILE__,__LINE__,__func__,fmt,__VA_ARGS__);
 
 #define LOGF_FATAL(exitcode,fmt, ...) \
-	LOGF_ERROR(fmt,#__VA_ARGS__); \
+	_logf(LOGLVL_ERROR,__FILE__,__LINE__,__func__,fmt,__VA_ARGS__); \
 	exit(exitcode);
 
 #define LOG_FATAL(exitcode,msg) \

@@ -12,116 +12,75 @@
 #include "table.h"
 #include "statements.h"
 #include "keys.h"
-{{ $td := . }}{{ range $db := .L.Databases }}
-const char c_{{ $db.Name }}[] = "{{ $db.Name }}"; {{ range $tbl := $db.Tables }}
-
+{{ $td := . }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */{{ $nuniq := len $tbl.UniqueKeys }}
-
-// {{ $db.Name }}.{{ $tbl.Name }}: column names
-const char c_{{ $db.Name }}_{{ $tbl.Name }}[] = "{{ $tbl.Name }}";{{ range $col := $tbl.Columns }}
-const char c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}[] = "{{ $col.Name }}";{{ end }}{{/* columns */}}
 
 // {{ $db.Name }}.{{ $tbl.Name }}: column definitions
 const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $col := $tbl.Columns }}
 	(struct _DBColumnDef) { 
 		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
-		.name = c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }},
-		.table = c_{{ $db.Name }}_{{ $tbl.Name }},
-		.database = c_{{ $db.Name }},
+		.name = "{{ $col.Name }}",
+		.table = "{{ $tbl.Name }}",
+		.database = "{{ $db.Name }}",
 		.size = {{ $td.SizeOf $col }},
 		.autoincrement = {{ if $col.AutoIncrement }}1{{ else }}0{{ end }},
 		.notnull = {{ if $col.NotNull }}1{{ else }}0{{ end }},
 		.notsigned = {{ if $col.Unsigned }}1{{ else }}0{{ end }},
 	},{{ end }}{{/* columns */}}
 };
-{{ range $i,$col := $tbl.Columns }}
-const struct _DBColumnDef *const coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} = &(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $i }}]);{{ end }}{{/* columns */}}
-
+{{ if gt $nuniq 0 }} {{ range $iuniq,$uniq := $tbl.UniqueKeys }}
+const struct _DBColumnDef* uniqdef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $iuniq }}[] = { {{ range $uniqcol := $uniq.Columns }}{{ range $itblcol,$tblcol := $tbl.Columns }}{{ if eq $tblcol.Name $uniqcol }}
+	&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $itblcol }}]), //{{ $uniqcol }}	{{ end }}{{ end }}{{ end }} 
+};
+{{ end }}
+// {{ $db.Name }}.{{ $tbl.Name }}: unique keys
+const struct _UniqKey uniqs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $iuniq,$uniq := $tbl.UniqueKeys }}
+	{
+		.ncols = {{ len $uniq.Columns }},
+		.cols = (const struct _DBColumnDef**)uniqdef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $iuniq }}, 
+	}, {{ end }}
+};
+{{ end }}
 // {{ $db.Name }}.{{ $tbl.Name }}: table definition
 const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
-	.name = c_{{ $db.Name }}_{{ $tbl.Name }},
-	.database = c_{{ $db.Name }},
+	.name = "{{ $tbl.Name }}",
+	.database = "{{ $db.Name }}",
 	.cols = (const struct _DBColumnDef*)&coldefs_{{ $db.Name }}_{{ $tbl.Name }},
 	.ncols = {{ len $tbl.Columns }},
-};
-{{ if gt $nuniq 0 }}{{ range $uniq := $tbl.UniqueKeys }}
-// {{ $db.Name }}.{{ $tbl.Name }}: unique keys
-const char *const uniqcol_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}}[] = { {{ range $uniqcol := $uniq.Columns }}
-	c_{{ $db.Name }}_{{ $tbl.Name }}_{{ $uniqcol }}, {{ end }}{{/* unique columns */}}
+	.primarykey = {{ range $i,$col := $tbl.Columns }}{{ if eq $col.Name $tbl.PrimaryKey.Column }}&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $i }}]){{ end }}{{ end }},
+	.uniquekeys = {{ if gt $nuniq 0 }}(const struct _UniqKey*)&uniqs_{{ $db.Name }}_{{ $tbl.Name }}{{ else }}0{{ end }},
+	.nunique = {{ $nuniq }},
 };
 
-const struct _UniqKey uniq_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}} = {
-	.ncols = {{ len $uniq.Columns }},
-	.cols = uniqcol_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}},
-};
-{{ end }}{{/* unique key */}}
-const struct _UniqKey *const uniq_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $uniq := $tbl.UniqueKeys }}
-	&uniq_{{ $db.Name }}_{{ $tbl.Name }}{{ range $uniqcol := $uniq.Columns }}_{{ $uniqcol }}{{ end }}{{/* unique columns */}}, {{ end }}{{/* unique keys */}}
-};
-{{ end }}{{/* endif */}}
 // {{ $db.Name }}.{{ $tbl.Name }}: create/initialize table structure
-void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl) {
-	tbl->tbl.def = &def_{{ $db.Name }}_{{ $tbl.Name }};
-	memset(&(tbl->tbl.valbuf),0,sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }}));	
-	{{ range $col := $tbl.Columns }}
-	tbl->tbl.colptr.{{ $col.Name }} = 0;{{ end }}{{/* columns */}}
-
-	tbl->tbl.p_colptr = &(tbl->tbl.colptr);
-	tbl->tbl.primarykey = coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $tbl.PrimaryKey.Column }}; {{ if gt $nuniq 0 }}
-	tbl->tbl.uniquekeys = uniq_{{ $db.Name }}_{{ $tbl.Name }};
-	tbl->tbl.nunique = {{ $nuniq }};{{ else }}
-	tbl->tbl.uniquekeys = 0;
-	tbl->tbl.nunique = 0;{{ end }}{{/* endif */}}
+int create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl, size_t rows) {	
+	memset(tbl,0,sizeof(struct _{{ $db.Name }}_{{ $tbl.Name }}));	
+	return create_dbtable(&tbl->dbtbl,&def_{{ $db.Name }}_{{ $tbl.Name }},rows);
 }
 
-{{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}() {
-	{{ $db.Name }}_{{ $tbl.Name }} *tbl = malloc(sizeof({{ $db.Name }}_{{ $tbl.Name }}));
-	_create_{{ $db.Name }}_{{ $tbl.Name }}(tbl);
-	return tbl;
-}
-
-// {{ $db.Name }}.{{ $tbl.Name }}: initialize upsert statement
-void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt *s) {
-	memset(s,0,sizeof(struct _UpsertStmt));
-	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
-	s->ncols = {{ len $tbl.Columns }}; {{ if gt $nuniq 0 }}
-	s->uniqs = uniq_{{ $db.Name }}_{{ $tbl.Name }};
-	s->nuniq = {{ $nuniq }}; {{ else }}
-	s->uniqs = 0;
-	s->nuniq = 0;{{ end }}{{/* endif */}}
-	s->prikey = coldef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $tbl.PrimaryKey.Column }};
-}
-
-// {{ $db.Name }}.{{ $tbl.Name }}: initialize delete statement
-void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt *s) {
-	memset(s,0,sizeof(struct _DeleteStmt));
-	s->def = &def_{{ $db.Name }}_{{ $tbl.Name }};
-}
-
-// {{ $db.Name }}.{{ $tbl.Name }}: initialize select statement
-void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt *s) {
-	memset(s,0,sizeof(struct _SelectStmt));
-	s->defs = coldefs_{{ $db.Name }}_{{ $tbl.Name }};
-	s->ncols = {{ len $tbl.Columns }};
+const struct _DBTableDef* {{ $db.Name }}_{{ $tbl.Name }}_tbldef() {
+	return &def_{{ $db.Name }}_{{ $tbl.Name }};
 }
 {{ range $colidx,$col := $tbl.Columns }}
-const struct _DBColumnDef *{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}() {
-	return &coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $colidx }}];
+void {{ $db.Name }}_{{ $tbl.Name }}_unset_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
+	{{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}(t,row);
+	t->dbtbl.rows.isset[row][{{  $colidx }}] = 0;
 }
 
-void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t, const {{ $td.PtrVar $col $col.Name }}) {
-	if( !{{ $col.Name }} ) {
-		SET_COLUMN_NULL(*t,{{ $col.Name }});
-	} else { {{ if eq $col.DataType "string" }}
-		SET_COLUMN_STRING(*t,{{ $col.Name }},{{ $col.Name }});{{ else if eq $col.DataType "datetime" }}
-		SET_COLUMN_TM(*t,{{ $col.Name }},*{{ $col.Name }});{{ else if eq $col.DataType "float" }}
-		SET_COLUMN(*t,{{ $col.Name }},*{{ $col.Name }});{{ else if eq $col.DataType "int" }}
-		SET_COLUMN(*t,{{ $col.Name }},*{{ $col.Name }});{{ end }}
-	}
+void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
+	if(!t->dbtbl.rows.buf[row][{{  $colidx }}]) {
+		return; }
+	free(t->dbtbl.rows.buf[row][{{  $colidx }}]);
+	t->dbtbl.rows.buf[row][{{  $colidx }}] = 0;
+	t->dbtbl.rows.isset[row][{{  $colidx }}] = 1;
 }
 
-const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
-	return t->tbl.colptr.{{ $col.Name }};
+{{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
+	return ({{ $td.PtrType $col }})get_dbtable_columnbuf(&t->dbtbl, row, {{  $colidx }});
+}
+
+const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
+	return t->dbtbl.rows.isset[row][{{  $colidx }}] ? (const {{ $td.PtrType $col }})t->dbtbl.rows.buf[row][{{  $colidx }}] : 0;
 }
 {{ end }}{{/* columns */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

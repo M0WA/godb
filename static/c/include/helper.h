@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 struct _DBColumnDef;
+struct _DBTable;
 struct _WhereClause;
 
 #define ARRAY_RESIZE(arr,idx,type) ({ \
@@ -22,5 +23,6 @@ struct _WhereClause;
 })
 
 char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols);
+char* comma_concat_colnames_setonly(const struct _DBTable *tbl);
 int append_string(const char *src, char** dest);
 void get_limit(const size_t limits[], char *limit);

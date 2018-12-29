@@ -18,53 +18,19 @@ struct _UniqKey;
 {{ $td := . }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
 
-#pragma pack(push, 1)
-typedef struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} { {{ range $col := $tbl.Columns }}
-	{{ $td.DataVar $col $col.Name }};{{ end }}{{/* columns */}}
-} valbuf_{{ $db.Name }}_{{ $tbl.Name }};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} { {{ range $col := $tbl.Columns }}
-	{{ $td.PtrVar $col $col.Name }};{{ end }}{{/* columns */}}
-} colptr_{{ $db.Name }}_{{ $tbl.Name }};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct _{{ $db.Name }}_{{ $tbl.Name }}_impl {
-	const struct _DBTableDef *def;
-	const struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} *p_colptr;
-	struct _colptr_{{ $db.Name }}_{{ $tbl.Name }} colptr;
-	struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }} valbuf;
-	const struct _UniqKey *const *uniquekeys;
-	size_t nunique;
-	const struct _DBColumnDef *primarykey;
-} {{ $db.Name }}_{{ $tbl.Name }}_impl;
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef union _{{ $db.Name }}_{{ $tbl.Name }} {
+typedef struct _{{ $db.Name }}_{{ $tbl.Name }} {
 	struct _DBTable dbtbl;
-	struct _{{ $db.Name }}_{{ $tbl.Name }}_impl tbl;
 } {{ $db.Name }}_{{ $tbl.Name }};
-#pragma pack(pop)
-
-// {{ $db.Name }}.{{ $tbl.Name }}: allocate a new initialized datastructure
-{{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}();
 
 // {{ $db.Name }}.{{ $tbl.Name }}: initializes a datastructure
-void _create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl);
+int create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl,size_t rows);
 
-// {{ $db.Name }}.{{ $tbl.Name }}: initializes upsert statement
-void upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _UpsertStmt* s);
+const struct _DBTableDef* {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
 
-// {{ $db.Name }}.{{ $tbl.Name }}: initializes delete statement
-void deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _DeleteStmt* s);
-
-// {{ $db.Name }}.{{ $tbl.Name }}: initializes select statement
-void selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(struct _SelectStmt* s);
-{{ range $col := $tbl.Columns }}
-const struct _DBColumnDef *{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}();
-void {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl, const {{ $td.PtrVar $col $col.Name }});
-const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *tbl);{{ end }}{{/* columns */}}
+// {{ $db.Name }}.{{ $tbl.Name }}: getter/setter {{ range $col := $tbl.Columns }}
+void {{ $db.Name }}_{{ $tbl.Name }}_unset_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
+void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
+{{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
+const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
+{{ end }}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libDB.la
 
-libDB_la_CFLAGS = -Wall -fPIC -D_REENTRANT -pthread -D_XOPEN_SOURCE -D_GNU_SOURCE
+libDB_la_CFLAGS = -Wall -fPIE -pie -D_REENTRANT -pthread -D_XOPEN_SOURCE -D_GNU_SOURCE
 libDB_la_LDFLAGS =
 
 if DEBUG
@@ -11,22 +11,23 @@ endif
 
 if ! DISABLE_POSTGRES
 libDB_la_LDFLAGS += -lpq
+libDB_la_CFLAGS += -D_ENABLE_POSTGRESHELPER
+else
+libDB_la_CFLAGS += -D_DISABLE_POSTGRES
 endif
 
 if ! DISABLE_MYSQL
 libDB_la_LDFLAGS += -lmysqlclient
+libDB_la_CFLAGS += -D_ENABLE_MYSQLHELPER
+else
+libDB_la_CFLAGS += -D_DISABLE_MYSQL
 endif
 
 if ! DISABLE_DBI
 libDB_la_LDFLAGS += -ldbi
-endif
-
-if ENABLE_POSTGRESHELPER
-libDB_la_CFLAGS += -D_ENABLE_POSTGRESHELPER
-endif
-
-if ENABLE_MYSQLHELPER
-libDB_la_CFLAGS += -D_ENABLE_MYSQLHELPER
+libDB_la_CFLAGS += -D_ENABLE_POSTGRESHELPER -D_ENABLE_MYSQLHELPER
+else
+libDB_la_CFLAGS += -D_DISABLE_DBI
 endif
 
 # find libs/c/src -name *.c | xargs -l1 basename | sort

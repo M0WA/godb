@@ -151,15 +151,7 @@ int destroy_dbhandle(struct _DBHandle *dbh) {
 	return 0;
 }
 
-void destroy_dbtable(struct _DBTable** tbl) {
-	if(!tbl||!*tbl) {
-		return; }
-	if(!(*tbl)->valbuf) {
-		return; }
-	free((*tbl)->valbuf);
-	(*tbl)->valbuf = 0;
-}
-
+/*
 int insert_stmt(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
 	if(!dbh || !dbh->hooks.insert || !stmt) {
 		LOG_ERROR("null database handle/hook/stmt");
@@ -168,8 +160,8 @@ int insert_stmt(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
 	return dbh->hooks.insert(dbh,stmt);
 }
 
-int insert_dbtable(struct _DBHandle *dbh,const struct _DBTable *const*const tbl,size_t nrows) {
-	if(!dbh || !tbl || !nrows) {
+int insert_dbtable(struct _DBHandle *dbh,const struct _DBTable *tbl) {
+	if(!dbh || !tbl) {
 		LOG_ERROR("null database handle/dbtable");
 		return 1;
 	}
@@ -181,21 +173,25 @@ int insert_dbtable(struct _DBHandle *dbh,const struct _DBTable *const*const tbl,
 	}
 	int rc = insert_db(dbh,tbl[0]->def,(const void *const*const*const)buf,nrows);
 	free(buf);
-	return rc;
-}
-
-int insert_db(struct _DBHandle *dbh,const struct _DBTableDef *const def,const void *const*const*const values,size_t nrows){
-	if(!dbh|!def|!values) {
-		LOG_ERROR("null database handle/table/values");
-		return 1;
-	}
 	struct _InsertStmt stmt = (struct _InsertStmt) {
 		.defs = def->cols,
 		.ncols = def->ncols,
 		.valbuf = values,
 		.nrows = nrows,
 	};
-	return insert_stmt(dbh,&stmt);
+	return rc;
+}
+*/
+int insert_db(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
+	if(!dbh) {
+		LOG_ERROR("null database handle/table/values");
+		return 1;
+	}
+	if(!dbh->hooks.insert) {
+		LOG_ERROR("invalid database handle");
+		return 1;
+	}
+	return dbh->hooks.insert(dbh,stmt);
 }
 
 int update_db(struct _DBHandle *dbh,const struct _UpdateStmt *const stmt) {

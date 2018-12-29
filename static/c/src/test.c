@@ -244,9 +244,11 @@ int main(int argc,char** argv) {
 			LOG_DEBUG("checking mysql raw statements");
 			mysql_conf.Mysql.Preparedstatements = 0;
 			test(&mysql_conf,&mysql_creds);
+			/*
 			LOG_DEBUG("checking mysql prepared statements");
 			mysql_conf.Mysql.Preparedstatements = 1;
 			test(&mysql_conf,&mysql_creds);
+			*/
 			break;
 #endif
 #ifndef _DISABLE_POSTGRES

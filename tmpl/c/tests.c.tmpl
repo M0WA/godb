@@ -18,44 +18,86 @@
 #include "logger.h"
 #include "keys.h"
 
-
 static int serial = 0;
+{{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}{{ if eq $tbl.Name "complextable3" }}
+static void test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	int rc = 0;
+	size_t rowcount = 0;
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} upsert results");
 
-{{ $td := . }}{{ range $db := $td.L.Databases }}{{ range $tbl := $db.Tables }}
+	const DBTableDef *tbldef = {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
+
+	SelectStmt stmt;
+	create_select_stmt(&stmt,tbldef);
+
+	size_t tmp = (serial == 11 ? 9 : serial - 1);
+	char buf[16] = {0};
+	snprintf(buf,16,"%zu",tmp);
+
+	struct _WhereCondition cond;
+	memset(&cond,0,sizeof(struct _WhereCondition));
+	cond.cond = WHERE_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = &(tbldef->cols[5]);
+	cond.values = (const void*[]){&buf};
+	cond.cnt = 1;
+
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
+
+	SelectResult res;
+	if( create_selectresult(tbldef, &res) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while creating select result");
+	}
+	if( select_db(dbh,&stmt,&res) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
+
+	while( (rc = fetch_db(dbh,&res)) > 0){
+		char *buf = 0;
+		dump_selectresult(&res,&buf);
+		if(buf) {
+			LOGF_DEBUG("%s",buf);
+			free(buf); }
+		const double *tf = (const double *)res.tbl.rows.buf[0][4];
+		if(*tf != 12.12) {
+			double tmpd = *tf;
+			LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid values while fetch: %f != 12.12",tmpd); }
+		rowcount++;
+	}
+		
+	LOGF_DEBUG("fetched %lu rows",rowcount);	
+	if(rc != 0 || rowcount != 1 ) {
+		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }	
+
+	DESTROY_STMT( (&stmt) );
+	destroy_selectresult(&res);
+}
+
 static void test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
-	if(strcmp("{{ $tbl.Name }}","complextable3") != 0)  {
-		return; }
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} upsert");
 
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
 
-	double testfloat = 12.12;
-	char testuniq[10];
+	(*{{ $db.Name }}_{{ $tbl.Name }}_set_testfloat(&tbl,0)) = 12.12;
+	
 	size_t tmp = (serial == 11 ? 9 : serial - 1);
-	snprintf(testuniq,10,"%zu",tmp);
-
-	const void *const values[2] = { &testuniq, &testfloat };
-	const void *const *const c_vals = (const void *const *const)&values;
-
-	struct _DBColumnDef defs[2];	
-	defs[0] = tbl.dbtbl.def->cols[5]; //testuniq
-	defs[1] = tbl.dbtbl.def->cols[4]; //testfloat
+	snprintf(({{ $db.Name }}_{{ $tbl.Name }}_set_testuniq(&tbl,0)),10,"%zu",tmp);
 
 	UpsertStmt stmt;
-	upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
-	stmt.defs = defs;
-	stmt.ncols = 2;
-	stmt.valbuf = &c_vals;
-	stmt.nrows = 1;
+	create_upsert_stmt(&stmt,&tbl.dbtbl);
 	
 	if(upsert_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while upsert"); }
+	
+	destroy_dbtable(&tbl.dbtbl);
+	
+	test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 }
-
+{{ end }}
 static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} update");
 
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
 
 	int id = 10;
 
@@ -67,12 +109,11 @@ static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	cond.values = (const void*[]){&id};
 	cond.cnt = 1;
 
-	double testfloat = 11.11;
+	double *tf = {{ $db.Name }}_{{ $tbl.Name }}_set_testfloat(&tbl,0);
+	*tf = 11.11;
+	
 	UpdateStmt stmt;
-	memset(&stmt,0,sizeof(UpdateStmt));
-	stmt.defs = &(tbl.dbtbl.def->cols[4]);
-	stmt.ncols = 1;
-	stmt.valbuf = (const void*[]){&testfloat};
+	create_update_stmt(&stmt,&tbl.dbtbl);
 
 	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
@@ -81,13 +122,14 @@ static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while update"); }
 
 	DESTROY_STMT(&stmt);
+	destroy_dbtable(&tbl.dbtbl);
 }
 
 static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} delete");
 
 	DeleteStmt stmt;
-	deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
+	create_delete_stmt(&stmt,{{ $db.Name }}_{{ $tbl.Name }}_tbldef());
 
 	int id = 10;
 
@@ -109,30 +151,32 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 }
 
 static void test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(SelectResult *res) {
-	for(size_t col = 0; col < res->ncols; col++) {
-		if( strcasecmp(res->cols[col].name,"ID") == 0 ) {
-			if( (*(unsigned long long*)res->row[col]) == 0 ) {
+	for(size_t col = 0; col < res->tbl.def->ncols; col++) {
+		if( strcasecmp(res->tbl.def->cols[col].name,"ID") == 0 ) {			
+			if( (*(unsigned long long*)res->tbl.rows.buf[0][col]) == 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID in select result");	}
-		} else if( strcasecmp(res->cols[col].name,"testint") == 0 ) {
-			if( (*(long long*)res->row[col]) != 10 ) {
-				LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint in select result: %ld",*((long long*)res->row[col])); }
-		} else if( strcasecmp(res->cols[col].name,"testfloat") == 0 ) {
-			if( (*(double*)res->row[col]) != 10.10 ) {
+		} else if( strcasecmp(res->tbl.def->cols[col].name,"testint") == 0 ) {
+			if( (*(long long*)res->tbl.rows.buf[0][col]) != 10 ) {
+				LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint in select result: %ld",*((long long*)res->tbl.rows.buf[0][col])); }
+		} else if( strcasecmp(res->tbl.def->cols[col].name,"testfloat") == 0 ) {
+			if( (*(double*)res->tbl.rows.buf[0][col]) != 10.10 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat in select result"); }
-		} else if( strcasecmp(res->cols[col].name,"teststr") == 0 ) {
-			if( strcmp(res->row[col],"test") != 0 ) {
+		} else if( strcasecmp(res->tbl.def->cols[col].name,"teststr") == 0 ) {
+			if( strcmp((const char*)res->tbl.rows.buf[0][col],"test") != 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr in select result"); }
 		}
 	}
 }
 
-static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh, int check) {
 	int rc = 0;
 	size_t rowcount = 0;
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} select");
 
+	const DBTableDef *tbldef = {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
+
 	SelectStmt stmt;
-	selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
+	create_select_stmt(&stmt,tbldef);
 
 	char test[] = "test";
 
@@ -140,7 +184,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	memset(&cond,0,sizeof(struct _WhereCondition));
 	cond.cond = WHERE_EQUAL;
 	cond.type = WHERE_COND;
-	cond.def = &(stmt.defs[1]);
+	cond.def = &(tbldef->cols[1]);
 	cond.values = (const void*[]){&test};
 	cond.cnt = 1;
 
@@ -148,7 +192,9 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
 
 	SelectResult res;
-	memset(&res,0,sizeof(res));
+	if( create_selectresult(tbldef, &res) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while creating select result");
+	}
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
@@ -158,85 +204,97 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 		if(buf) {
 			LOGF_DEBUG("%s",buf);
 			free(buf); }
-		test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(&res);
+		if(check) {
+			test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(&res);
+		}
 		rowcount++;
 	}
-	LOGF_DEBUG("fetched %lu rows",rowcount);
-	if(rc != 0 || rowcount != 4) {
+		
+	LOGF_DEBUG("fetched %lu rows",rowcount);	
+	if(rc != 0 || (check && rowcount != 4) ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }
 
 	DESTROY_STMT( (&stmt) );
 	destroy_selectresult(&res);
 }
 
-static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
-	{{ $td.DataVar $col (printf "t%s" $col.Name) }}{{ if eq $col.Name "testuniq" }};
-	snprintf(t{{ $col.Name }}, sizeof(t{{ $col.Name }}),"%d",serial);
-	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
+static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl, size_t row) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
+	{{ if eq $col.Name "testuniq" }}
+	snprintf({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),10,"%d",serial);
 	serial++;
 	if(serial == 10) {
 		serial++; }
 	{{ else if eq $col.DataType "string" }};
-	sprintf(t{{ $col.Name }},"test");
-	SET_COLUMN_STRING((*tbl),{{ $col.Name }},t{{ $col.Name }});
+	sprintf({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),"test");
 	{{ else if eq $col.DataType "datetime" }};
 	time_t tt{{ $col.Name }} = time(0);
-	memset(&t{{ $col.Name }},0,sizeof(struct tm));
-	gmtime_r(&tt{{ $col.Name }},&t{{ $col.Name }});
-	SET_COLUMN_TM((*tbl),{{ $col.Name }},t{{ $col.Name }});
-	{{ else if eq $col.DataType "float" }} = 10.10;
-	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
-	{{ else if eq $col.DataType "int" }} = 10;
-	SET_COLUMN((*tbl),{{ $col.Name }},t{{ $col.Name }});
+	memset({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),0,sizeof(struct tm));
+	gmtime_r(&tt{{ $col.Name }},{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row));
+	{{ else if eq $col.DataType "float" }}
+	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10.10;
+	{{ else if eq $col.DataType "int" }} 
+	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10;
 	{{ end }}{{/* end if */}}{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
 }
 
-static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
-	if( !tbl->tbl.colptr.{{ $col.Name }} ) {
-	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: null value column"); }
+static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *tbl, size_t row) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
+	if(! {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row) ) {
+	 	LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: null value column"); }
 	{{ if eq $col.Name "testuniq" }}
-	{{ else if eq $col.DataType "datetime" }}
-	if (tbl->tbl.colptr.{{ $col.Name }}->tm_year < 100 || tbl->tbl.colptr.{{ $col.Name }}->tm_year > 1000) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid datetime value: %lu-%lu-%lu",tbl->tbl.colptr.{{ $col.Name }}->tm_year,tbl->tbl.colptr.{{ $col.Name }}->tm_mon,tbl->tbl.colptr.{{ $col.Name }}->m_day); }
-	{{ else if eq $col.DataType "string" }}
-	if( strcmp(tbl->tbl.colptr.{{ $col.Name }},"test") != 0 ){
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %s",tbl->tbl.{{ $col.Name }}); }
-	{{ else if eq $col.DataType "int" }}
-	if( *(tbl->tbl.colptr.{{ $col.Name }}) != 10 ) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %d",*tbl->tbl.{{ $col.Name }}); }
-	{{ else if eq $col.DataType "float" }}
-	if( *(tbl->tbl.colptr.{{ $col.Name }}) != 10.10 ) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid value: %f",*tbl->tbl.{{ $col.Name }}); } {{ end }}{{/* end if */}}
-	if( tbl->tbl.colptr.{{ $col.Name }} != tbl->dbtbl.valbuf[{{ $i }}] ) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.colptr.{{ $col.Name }}: invalid dbtable ptr: %p != %p",tbl->tbl.colptr.{{ $col.Name }},tbl->dbtbl.valbuf[{{ $i }}]); }
+	{{ else if eq $col.DataType "datetime" }}{
+		const struct tm *tmp = {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row);
+		if (tmp->tm_year < 100 || tmp->tm_year > 1000) {
+			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: invalid datetime value"); }
+	}
+	{{ else if eq $col.DataType "string" }}{
+		const char *tmp = {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row);
+		if( strcmp(tmp,"test") != 0 ){
+			LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: invalid value: %s",tmp); }
+	}
+	{{ else if eq $col.DataType "int" }}{		
+		if( *({{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row)) != 10 ) {
+			LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: invalid value: %d",*{{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row)); }
+	}
+	{{ else if eq $col.DataType "float" }} {
+		if( *({{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row)) != 10.10 ) {
+			LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: invalid value: %f",*{{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(tbl,row)); }
+	}{{ end }}{{/* end if */}}
 	{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
 }
 
-static void test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+static void test_table_insert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} single row insert");
 
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
+	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,0);
 
-	if( INSERT_ONE_DBTABLE(dbh,&tbl.dbtbl) ) {
+	InsertStmt s;
+	create_insert_stmt(&s,&tbl.dbtbl);	
+	if( insert_db(dbh,&s)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: single table insert failed"); }
+		
+	destroy_dbtable(&tbl.dbtbl);
+}
 
-	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} multi row insert");
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl2);
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl3);
-	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl2);
-	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl3);
-
-	DBTable* rows[2] = { &(tbl2.dbtbl), &(tbl3.dbtbl) };
-	const struct _DBTable *const*const rowp = (const struct _DBTable *const*const)&rows;
-	if( insert_dbtable(dbh,rowp,2) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: multi table insert failed"); }
+static void test_table_bulkinsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} multi row/bulk insert");
+	
+	INIT_TABLE_ROWS({{ $db.Name }},{{ $tbl.Name }},tbl,2);	
+	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,0);
+	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,1);
+	
+	InsertStmt s;
+	create_insert_stmt(&s,&tbl.dbtbl);
+	if( insert_db(dbh,&s)) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: bulk insert failed");}	
+		
+	destroy_dbtable(&tbl.dbtbl);
 }
 
 static void test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTableDef* def) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} definition");
 	if(!def) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: definition is null");}
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: definition is null");}
 	if(!def->name || strcmp(def->name,"{{ $tbl.Name }}") != 0) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: def->name: invalid table name: %s",def->name ? def->name : "NULL");}
 	if(!def->database || strcmp(def->database,"{{ $db.Name }}") != 0) {
@@ -247,77 +305,85 @@ static void test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(const struct _DBTableD
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: def->cols is NULL");}
 }
 
-static void test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}() {
-	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} buffer size");
-	const size_t bufsize = 0{{ range $i,$col := $tbl.Columns }} + {{ $td.SizeOf $col  }}{{ end }};
-	const size_t ssize = sizeof(struct _valbuf_{{ $db.Name }}_{{ $tbl.Name }});
-	if( bufsize != ssize ) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: tbl.valbuf: invalid size %d != %d",bufsize,ssize); }
-}
-
 static void test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} indexes");
-	if( !tbl->tbl.def->cols[{{ $i }}].name
-	 || strcmp(tbl->tbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0 ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column for index"); } {{ end }}{{/* columns */}}
+	if( !tbl->dbtbl.def->cols[{{ $i }}].name
+	 || strcmp(tbl->dbtbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0 ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->dbtbl.def->cols: invalid column for index"); } {{ end }}{{/* columns */}}
 }
 
 static void test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }}* tbl) { {{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} definitions");
-	if( !tbl->tbl.def->cols[{{ $i }}].name || strcmp(tbl->tbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid column name"); }
-	if( !tbl->tbl.def->cols[{{ $i }}].table || strcmp(tbl->tbl.def->cols[{{ $i }}].table,"{{ $tbl.Name }}") != 0) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid table name"); }
-	if( !tbl->tbl.def->cols[{{ $i }}].database || strcmp(tbl->tbl.def->cols[{{ $i }}].database,"{{ $db.Name }}") != 0) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->tbl.def->cols: invalid database name"); } {{ end }}{{/* columns */}}
+	if( !tbl->dbtbl.def->cols[{{ $i }}].name || strcmp(tbl->dbtbl.def->cols[{{ $i }}].name,"{{ $col.Name }}") != 0) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->dbtbl.def->cols: invalid column name"); }
+	if( !tbl->dbtbl.def->cols[{{ $i }}].table || strcmp(tbl->dbtbl.def->cols[{{ $i }}].table,"{{ $tbl.Name }}") != 0) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->dbtbl.def->cols: invalid table name"); }
+	if( !tbl->dbtbl.def->cols[{{ $i }}].database || strcmp(tbl->dbtbl.def->cols[{{ $i }}].database,"{{ $db.Name }}") != 0) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl->dbtbl.def->cols: invalid database name"); } {{ end }}{{/* columns */}}
 }
 
 static void test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}() {
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
 	{{ range $i,$col := $tbl.Columns }}
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} getter/setter");
-	if( tbl.tbl.colptr.{{ $col.Name }} ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: tbl.tbl.colptr.{{ $col.Name }}: not initialized to null"); } {{ end }}{{/* columns */}}
+	if( {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(&tbl,0) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: not initialized to null"); } {{ end }}{{/* columns */}}
 	{{ range $i,$col := .Columns }}
-	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
-	test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
+	test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,0);
+	test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,0);
 
-	SET_COLUMN_NULL(tbl,{{ $col.Name }});
-	if( tbl.tbl.colptr.{{ $col.Name }} ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: SET_COLUMN_NULL: not null"); }	{{ end }}{{/* columns */}}
+	{{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}(&tbl,0);
+	if( {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(&tbl,0) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: not null"); }	{{ end }}{{/* columns */}}
+		
+	destroy_dbtable(&tbl.dbtbl);
+}
+
+static void test_table_getset_multi_{{ $db.Name }}_{{ $tbl.Name }}() {
+	INIT_TABLE_ROWS({{ $db.Name }},{{ $tbl.Name }},tbl,2);
+	
+	for(size_t row = 0 ; row < 2; row++) {
+		{{ range $i,$col := $tbl.Columns }}
+		LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} getter/setter (multi table)");
+		if( {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(&tbl,row) ) {
+			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: {{ $col.Name }}: not initialized to null"); } {{ end }}{{/* columns */}}
+		{{ range $i,$col := .Columns }}
+		test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,row);
+		test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(&tbl,row);
+	
+		{{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}(&tbl,row);
+		if( {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(&tbl,row) ) {
+			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }}: not null"); }	{{ end }}{{/* columns */}}
+	}
+		
+	destroy_dbtable(&tbl.dbtbl);
 }
 
 static void test_table_uniq_{{ $db.Name }}_{{ $tbl.Name }}() {
 	LOG_DEBUG("checking column {{ $db.Name }}.{{ $tbl.Name }} unique keys");
 
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
+	
+	if( tbl.dbtbl.def->nunique !=  {{ len $tbl.UniqueKeys }} ) {
+		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key count (%zu,%d)",tbl.dbtbl.def->nunique,{{ len $tbl.UniqueKeys }}); }
+
 	UpsertStmt stmt;
-	upsertstmt_{{ $db.Name }}_{{ $tbl.Name }}(&stmt);
-
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
-	if( tbl.tbl.nunique != stmt.nuniq || stmt.nuniq != {{ len $tbl.UniqueKeys }} ) {
-		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key count (%zu,%zu,%d)",tbl.tbl.nunique,stmt.nuniq,{{ len $tbl.UniqueKeys }}); }
-
-	for(size_t uk = 0; uk < stmt.nuniq; uk++) {
-		if( tbl.tbl.uniquekeys[uk]->ncols != stmt.uniqs[uk]->ncols ) {
-			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key column count"); }
-		for(size_t col = 0; col < stmt.uniqs[uk]->ncols; col++) {
-			if( strcmp(tbl.tbl.uniquekeys[uk]->cols[col],stmt.uniqs[uk]->cols[col]) != 0 ) {
-				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid uniq key column name"); }
-		}
-	}
+	create_upsert_stmt(&stmt,&tbl.dbtbl);
+	
+	//TODO: test upserts
+	
+	destroy_dbtable(&tbl.dbtbl);
 }
 
 static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
-	
-	test_table_buffer_size_{{ $db.Name }}_{{ $tbl.Name }}();
-
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} instanciation");
-	TABLE_STRUCT({{ $db.Name }},{{ $tbl.Name }},tbl);
+	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
 	
-	test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(tbl.tbl.def);
+	test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(tbl.dbtbl.def);
 	test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_coldef_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);
 	test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}();
+	test_table_getset_multi_{{ $db.Name }}_{{ $tbl.Name }}();
 	test_table_uniq_{{ $db.Name }}_{{ $tbl.Name }}();
 }
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
@@ -332,11 +398,13 @@ void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases 
 	LOG_DEBUG("checking database {{ $db.Name }}");{{ range $tbl := $db.Tables }}
 	LOG_DEBUG("checking table {{ $db.Name }}");
 	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_insert{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
-	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{/* tables */}}
+	test_table_insert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_bulkinsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh,1);
+	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ if eq $tbl.Name "complextable3" }}
+	test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}
+	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
+	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh,0);{{ end }}{{/* tables */}}
 	LOG_DEBUG("all tables for {{ $db.Name }}: SUCCESS");{{ end }}{{/* databases */}}
 	LOG_INFO("all dynamic checks on generated tables: SUCCESS");
 }

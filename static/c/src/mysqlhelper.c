@@ -71,25 +71,27 @@ int mysql_string_to_tm(const char *val, struct tm *t) {
 }
 
 static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf *sql) {
-	if(!s->prikey) {
+	if(!s->dbtbl->def->primarykey) {
 		LOG_WARN("no primary key found");
 		return 1;
 	}
-	if( stringbuf_append(sql,s->prikey->name) ||
+	if( stringbuf_append(sql,s->dbtbl->def->primarykey->name) ||
 	    stringbuf_append(sql," = LAST_INSERT_ID(") ||
-		stringbuf_append(sql,s->prikey->name) ||
+		stringbuf_append(sql,s->dbtbl->def->primarykey->name) ||
 		stringbuf_append(sql,")")
 	){
 		return 1;
 	}
-	for(size_t col = 0; col < s->ncols; col++) {
-		if( strcmp(s->defs[col].name,s->prikey->name) == 0) {
+	for(size_t col = 0; col < s->dbtbl->def->ncols; col++) {
+		if( strcmp(s->dbtbl->def->cols[col].name,s->dbtbl->def->primarykey->name) == 0) {
+			continue; }
+		if(!s->dbtbl->rows.isset[0][col]) {
 			continue; }
 		if(stringbuf_append(sql,",")) {
 			return 1; }
-		if ( stringbuf_append(sql,s->defs[col].name) ||
+		if ( stringbuf_append(sql,s->dbtbl->def->cols[col].name) ||
 			stringbuf_append(sql," = VALUES(") ||
-			stringbuf_append(sql,s->defs[col].name) ||
+			stringbuf_append(sql,s->dbtbl->def->cols[col].name) ||
 			stringbuf_append(sql,")")
 		){
 			return 1;
@@ -107,12 +109,12 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&updatekeys,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames(s->defs,s->ncols);
+	colnames = comma_concat_colnames_setonly(s->dbtbl);
 	if(!colnames) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT;	}
 
-	if( insert_values_row_string(s->defs, s->ncols, valspec, s->valbuf, s->nrows, &values, 0) ) {
+	if( upsert_values_row_string(s->dbtbl, valspec, &values, 0) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
@@ -120,11 +122,11 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
-	size_t sqlsize = 1 + stringbuf_strlen(&values) + strlen(fmt) + strlen(colnames) + strlen(s->defs->table) + stringbuf_strlen(&updatekeys);
+	size_t sqlsize = 1 + stringbuf_strlen(&values) + strlen(fmt) + strlen(colnames) + strlen(s->dbtbl->def->name) + stringbuf_strlen(&updatekeys);
 	if( stringbuf_resize(sql,sqlsize) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
-	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->defs->table,colnames,
+	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->dbtbl->def->name,colnames,
 			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
 			(stringbuf_get(&updatekeys) ? stringbuf_get(&updatekeys) : ""));
 	LOGF_DEBUG("statement: %s",stringbuf_get(sql));

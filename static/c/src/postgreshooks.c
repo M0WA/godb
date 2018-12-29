@@ -123,8 +123,8 @@ static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt con
 		rc = 1;
 		goto POSTGRES_INSERT_PREPARED_EXIT; }
 
-	for(size_t row = 0; row < s->nrows; row++) {
-		if( postgres_values(s->defs,s->ncols,s->valbuf[row],&param) ) {
+	for(size_t row = 0; row < s->dbtbl->rows.nrows; row++) {
+		if( postgres_values(s->dbtbl,row,&param) ) {
 			rc = 1;
 			goto POSTGRES_INSERT_PREPARED_EXIT; }
 	}
@@ -235,7 +235,7 @@ static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*co
 		goto POSTGRES_SELECT_RAW_EXIT; }
 	dbh->postgres.resrow = 0;
 
-	if( create_selectresult(s->defs,s->ncols,res) ) {
+	if( create_selectresult(s->def,res) ) {
 		LOG_WARN("create_selectresult(): could not create select stmt");
 		rc = 1;
 		PQclear(dbh->postgres.res);
@@ -274,7 +274,7 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 	dbh->postgres.resrow = 0;
 
-	if( create_selectresult(s->defs,s->ncols,res) ) {
+	if( create_selectresult(s->def,res) ) {
 		LOG_WARN("create_selectresult(): could not create select stmt");
 		rc = 1;
 		PQclear(dbh->postgres.res);
@@ -299,19 +299,19 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 		PQclear(dbh->postgres.res);
 		dbh->postgres.res = 0;
 		dbh->postgres.resrow = 0;
-		destroy_selectresult(res);
 		return 0;
 	}
 	size_t ncols = PQnfields(dbh->postgres.res);
 	for (size_t residx = 0; residx < ncols; residx++) {
+		void *colbuf = get_dbtable_columnbuf(&res->tbl, 0, residx);
 		if(PQgetisnull(dbh->postgres.res, dbh->postgres.resrow, residx)) {
-			res->row[residx] = 0;
+			setnull_dbtable_columnbuf(&res->tbl, 0, residx);
 		} else {
 			char *val = PQgetvalue(dbh->postgres.res, dbh->postgres.resrow, residx);
 			if(!val) {
-				return 0; }
-			const DBColumnDef *col = &(res->cols[residx]);
-			if( set_columnbuf_by_string(col,postgres_time_to_tm,res->row[residx],val) ) {
+				return -1; }
+			const DBColumnDef *col = &(res->tbl.def->cols[residx]);
+			if( set_columnbuf_by_string(col,postgres_time_to_tm,colbuf,val) ) {
 				return -1;
 			}
 		}
@@ -355,7 +355,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( postgres_values(s->defs,s->ncols,s->valbuf,&param) ) {
+	if( postgres_update_values(s->dbtbl,0,&param) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
@@ -416,30 +416,37 @@ POSTGRES_UPSERT_RAW_EXIT:
 }
 
 static int postgres_upsert_prepared(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {
+	/*
 	int rc = 0;
 	PGresult *res = 0;
+
+	PostgresParamWrapper param;
+	memset(&param,0,sizeof(PostgresParamWrapper));
+
+	//TODO: fill param with real values
 
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
 	if(postgres_upsert_stmt_string(s, postgres_values_specifier, &stmtbuf)) {
 		rc = 1;
-		goto POSTGRES_UPSERT_RAW_EXIT; }
+		goto POSTGRES_UPSERT_PREPARED_EXIT; }
 
-	/*
 	res = PQexecParams(dbh->postgres.conn, stmtbuf, param.nparam, param.types,param.values,param.lengths,param.formats,0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		LOGF_WARN("update failed: %s",PQerrorMessage(dbh->postgres.conn));
+		LOGF_WARN("upsert failed: %s",PQerrorMessage(dbh->postgres.conn));
 		rc = 1;
 		PQclear(res);
-		goto POSTGRES_UPDATE_PREPARED_EXIT; }
-	*/
+		goto POSTGRES_UPSERT_PREPARED_EXIT; }
 
-POSTGRES_UPSERT_RAW_EXIT:
+POSTGRES_UPSERT_PREPARED_EXIT:
 	if(res) {
 		PQclear(res); }
 	stringbuf_destroy(&stmtbuf);
 	return rc;
+	*/
+	LOG_WARN("postgres prepared upsert not implemented, falling back to raw...");
+	return postgres_upsert_raw(dbh,s);
 }
 
 int postgres_upsert_hook(struct _DBHandle *dbh,struct _UpsertStmt const*const s) {

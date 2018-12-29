@@ -11,7 +11,7 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
 
 AC_ARG_ENABLE([debug],
-[  --enable-debug          Turn on debugging],
+[AS_HELP_STRING([--enable-debug],[Turn on debugging (default is no)])],
 [case "${enableval}" in
   yes) debug=true ;;
   no)  debug=false ;;
@@ -20,7 +20,7 @@ esac],[debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 AC_ARG_ENABLE([testbin],
-[  --enable-testbin        Build test binary],
+[AS_HELP_STRING([--enable-testbin],[Build test binary (default is no)])],
 [case "${enableval}" in
   yes) testbin=true ;;
   no)  testbin=false ;;
@@ -29,35 +29,31 @@ esac],[testbin=false])
 AM_CONDITIONAL([TESTBIN], [test x$testbin = xtrue])
 
 AC_ARG_ENABLE([postgre],
-[  --disable-postgre       Disables PostgreSQL support],
+[AS_HELP_STRING([--enable-postgre],[Enables PostgreSQL support (default is yes)])],
 [case "${enableval}" in
-  yes) postgre=false ;;
-  no)  postgre=true ;;
-  *) AC_MSG_ERROR([bad value ${enableval} for --disable-postgre]) ;;
+  yes) postgre=true ;;
+  no)  postgre=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-postgre]) ;;
 esac],[postgre=true])
 AM_CONDITIONAL([DISABLE_POSTGRES], [test x$postgre = xfalse])
-AM_CONDITIONAL([ENABLE_POSTGRESHELPER], [test x$postgre = xtrue])
 
 AC_ARG_ENABLE([mysql],
-[  --disable-mysql         Disables MySQL support],
+[AS_HELP_STRING([--enable-mysql],[Enables MySQL support (default is yes)])],
 [case "${enableval}" in
-  yes) mysql=false ;;
-  no)  mysql=true ;;
-  *) AC_MSG_ERROR([bad value ${enableval} for --disable-mysql]) ;;
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-mysql]) ;;
 esac],[mysql=true])
 AM_CONDITIONAL([DISABLE_MYSQL], [test x$mysql = xfalse])
-AM_CONDITIONAL([ENABLE_MYSQLHELPER], [test x$mysql = xtrue])
 
 AC_ARG_ENABLE([dbi],
-[  --disable-dbi           Disables DBI support],
+[AS_HELP_STRING([--enable-dbi],[Enables DBI support (default is yes)])],
 [case "${enableval}" in
-  yes) dbi=false ;;
-  no)  dbi=true ;;
-  *) AC_MSG_ERROR([bad value ${enableval} for --disable-dbi]) ;;
+  yes) dbi=true ;;
+  no)  dbi=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-dbi]) ;;
 esac],[dbi=true])
 AM_CONDITIONAL([DISABLE_DBI], [test x$dbi = xfalse])
-AM_CONDITIONAL([ENABLE_MYSQLHELPER], [test x$dbi = xtrue])
-AM_CONDITIONAL([ENABLE_POSTGRESHELPER], [test x$dbi = xtrue])
 
 # Checks for programs.
 AC_PROG_CC

@@ -16,15 +16,15 @@ int dump_selectresult(const SelectResult *res, char** buf) {
 
 	if(append_string(" | ",buf)) {
 		return 1; }
-	for(size_t i = 0; i < res->ncols; i++) {
+	for(size_t i = 0; i < res->tbl.def->ncols; i++) {
 		size_t oldbufsize = bufsize;
-		bufsize = res->cols[i].type == COL_TYPE_STRING ? res->cols[i].size : 64;
+		bufsize = res->tbl.def->cols[i].type == COL_TYPE_STRING ? res->tbl.def->cols[i].size : 64;
 		if(bufsize > oldbufsize) {
 			tmpbuf = alloca(bufsize);
 			oldbufsize = bufsize; }
 		if(!tmpbuf) {
 			return 1; }
-		if( get_column_string(tmpbuf,bufsize,&(res->cols[i]),res->row[i]) ) {
+		if( get_column_string(tmpbuf,bufsize,&(res->tbl.def->cols[i]),res->tbl.rows.buf[0][i]) ) {
 			return 1; }
 		if(append_string(tmpbuf,buf)) {
 			return 1; }
@@ -34,37 +34,19 @@ int dump_selectresult(const SelectResult *res, char** buf) {
 	return 0;
 }
 
-int create_selectresult(const struct _DBColumnDef *defs,size_t ncols, struct _SelectResult *res) {
-	if(!defs || !ncols || !res) {
+int create_selectresult(const struct _DBTableDef *def, struct _SelectResult *res) {
+	if(!def || !res) {
 		return 1; }
 
-	res->cols = defs;
-	res->ncols = ncols;
-	res->row = calloc(sizeof(void*),res->ncols);
-	for(size_t i = 0; i < res->ncols; i++) {
-		size_t colsize = get_column_bufsize(&(defs[i]));
-		if(colsize == 0) {
-			free(res->row);
-			res->row = 0;
-			LOG_WARN("invalid column size");
-			return 1; }
-		res->row[i] = calloc(1,colsize);
-	}
+	if( create_dbtable(&(res->tbl), def, 1) ) {
+		return 1; }
+
 	return 0;
 }
 
 int destroy_selectresult(struct _SelectResult *res) {
 	if(res) {
-		if(res->row) {
-			for(size_t i = 0; i < res->ncols; i++) {
-				if(res->row[i]) {
-					free(res->row[i]);
-					res->row[i] = 0;
-				}
-			}
-			free(res->row);
-		}
-		res->row = 0;
+		destroy_dbtable(&res->tbl);
 	}
 	return 0;
 }

@@ -62,18 +62,18 @@ func (*cTmplData)PtrType(c *layout.Column)(string) {
 				unsigned = "unsigned "
 			}
 			if c.Size == 16 {
-				return unsigned + "short *"
+				return unsigned + "short*"
 			} else if c.Size == 32 || c.Size == 0 {
-				return unsigned + "long *"
+				return unsigned + "long*"
 			} else if c.Size == 64 {
-				return unsigned + "long long *"
+				return unsigned + "long long*"
 			} else {
 				return "invalid"
 			}
 		case layout.FLOAT:
-			return "double* "
+			return "double*"
 		case layout.STRING:
-			return "char* "
+			return "char*"
 		default:
 			return "invalid"
 	}

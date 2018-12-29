@@ -2,14 +2,15 @@
 
 #include <stddef.h>
 
-struct _DBTable;
+struct _DBColumnDef;
+struct _DBTableDef;
+
+#include "table.h"
 
 typedef struct _SelectResult {
-	const struct _DBColumnDef *cols;
-	size_t ncols;
-	void** row;
+	struct _DBTable tbl;
 } SelectResult;
 
 int destroy_selectresult(SelectResult *res);
-int create_selectresult(const struct _DBColumnDef *defs,size_t ncols, struct _SelectResult *res);
+int create_selectresult(const struct _DBTableDef *def, struct _SelectResult *res);
 int dump_selectresult(const SelectResult *res, char** buf);

@@ -15,17 +15,13 @@ struct _StringBuf;
 #define DESTROY_STMT(somestmt) where_destroy(&((somestmt)->where));
 
 typedef struct _InsertStmt {
-	const struct _DBColumnDef *defs;
-	size_t ncols;
-	const void *const*const* valbuf;
-	size_t nrows;
+	const struct _DBTable *dbtbl;
 	struct _JoinClause *joins;
 	size_t njoins;
 } InsertStmt;
 
 typedef struct _SelectStmt {
-	const struct _DBColumnDef *defs;
-	size_t ncols;
+	const struct _DBTableDef *def;
 	struct _WhereClause where;
 	struct _GroupByClause groupby;
 	struct _JoinClause *joins;
@@ -39,23 +35,21 @@ typedef struct _DeleteStmt {
 } DeleteStmt;
 
 typedef struct _UpdateStmt {
-	const struct _DBColumnDef *defs;
-	size_t ncols;
-	const void *const* valbuf;
+	const struct _DBTable *dbtbl;
 	struct _JoinClause *joins;
 	size_t njoins;
 	struct _WhereClause where;
 } UpdateStmt;
 
 typedef struct _UpsertStmt {
-	const struct _DBColumnDef *defs;
-	size_t ncols;
-	const struct _UniqKey *const *uniqs;
-	size_t nuniq;
-	const struct _DBColumnDef *prikey;
-	const void *const*const* valbuf;
-	size_t nrows;
+	const struct _DBTable *dbtbl;
 } UpsertStmt;
+
+int create_insert_stmt(struct _InsertStmt *s,const struct _DBTable *dbtbl);
+int create_select_stmt(struct _SelectStmt *s,const struct _DBTableDef *def);
+int create_delete_stmt(struct _DeleteStmt *s,const struct _DBTableDef *def);
+int create_upsert_stmt(struct _UpsertStmt *s,const struct _DBTable *dbtbl);
+int create_update_stmt(struct _UpdateStmt *s,const struct _DBTable *dbtbl);
 
 int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, struct _StringBuf *sql);
 int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, struct _StringBuf *sql);
