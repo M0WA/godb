@@ -27,5 +27,6 @@ typedef struct _DBTable {
 
 int create_dbtable(struct _DBTable *tbl, const struct _DBTableDef *def,size_t rows);
 void destroy_dbtable(struct _DBTable *tbl);
-void* get_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col);
+const void* get_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col);
+void* set_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col);
 void setnull_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col);

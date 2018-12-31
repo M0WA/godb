@@ -76,7 +76,8 @@ void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $t
 }
 
 {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
-	return ({{ $td.PtrType $col }})get_dbtable_columnbuf(&t->dbtbl, row, {{  $colidx }});
+	t->dbtbl.rows.isset[row][{{  $colidx }}] = 1;
+	return ({{ $td.PtrType $col }})set_dbtable_columnbuf(&t->dbtbl, row, {{  $colidx }});
 }
 
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {

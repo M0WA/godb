@@ -36,6 +36,11 @@ void destroy_dbtable(struct _DBTable *tbl) {
 		return;
 	}
 	for(size_t row = 0; row < tbl->rows.nrows; row++) {
+		for(size_t col = 0; col < tbl->def->ncols; col++) {
+			if(tbl->rows.buf[row][col]) {
+				free(tbl->rows.buf[row][col]);
+			}
+		}
 		if(tbl->rows.isset && tbl->rows.isset[row]) {
 			free(tbl->rows.isset[row]);
 		}
@@ -51,14 +56,18 @@ void destroy_dbtable(struct _DBTable *tbl) {
 	}
 }
 
-void* get_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col) {
+const void* get_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col) {
+	return tbl->rows.buf[row][col];
+}
+
+void* set_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col) {
 	if(!tbl->rows.buf[row][col]) {
 		tbl->rows.buf[row][col] = malloc(get_column_bufsize(&tbl->def->cols[col]));
 		if(!tbl->rows.buf[row][col]) {
 			return 0;
 		}
 	}
-	tbl->rows.isset[row][col] = col;
+	tbl->rows.isset[row][col] = 1;
 	return tbl->rows.buf[row][col];
 }
 

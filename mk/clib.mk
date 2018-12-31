@@ -50,7 +50,7 @@ test_clib:
 
 valgrind_clib:
 	$(MAKE) testbin_dbg_clib
-	( cd $(LIBS_DIR)/c/src/.libs/ && LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs valgrind --trace-children=yes --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all -v libdbtest )
+	LD_LIBRARY_PATH=$(LIBS_DIR)/c/src/.libs valgrind --trace-children=yes --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all -v $(LIBS_DIR)/c/src/.libs/./libdbtest
 
 gdb_clib:
 	$(MAKE) testbin_dbg_clib

@@ -354,7 +354,7 @@ static int mysql_fetch_raw(struct _DBHandle *dbh,struct _SelectResult *res) {
 	for(size_t col = 0; col < num_fields; col++) {
 		if(!row[col]) {
 			setnull_dbtable_columnbuf(&res->tbl, 0, col);
-		} else if (	set_columnbuf_by_string(&(res->tbl.def->cols[col]),mysql_string_to_tm,get_dbtable_columnbuf(&res->tbl, 0, col),row[col]) ) {
+		} else if (	set_columnbuf_by_string(&(res->tbl.def->cols[col]),mysql_string_to_tm,set_dbtable_columnbuf(&res->tbl, 0, col),row[col]) ) {
 			return -1;
 		}
 	}
@@ -383,7 +383,7 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 			bind[i].buffer = &times[i];
 		} else {
 			bind[i].buffer_length = get_column_bufsize(&(res->tbl.def->cols[i]));
-			bind[i].buffer = get_dbtable_columnbuf(&res->tbl, 0, i);
+			bind[i].buffer = set_dbtable_columnbuf(&res->tbl, 0, i);
 		}
 		bind[i].length = &(length[i]);
 		bind[i].is_null = &(is_null[i]);
@@ -403,7 +403,7 @@ static int mysql_fetch_prepared(struct _DBHandle *dbh,struct _SelectResult *res)
 		if(bind[i].is_null) {
 			setnull_dbtable_columnbuf(&res->tbl, 0, i);
 		} else if(res->tbl.def->cols[i].type == COL_TYPE_DATETIME) {
-			mysql_tm(&times[i], get_dbtable_columnbuf(&res->tbl, 0, i));
+			mysql_tm(&times[i], set_dbtable_columnbuf(&res->tbl, 0, i));
 		}
 	}
 	return 1;

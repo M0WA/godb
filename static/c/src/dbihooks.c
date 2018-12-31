@@ -162,10 +162,10 @@ int dbi_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 		}
 
 		if( dbi_result_field_is_null_idx(dbh->dbi.result,dbiidx) ) {
-			res->tbl.rows.buf[0][residx] = 0;
+			setnull_dbtable_columnbuf(&res->tbl, 0, residx);
 		} else {
 			const DBColumnDef *col = &(res->tbl.def->cols[residx]);
-			const void *colbuf = get_dbtable_columnbuf(&res->tbl, 0, residx);
+			const void *colbuf = set_dbtable_columnbuf(&res->tbl, 0, residx);
 
 			switch(col->type) {
 			case COL_TYPE_STRING:

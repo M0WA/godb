@@ -303,13 +303,13 @@ int postgres_fetch_hook(struct _DBHandle *dbh,struct _SelectResult *res) {
 	}
 	size_t ncols = PQnfields(dbh->postgres.res);
 	for (size_t residx = 0; residx < ncols; residx++) {
-		void *colbuf = get_dbtable_columnbuf(&res->tbl, 0, residx);
 		if(PQgetisnull(dbh->postgres.res, dbh->postgres.resrow, residx)) {
 			setnull_dbtable_columnbuf(&res->tbl, 0, residx);
 		} else {
 			char *val = PQgetvalue(dbh->postgres.res, dbh->postgres.resrow, residx);
 			if(!val) {
 				return -1; }
+			void *colbuf = set_dbtable_columnbuf(&res->tbl, 0, residx);
 			const DBColumnDef *col = &(res->tbl.def->cols[residx]);
 			if( set_columnbuf_by_string(col,postgres_time_to_tm,colbuf,val) ) {
 				return -1;

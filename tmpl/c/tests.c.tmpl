@@ -46,9 +46,8 @@ static void test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
 
 	SelectResult res;
-	if( create_selectresult(tbldef, &res) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while creating select result");
-	}
+	memset(&res,0,sizeof(SelectResult));
+
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
@@ -192,9 +191,8 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh, int 
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: cannot append where stmt"); }
 
 	SelectResult res;
-	if( create_selectresult(tbldef, &res) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while creating select result");
-	}
+	memset(&res,0,sizeof(SelectResult));
+
 	if( select_db(dbh,&stmt,&res) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
@@ -218,23 +216,19 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh, int 
 	destroy_selectresult(&res);
 }
 
-static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl, size_t row) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
-	{{ if eq $col.Name "testuniq" }}
+static void test_table_columnpreset_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* tbl, size_t row) { {{ range $i,$col := $tbl.Columns }}
+	// {{ $db.Name }}.{{ $tbl.Name }}.{{ $col.Name }} {{ if eq $col.AutoIncrement false }}{{ if eq $col.Name "testuniq" }}	
 	snprintf({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),10,"%d",serial);
 	serial++;
 	if(serial == 10) {
-		serial++; }
-	{{ else if eq $col.DataType "string" }};
-	sprintf({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),"test");
-	{{ else if eq $col.DataType "datetime" }};
+		serial++; }	{{ else if eq $col.DataType "string" }}		
+	sprintf({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),"test"); {{ else if eq $col.DataType "datetime" }}
 	time_t tt{{ $col.Name }} = time(0);
 	memset({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row),0,sizeof(struct tm));
-	gmtime_r(&tt{{ $col.Name }},{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row));
-	{{ else if eq $col.DataType "float" }}
-	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10.10;
-	{{ else if eq $col.DataType "int" }} 
-	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10;
-	{{ end }}{{/* end if */}}{{ end }}{{/* end if */}}{{ end }}{{/* columns */}}
+	gmtime_r(&tt{{ $col.Name }},{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)); {{ else if eq $col.DataType "float" }}
+	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10.10;	{{ else if eq $col.DataType "int" }} 
+	*({{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(tbl,row)) = 10;{{ end }}{{/* end if */}}{{ end }}{{/* end if */}}
+	{{ end }}{{/* columns */}}
 }
 
 static void test_table_checkpreset_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *tbl, size_t row) { {{ range $i,$col := $tbl.Columns }}{{ if eq $col.AutoIncrement false }}
@@ -385,6 +379,8 @@ static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	test_table_getset_{{ $db.Name }}_{{ $tbl.Name }}();
 	test_table_getset_multi_{{ $db.Name }}_{{ $tbl.Name }}();
 	test_table_uniq_{{ $db.Name }}_{{ $tbl.Name }}();
+	
+	destroy_dbtable(&tbl.dbtbl);
 }
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 
