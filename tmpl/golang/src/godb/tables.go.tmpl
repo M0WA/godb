@@ -5,155 +5,42 @@ package godb
    ============================================================== */
 
 /*
-#include <db.h>
-#include <table.h>
-#include <tables.h>
-#include <statements.h>
-#include <column.h>
-
-#include <stddef.h>
-#include <stdlib.h>
-
-static void tables_free_string(char *str) {
-	if(str) {
-		free(str);
-	}
-}
-
-{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
-static const struct _DBTable *get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t) {
-	return &(t->dbtbl);
-}
-static void free_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t) {
- }
-{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+#include "table.h"
+#include "tables.h"
 */
 import "C"
-
-import (
-	"errors"
-	"runtime"
-)
-{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
+{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
 /* ==============================================================
    table {{ $db.Name }}.{{ $tbl.Name }}
    ============================================================== */
-   
-/*
-	{{ $db.Name }}_{{ $tbl.Name }} is an interface to access data/columns of {{ $db.Name }}.{{ $tbl.Name }} table
-*/
-type {{ $db.Name }}_{{ $tbl.Name }} interface { {{ range $col := $tbl.Columns }}
-	Get_{{ $col.Name }}()*{{ $td.DataType $col }}
-	Set_{{ $col.Name }}({{ $td.DataType $col }}){{ end }}{{/* columns */}}
-	ToNative()*C.{{ $db.Name }}_{{ $tbl.Name }}
-	ToNativeDBTable()*C.DBTable
+type {{ $tblif }} interface { {{ range $col := $tbl.Columns }}
+	// {{ Title $col.Name }} returns pointer to value of column {{ $col.Name }}
+	{{ Title $col.Name }}()*{{ $td.DataType $col }}{{ end }}
 }
 
-type {{ $db.Name }}_{{ $tbl.Name }}_impl struct {
-	tbl *C.{{ $db.Name }}_{{ $tbl.Name }}
+type {{ $tblimpl }} struct { 
+	dbtbl DBTable
 }
 
-/*
-	New_{{ $db.Name }}_{{ $tbl.Name }} creates a new instance of a {{ $db.Name }}_{{ $tbl.Name }} interface
-*/
-func New_{{ $db.Name }}_{{ $tbl.Name }}(){{ $db.Name }}_{{ $tbl.Name }} {
-	t := new({{ $db.Name }}_{{ $tbl.Name }}_impl)
-	t.tbl = C.alloc_{{ $db.Name }}_{{ $tbl.Name }}()	
-	runtime.SetFinalizer(t, free_{{ $db.Name }}_{{ $tbl.Name }})
+// New{{ $tblif }} creates a new instance of a {{ $tblif }} interface
+func New{{ $tblif }}(rows uint32){{ $tblif }} {
+	t := new({{ $tblimpl }})
+	t.dbtbl = NewDBTable(t.TableDef(),rows)
 	return t
 }
 
-func free_{{ $db.Name }}_{{ $tbl.Name }}(tbl *{{ $db.Name }}_{{ $tbl.Name }}_impl) {
-	if tbl.tbl != nil {
-		C.free_{{ $db.Name }}_{{ $tbl.Name }}(tbl.tbl)
-	}
+// CTable implements DBTable interface
+func (t *{{ $tblimpl }})CTable()*C.DBTable {
+	return t.dbtbl.CTable()
 }
 
-/*
-	NewDeleteStmt_{{ $db.Name }}_{{ $tbl.Name }} allocates and initializes a delete statement for rows of {{ $db.Name }}.{{ $tbl.Name }}
-*/
-func NewDeleteStmt_{{ $db.Name }}_{{ $tbl.Name }}()DeleteStmt {
-	s := NewDeleteStmt()	
-	C.deletestmt_{{ $db.Name }}_{{ $tbl.Name }}(s.ToNative())
-	return s
-}
-
-/*
-	NewSelectStmt_{{ $db.Name }}_{{ $tbl.Name }} allocates and initializes a select statement for rows of {{ $db.Name }}.{{ $tbl.Name }},
-	selecting all columns in that table
-*/
-func NewSelectStmt_{{ $db.Name }}_{{ $tbl.Name }}()SelectStmt {
-	s := NewSelectStmt()	
-	C.selectstmt_{{ $db.Name }}_{{ $tbl.Name }}(s.ToNative())
-	return s
-}
-
-/*
-	Insert_{{ $db.Name }}_{{ $tbl.Name }} inserts one or more rows into {{ $db.Name }}.{{ $tbl.Name }}
-*/
-func Insert_{{ $db.Name }}_{{ $tbl.Name }}(dbh DBHandle, row {{ $db.Name }}_{{ $tbl.Name }})error {
-	dbtbl := row.ToNativeDBTable()
-	if C.insert_dbtable(dbh.ToNative(),&dbtbl,1) != 0 {
-		return errors.New("error while insert")
-	}
-	return nil
-}
-
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)ToNative()*C.{{ $db.Name }}_{{ $tbl.Name }} {
-	return t.tbl
-}
-
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)ToNativeDBTable()*C.DBTable {
-	return C.get_dbtbl_{{ $db.Name }}_{{ $tbl.Name }}(t.ToNative())
+// TableDef implements DBTable interface
+func (*{{ $tblimpl }})TableDef()DBTableDef {	
+	return NewDBTableDef(C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef())
 }
 {{ range $col := $tbl.Columns }}
-/*
-	Def_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }} returns the definition of the column {{ $col.Name }}
-*/
-func Def_{{ $db.Name }}_{{ $tbl.Name }}_{{ $col.Name }}()*C.DBColumnDef {
-	return C.{{ $db.Name }}_{{ $tbl.Name }}_def_{{ $col.Name }}();
+// {{ Title $col.Name }} implements {{ $tblif }} interface
+func (t *{{ $tblimpl }}){{ Title $col.Name }}()*{{ $td.DataType $col }} {
+	return nil
 }
-
-/*
-	Get_{{ $col.Name }} implements {{ $db.Name }}_{{ $tbl.Name }} interface
-*/
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Get_{{ $col.Name }}()*{{ $td.DataType $col }} {
-	v := C.{{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(t.ToNative())
-	if v == nil {
-		return nil
-	}
-{{ if eq $col.DataType "string" }}
-	str := C.GoString(v)
-	return &str
-{{ else if eq $col.DataType "datetime" }}
-	timestamp := C.mktime(v)
-	tm := time.Unix(int64(timestamp), 0)
-	return &tm
-{{ else if eq $col.DataType "float" }}
-	f := {{ $td.DataType $col }}(*v)
-	return &f
-{{ else if eq $col.DataType "int" }}
-	i := {{ $td.DataType $col }}(*v)
-	return &i
-{{ end }}
-}
-
-/*
-	Set_{{ $col.Name }} implements {{ $db.Name }}_{{ $tbl.Name }} interface
-*/
-func (t *{{ $db.Name }}_{{ $tbl.Name }}_impl)Set_{{ $col.Name }}(v {{ $td.DataType $col }}){
-{{ if eq $col.DataType "datetime" }}
-	tmp := C.long(v.Unix())
-	tm := new(C.struct_tm)
-	tm = C.gmtime_r(&tmp, tm)
-	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tm)
-{{ else if eq $col.DataType "string" }}
-	tmp := C.CString(v)
-	defer C.tables_free_string(tmp)
-	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), tmp)
-{{ else }}
-	tmp := {{ $td.CGoType $col }}(v)
-	C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.ToNative(), &tmp)
-{{ end }}
-}
-{{ end }}{{/* columns */}}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

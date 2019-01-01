@@ -14,7 +14,8 @@ const (
 	INVALID      DBType = iota
 	MYSQL        DBType = iota
 	POSTGRES     DBType = iota
-	DBI          DBType = iota
+	DBI_MYSQL    DBType = iota
+	DBI_POSTGRES DBType = iota
 )
 
 type DBConfig interface {
@@ -35,7 +36,9 @@ func NewDBConfig(dbtype DBType)(DBConfig,error) {
 		c.native.Type = C.DB_TYPE_MYSQL
 		case POSTGRES:
 		c.native.Type = C.DB_TYPE_POSTGRES
-		case DBI:
+		case DBI_MYSQL:
+		c.native.Type = C.DB_TYPE_DBI
+		case DBI_POSTGRES:
 		c.native.Type = C.DB_TYPE_DBI
 		default:
 		return nil, errors.New("invalid database type")

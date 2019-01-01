@@ -65,6 +65,7 @@ int postgres_connect_hook(struct _DBHandle *dbh) {
 			postgres_disconnect_hook(dbh); }
 		return 1;
 	}
+	LOG_DEBUG("connected to postgres-database");
 	return 0;
 }
 

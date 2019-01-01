@@ -142,6 +142,9 @@ func ComplexLayout(db string)(string) {
           - columns:
               - ID
               - testint
+        indexkeys:
+          - column: testfloat
+          - column: teststr
 `
 	t3 := singleOneTableLayout("complextable3") + `
           - name: testuniq
@@ -174,6 +177,10 @@ func complexTables(db string)([]Table) {
 	u := UniqueKey{
 		Columns: []string{"ID","testint"},
 	}
+	
+	idxs := make([]IndexKey,0)
+	idxs = append(idxs,IndexKey{Column: "testfloat"})
+	idxs = append(idxs,IndexKey{Column: "teststr"})
 
 	dfk := "0"
 	c := oneTableFields()
@@ -192,6 +199,7 @@ func complexTables(db string)([]Table) {
 		PrimaryKey: PrimaryKey{ Column: "ID" },
 		ForeignKeys: []ForeignKey{ f },
 		UniqueKeys: []UniqueKey{ u },
+		IndexKeys: idxs,
 		MySQL: MySQLTable{ Engine: "innodb", RowFormat: "dynamic" },
 	}
 

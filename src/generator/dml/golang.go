@@ -108,6 +108,7 @@ func (*golangGenerator)processTemplate(t *golangTmplData,out string,name string,
 	h := template.New(name + ".tmpl")
     h.Funcs(template.FuncMap{"ToUpper": strings.ToUpper})
     h.Funcs(template.FuncMap{"ToLower": strings.ToLower})
+    h.Funcs(template.FuncMap{"Title": strings.Title})
     
 	if h,err = h.ParseFiles(tmpl + "/" + name + ".tmpl"); err != nil {
 		return err

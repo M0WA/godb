@@ -1,7 +1,9 @@
 #include "stringbuf.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include <string.h>
 
 int stringbuf_resize(struct _StringBuf *buf,size_t newsize) {
@@ -48,6 +50,32 @@ int stringbuf_append(struct _StringBuf *buf,const char *str) {
 	if(stringbuf_resize(buf,newlen)) {
 		return 1; }
 	strncat(buf->buf,str,newlen + 1);
+	return 0;
+}
+
+int stringbuf_appendf(struct _StringBuf *buf,const char *fmt,...) {
+	int size = 0;
+    va_list ap;
+
+    // determine space
+    va_start(ap, fmt);
+    size = vsnprintf(0, size, fmt, ap);
+    va_end(ap);
+    if (size < 0)
+        return 1;
+
+    // allocate enough space
+    size_t newlen = stringbuf_strlen(buf) + size + 1;
+	if(stringbuf_resize(buf,newlen)) {
+		return 1; }
+
+	char *cbuf = stringbuf_buf(buf);
+	cbuf = &(cbuf[stringbuf_strlen(buf)]);
+
+	// actually do vsnprintf
+    va_start(ap, fmt);
+	vsprintf(cbuf,fmt,ap);
+	va_end(ap);
 	return 0;
 }
 

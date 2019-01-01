@@ -15,6 +15,7 @@
 #include "tables.h"
 #include "statements.h"
 #include "selectresult.h"
+#include "stringbuf.h"
 #include "logger.h"
 #include "keys.h"
 
@@ -372,6 +373,12 @@ static void test_table_uniq_{{ $db.Name }}_{{ $tbl.Name }}() {
 static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} instanciation");
 	INIT_TABLE({{ $db.Name }},{{ $tbl.Name }},tbl);
+	
+	StringBuf buf;
+	stringbuf_init(&buf,512);	
+	dump_dbtabledef(tbl.dbtbl.def,&buf);	
+	LOGF_DEBUG("%s",stringbuf_get(&buf));	
+	stringbuf_destroy(&buf);
 	
 	test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(tbl.dbtbl.def);
 	test_table_indexes_{{ $db.Name }}_{{ $tbl.Name }}(&tbl);

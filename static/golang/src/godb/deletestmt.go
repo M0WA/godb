@@ -1,16 +1,11 @@
 package godb
 
 /*
-#include <stdlib.h>
-#include <statements.h>
+#include "statements.h"
+#include "where.h"
 
-static DeleteStmt *alloc_delete_stmt() {
-	DeleteStmt *s = calloc(1,sizeof(DeleteStmt));
-	return s;
-}
-
-static WhereClause *get_where_clause_deletestmt(DeleteStmt *s) {
-	return &s->where;
+static void free_delete_where(DeleteStmt *s) {
+	where_destroy(&s->where);
 }
 */
 import "C"
@@ -20,48 +15,26 @@ import (
 )
 
 type DeleteStmt interface {
-	/*
-		Where returns the where clause part of the statement
-	*/
-	Where()*C.WhereClause
-	
-	/*
-		ToNative returns a pointer to this statement's C datatype
-	*/
-	ToNative()*C.DeleteStmt
+	CDeleteStmt()*C.DeleteStmt
 }
 
 type DeleteStmtImpl struct {
-	stmt *C.DeleteStmt
+	s C.DeleteStmt
 }
 
-/*
-	NewDeleteStmt allocates a delete statement
-*/
-func NewDeleteStmt()DeleteStmt {
-	s := new(DeleteStmtImpl)
-	s.stmt = C.alloc_delete_stmt()
-	runtime.SetFinalizer(s, FreeDeleteStmt)
-	return s
+func freeDeleteStmt(s *DeleteStmtImpl) {
+	C.free_delete_where(&s.s)
 }
 
-/*
-	FreeDeleteStmt frees all allocated memory for a delete statement
-*/
-func FreeDeleteStmt(s *DeleteStmtImpl) {
-	DestroyWhereClause(s.Where())
+func NewDeleteStmt(def DBTableDef)DeleteStmt {
+	t := new(DeleteStmtImpl)
+	if int(C.create_delete_stmt(&t.s,def.CTableDef())) != 0 {
+		return nil
+	}
+	runtime.SetFinalizer(t, freeInsertStmt)
+	return t
 }
 
-/*
-	Where implements DeleteStmt interface
-*/
-func (stmt *DeleteStmtImpl)Where()*C.WhereClause {
-	return C.get_where_clause_deletestmt(stmt.ToNative())
-}
-
-/*
-	ToNative implements DeleteStmt interface
-*/
-func (stmt *DeleteStmtImpl)ToNative()*C.DeleteStmt {
-	return stmt.stmt
+func (s *DeleteStmtImpl)CDeleteStmt()*C.DeleteStmt {
+	return &s.s
 }

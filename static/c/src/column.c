@@ -3,9 +3,44 @@
 
 #include "logger.h"
 #include "helper.h"
+#include "stringbuf.h"
 
 #include <time.h>
 #include <string.h>
+
+void dump_dbcolumndef(const struct _DBColumnDef *def, const char* prefix, struct _StringBuf *buf) {
+	stringbuf_appendf(buf,"%s%s.%s.%s\n",prefix,def->database,def->table,def->name);
+
+	switch(def->type) {
+	case COL_TYPE_STRING:
+		stringbuf_appendf(buf,"%s\ttype: COL_TYPE_STRING(%zu)\n",prefix,def->size);
+		break;
+	case COL_TYPE_INT:
+		stringbuf_appendf(buf,"%s\ttype: COL_TYPE_INT(%zu)\n",prefix,def->size);
+		break;
+	case COL_TYPE_FLOAT:
+		stringbuf_appendf(buf,"%s\ttype: COL_TYPE_FLOAT\n",prefix);
+		break;
+	case COL_TYPE_DATETIME:
+		stringbuf_appendf(buf,"%s\ttype: COL_TYPE_DATETIME\n",prefix);
+		break;
+	default:
+		stringbuf_appendf(buf,"%s\ttype: UNKNOWN\n",prefix);
+		break;
+	}
+
+	stringbuf_appendf(buf,"%s\topts:",prefix);
+	if(def->notsigned && def->type == COL_TYPE_INT) {
+		stringbuf_append(buf," UNSIGNED");
+	}
+	if(def->notnull) {
+		stringbuf_append(buf," NOT_NULL");
+	}
+	if(def->autoincrement) {
+		stringbuf_append(buf," AUTO_INCREMENT");
+	}
+	stringbuf_appendf(buf,"\n",prefix);
+}
 
 size_t get_column_bufsize(const struct _DBColumnDef *col) {
 	switch(col->type) {
