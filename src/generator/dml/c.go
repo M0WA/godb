@@ -13,7 +13,7 @@ type cGenerator struct {
 
 type cTmplData struct {
 	L *layout.Layout
-	ll layout.Layouter
+	LL layout.Layouter
 	TypeStrings map[int]string;
 }
 
@@ -145,7 +145,7 @@ func (g *cGenerator)Generate(l layout.Layouter,out string, tmpl string)error {
 	
 	t := new(cTmplData)
 	t.L = l.Layout()
-	t.ll = l
+	t.LL = l
 	
 	if err := g.processTemplate(t,hd,"columntypes.h",tmpl + "/c"); err != nil {
 		return err

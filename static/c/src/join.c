@@ -8,9 +8,8 @@
 
 #include <string.h>
 
-int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf) {
+static int join_stmt_string(const struct _JoinStmt *join,struct _StringBuf *buf) {
 	const char fmt[] = "%s JOIN %s ON %s.%s = %s.%s";
-	char tmp[JOIN_BUF_SIZE] = {0};
 	const char *left = "LEFT", *right = "RIGHT", *inner = "INNER", *outer = "OUTER";
 	const char *typestr = 0;
 
@@ -31,12 +30,31 @@ int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf) {
 		return 1;
 	}
 
-	if( snprintf(tmp,JOIN_BUF_SIZE,fmt,typestr,join->left->name,join->left->name,join->leftcol->name,join->right->name,join->rightcol->name) <= (JOIN_BUF_SIZE-1) ) {
-		LOG_WARN("join clause too long");
-		return 1; }
+	if( stringbuf_appendf(buf,fmt,typestr,join->right->table,join->right->table,join->right->name,join->left->table,join->left->name) ) {
+		return 1;
+	}
+	return 0;
+}
 
-	if( stringbuf_append(buf,tmp) ) {
-		return 1; }
+int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf) {
+	for(size_t i = 0; i < join->njoins; i++) {
+		if( join_stmt_string(join->joins[i],buf) ) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
+int join_append(struct _JoinClause *join, struct _JoinStmt *stmt) {
+	if(join->joins) {
+		join->joins = realloc(join->joins,sizeof(struct _JoinStmt) * (join->njoins + 1));
+	} else {
+		join->joins = malloc(sizeof(struct _JoinStmt));
+	}
+	if(!join->joins) {
+		return 1;
+	}
+	join->joins[join->njoins] = stmt;
+	join->njoins++;
 	return 0;
 }

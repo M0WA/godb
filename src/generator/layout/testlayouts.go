@@ -136,8 +136,7 @@ func ComplexLayout(db string)(string) {
           - column: testfk
             refcolumn: ID
             reftable: complextable1
-            mysql:
-              refdatabase: ` + db + `
+            refdatabase: ` + db + `
         uniquekeys:
           - columns:
               - ID
@@ -172,7 +171,7 @@ func complexTables(db string)([]Table) {
 		Column: "testfk",
 		RefColumn: "ID",
 		RefTable: "complextable1",
-		MySQL: MySQLForeignKey{ RefDatabase: db  },
+		RefDatabase: db,
 	}
 	u := UniqueKey{
 		Columns: []string{"ID","testint"},

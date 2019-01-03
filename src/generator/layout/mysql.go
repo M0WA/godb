@@ -17,7 +17,3 @@ type MySQLTable struct {
 
 type MySQLColumn struct {
 }
-
-type MySQLForeignKey struct {
-	RefDatabase string
-}

@@ -247,3 +247,13 @@ int where_generic_value_specifier(const struct _DBColumnDef *def,const void *val
 		return 1; }
 	return 0;
 }
+
+int create_where_condition(struct _WhereCondition *w, WhereCondOperator condOp,const struct _DBColumnDef *wherecol,const void** values,size_t valcnt) {
+	memset(w,0,sizeof(struct _WhereCondition));
+	w->cond = WHERE_EQUAL;
+	w->type = WHERE_COND;
+	w->def = wherecol;
+	w->values = values;
+	w->cnt = valcnt;
+	return 1;
+}

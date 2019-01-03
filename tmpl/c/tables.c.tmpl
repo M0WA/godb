@@ -12,9 +12,11 @@
 #include "table.h"
 #include "statements.h"
 #include "keys.h"
-{{ $td := . }}{{ $layout := .L }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
+#include "where.h"
+#include "join.h"
+{{ $td := . }}{{ $layout := .L }}{{ $layouter := .LL }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 // {{ $db.Name }}.{{ $tbl.Name }}: column definitions
-const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $col := $tbl.Columns }}
+const struct _DBColumnDef {{ $db.Name }}_{{ $tbl.Name }}_coldefs[] = { {{ range $col := $tbl.Columns }}
 	(struct _DBColumnDef) { 
 		.type = COL_TYPE_{{ $col.DataType | ToUpper }},
 		.name = "{{ $col.Name }}",
@@ -26,58 +28,62 @@ const struct _DBColumnDef coldefs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range 
 		.notsigned = {{ if $col.Unsigned }}1{{ else }}0{{ end }},
 	},{{ end }}{{/* columns */}}
 }; 
-{{ end }}{{ end }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $nuniq := len $tbl.UniqueKeys }}{{ $nforeign := len $tbl.ForeignKeys }}{{ $nindex := len $tbl.IndexKeys }}{{ if gt $nforeign 0 }} 
+
+// {{ $db.Name }}.{{ $tbl.Name }}: column indices {{ range $i,$col := $tbl.Columns }}
+const size_t {{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }} = {{ $i }};{{ end }}
+{{ end }}{{ end }}
+{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $nuniq := len $tbl.UniqueKeys }}{{ $nforeign := len $tbl.ForeignKeys }}{{ $nindex := len $tbl.IndexKeys }}{{ if gt $nforeign 0 }} 
 // {{ $db.Name }}.{{ $tbl.Name }}: foreign keys
-const struct _ForeignKey foreigns_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $iforeign,$foreign := $tbl.ForeignKeys }}
+const struct _ForeignKey {{ $db.Name }}_{{ $tbl.Name }}_foreigns[] = { {{ range $iforeign,$foreign := $tbl.ForeignKeys }}
 	(struct _ForeignKey){ 
-		.col = {{ range $iftbl,$ftblcol := $tbl.Columns }}{{ if eq $foreign.Column $ftblcol.Name }}&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $iftbl }}]), //{{ $ftblcol.Name }}{{ end }}{{ end }}
-		.ref = {{ range $fdb := $layout.Databases }}{{ range $ftbl := $fdb.Tables }}{{ if eq $foreign.RefTable $ftbl.Name }}{{ range $iftbl,$ftblcol := $ftbl.Columns }}{{ if eq $foreign.RefColumn $ftblcol.Name }}&(coldefs_{{ $fdb.Name }}_{{ $ftbl.Name }}[{{ $iftbl }}]), //{{ $ftblcol.Name }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }} 
+		.col = {{ range $iftbl,$ftblcol := $tbl.Columns }}{{ if eq $foreign.Column $ftblcol.Name }}&({{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $iftbl }}]), //{{ $ftblcol.Name }}{{ end }}{{ end }}
+		.ref = {{ range $fdb := $layout.Databases }}{{ range $ftbl := $fdb.Tables }}{{ if eq $foreign.RefTable $ftbl.Name }}{{ range $iftbl,$ftblcol := $ftbl.Columns }}{{ if eq $foreign.RefColumn $ftblcol.Name }}&({{ $fdb.Name }}_{{ $ftbl.Name }}_coldefs[{{ $iftbl }}]), //{{ $ftblcol.Name }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }} 
 	}, {{ end }}
 };
 {{ end }}{{ if gt $nindex 0 }}
 // {{ $db.Name }}.{{ $tbl.Name }}: index keys
-const struct _IndexKey indexkeys_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $iindex,$index := $tbl.IndexKeys }}
+const struct _IndexKey {{ $db.Name }}_{{ $tbl.Name }}_indexkeys[] = { {{ range $iindex,$index := $tbl.IndexKeys }}
 	(struct _IndexKey) {
-		.col = {{ range $itbl,$itblcol := $tbl.Columns }}{{ if eq $index.Column $itblcol.Name }}&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $itbl }}]), //{{ $itblcol.Name }}{{ end }}{{ end }},
+		.col = {{ range $itbl,$itblcol := $tbl.Columns }}{{ if eq $index.Column $itblcol.Name }}&({{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $itbl }}]), //{{ $itblcol.Name }}{{ end }}{{ end }},
 	}, {{ end }}
 };
 {{ end }}{{ if gt $nuniq 0 }} 
 // {{ $db.Name }}.{{ $tbl.Name }}: unique key definitions {{ range $iuniq,$uniq := $tbl.UniqueKeys }}
-const struct _DBColumnDef* uniqdef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $iuniq }}[] = { {{ range $uniqcol := $uniq.Columns }}{{ range $itblcol,$tblcol := $tbl.Columns }}{{ if eq $tblcol.Name $uniqcol }}
-	&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $itblcol }}]), //{{ $uniqcol }}	{{ end }}{{ end }}{{ end }} 
+const struct _DBColumnDef *{{ $db.Name }}_{{ $tbl.Name }}_uniqdef_{{ $iuniq }}[] = { {{ range $uniqcol := $uniq.Columns }}{{ range $itblcol,$tblcol := $tbl.Columns }}{{ if eq $tblcol.Name $uniqcol }}
+	&({{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $itblcol }}]), //{{ $uniqcol }}	{{ end }}{{ end }}{{ end }} 
 };{{ end }}
 
 // {{ $db.Name }}.{{ $tbl.Name }}: unique keys
-const struct _UniqKey uniqs_{{ $db.Name }}_{{ $tbl.Name }}[] = { {{ range $iuniq,$uniq := $tbl.UniqueKeys }}
+const struct _UniqKey {{ $db.Name }}_{{ $tbl.Name }}_uniqs[] = { {{ range $iuniq,$uniq := $tbl.UniqueKeys }}
 	{
 		.ncols = {{ len $uniq.Columns }},
-		.cols = (const struct _DBColumnDef**)uniqdef_{{ $db.Name }}_{{ $tbl.Name }}_{{ $iuniq }}, 
+		.cols = (const struct _DBColumnDef**){{ $db.Name }}_{{ $tbl.Name }}_uniqdef_{{ $iuniq }}, 
 	}, {{ end }}
 };
 {{ end }}
 // {{ $db.Name }}.{{ $tbl.Name }}: table definition
-const struct _DBTableDef def_{{ $db.Name }}_{{ $tbl.Name }} = (struct _DBTableDef) {
+const struct _DBTableDef {{ $db.Name }}_{{ $tbl.Name }}_def = (struct _DBTableDef) {
 	.name = "{{ $tbl.Name }}",
 	.database = "{{ $db.Name }}",
-	.cols = (const struct _DBColumnDef*)&coldefs_{{ $db.Name }}_{{ $tbl.Name }},
+	.cols = (const struct _DBColumnDef*)&{{ $db.Name }}_{{ $tbl.Name }}_coldefs,
 	.ncols = {{ len $tbl.Columns }},
-	.primarykey = {{ range $i,$col := $tbl.Columns }}{{ if eq $col.Name $tbl.PrimaryKey.Column }}&(coldefs_{{ $db.Name }}_{{ $tbl.Name }}[{{ $i }}]){{ end }}{{ end }},
-	.uniquekeys = {{ if gt $nuniq 0 }}(const struct _UniqKey*)&uniqs_{{ $db.Name }}_{{ $tbl.Name }}{{ else }}0{{ end }},
+	.primarykey = {{ range $i,$col := $tbl.Columns }}{{ if eq $col.Name $tbl.PrimaryKey.Column }}&({{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $i }}]){{ end }}{{ end }},
+	.uniquekeys = {{ if gt $nuniq 0 }}(const struct _UniqKey*)&{{ $db.Name }}_{{ $tbl.Name }}_uniqs{{ else }}0{{ end }},
 	.nunique = {{ $nuniq }},
-	.foreignkeys = {{ if gt $nforeign 0 }}(const struct _ForeignKey*)&foreigns_{{ $db.Name }}_{{ $tbl.Name }}{{ else }}0{{ end }},
+	.foreignkeys = {{ if gt $nforeign 0 }}(const struct _ForeignKey*)&{{ $db.Name }}_{{ $tbl.Name }}_foreigns{{ else }}0{{ end }},
 	.nforeign = {{ $nforeign }},
-	.indexkeys = {{ if gt $nindex 0 }}(const struct _IndexKey*)&indexkeys_{{ $db.Name }}_{{ $tbl.Name }}{{ else }}0{{ end }},
+	.indexkeys = {{ if gt $nindex 0 }}(const struct _IndexKey*)&{{ $db.Name }}_{{ $tbl.Name }}_indexkeys{{ else }}0{{ end }},
 	.nindex = {{ $nindex }},
 };
 
 // {{ $db.Name }}.{{ $tbl.Name }}: create/initialize table structure
 int create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl, size_t rows) {	
 	memset(tbl,0,sizeof(struct _{{ $db.Name }}_{{ $tbl.Name }}));	
-	return create_dbtable(&tbl->dbtbl,&def_{{ $db.Name }}_{{ $tbl.Name }},rows);
+	return create_dbtable(&tbl->dbtbl,&{{ $db.Name }}_{{ $tbl.Name }}_def,rows);
 }
 
 const struct _DBTableDef* {{ $db.Name }}_{{ $tbl.Name }}_tbldef() {
-	return &def_{{ $db.Name }}_{{ $tbl.Name }};
+	return &{{ $db.Name }}_{{ $tbl.Name }}_def;
 }
 {{ range $colidx,$col := $tbl.Columns }}
 void {{ $db.Name }}_{{ $tbl.Name }}_unset_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
@@ -101,8 +107,29 @@ void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $t
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
 	return t->dbtbl.rows.isset[row][{{  $colidx }}] ? (const {{ $td.PtrType $col }})t->dbtbl.rows.buf[row][{{  $colidx }}] : 0;
 } {{ end }}{{/* columns */}}
-{{ range $i,$idx := $tbl.IndexKeys }}
-int {{ $db.Name }}_{{ $tbl.Name }}_getidx_{{ $idx.Column }}() {
+{{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
+int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $col.Name }}(const {{ $td.PtrType $col }} *vals,size_t valcnt,struct _WhereCondition *w) {
+	const struct _DBColumnDef *wherecol = &{{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }}];
+	memset(w,0,sizeof(struct _WhereCondition));
+	w->cond = WHERE_EQUAL;
+	w->type = WHERE_COND;
+	w->def = wherecol;
+	w->values = vals;
+	w->cnt = 1;
 	return 0;
-} {{ end }}{{/* indexkeys */}}
+}
+{{ end }}{{/* indexkeys */}}{{ range $i,$foreign := $tbl.ForeignKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $foreign.Column }}
+{{ $foreigncol := $layouter.Column $foreign.RefDatabase $foreign.RefTable $foreign.RefColumn }}
+int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt *s,enum _DBJoinType type) {
+	struct _JoinStmt *j = malloc(sizeof(struct _JoinStmt));
+	if(!j) {
+		return 1; }
+	j->type = type;
+	j->left = &{{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }}];
+	j->right = &{{ $foreign.RefDatabase }}_{{ $foreign.RefTable }}_coldefs[{{ $foreign.RefDatabase }}_{{ $foreign.RefTable }}_colidx_{{ $foreign.RefColumn }}];	
+	if( join_append(&s->joins,j) ) {
+		return 1; }
+	return 0;
+} 
+{{ end }}{{/* foreignkeys */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}

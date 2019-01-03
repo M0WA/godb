@@ -93,6 +93,49 @@ static void test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	
 	test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 }
+{{ end }}{{ if eq $tbl.Name "complextable2" }}
+static void test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
+	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} foreignkey/index");
+	const DBTableDef *tbldef = {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
+
+	SelectStmt stmt;
+	create_select_stmt(&stmt,tbldef);
+	
+	const char test[] = "test";
+	const char **values = (const char*[]){test};
+	
+	struct _WhereCondition w;	
+	if( {{ $db.Name }}_{{ $tbl.Name }}_by_idx_teststr(values,1,&w) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while index key test"); }
+	if( where_append(&stmt.where,(union _WhereStmt*)&w) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while foreign key test");}	
+	if( {{ $db.Name }}_{{ $tbl.Name }}_join_testfk(&stmt,DBJOIN_TYPE_LEFT) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error: {{ $db.Name }}_{{ $tbl.Name }}_join_testfk()"); }
+		
+	SelectResult res;
+	memset(&res,0,sizeof(SelectResult));
+
+	if( select_db(dbh,&stmt,&res) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
+
+	int rc = 0;
+	size_t rowcount = 0;
+	while( (rc = fetch_db(dbh,&res)) > 0){
+		char *buf = 0;
+		dump_selectresult(&res,&buf);
+		if(buf) {
+			LOGF_DEBUG("%s",buf);
+			free(buf); }
+		rowcount++;
+	}
+		
+	LOGF_DEBUG("fetched %lu rows",rowcount);	
+	if(rc != 0 || rowcount != 4 ) {
+		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }	
+
+	DESTROY_STMT( (&stmt) );
+	destroy_selectresult(&res);
+}
 {{ end }}
 static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	LOG_DEBUG("checking table {{ $db.Name }}.{{ $tbl.Name }} update");
@@ -405,7 +448,8 @@ void test_tables_db(DBHandle *dbh) { {{ $td := . }}{{ range $db := .L.Databases 
 	test_table_bulkinsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh,1);
 	test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ if eq $tbl.Name "complextable3" }}
-	test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}
+	test_table_upsert_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}{{ if eq $tbl.Name "complextable2" }}
+	test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(dbh);{{ end }}
 	test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(dbh);
 	test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(dbh,0);{{ end }}{{/* tables */}}
 	LOG_DEBUG("all tables for {{ $db.Name }}: SUCCESS");{{ end }}{{/* databases */}}

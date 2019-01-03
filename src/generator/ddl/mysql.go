@@ -118,10 +118,7 @@ func mysqlColSpec(l layout.Layouter, db string, tbl string, col string)string {
 }
 
 func mysqlFKSpec(l layout.Layouter, db string, tbl string, fk layout.ForeignKey)string {
-	ref := fk.RefTable
-	if fk.MySQL.RefDatabase != "" {
-		ref = fk.MySQL.RefDatabase + "." + fk.RefTable
-	}
+	ref := fk.RefDatabase + "." + fk.RefTable
 	return "ALTER TABLE `" + db + "`.`" + tbl +"` ADD CONSTRAINT FK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + strings.ToUpper(fk.Column) + " FOREIGN KEY (" + fk.Column + ") REFERENCES " + ref + " (" + fk.RefColumn + ")"
 }
 

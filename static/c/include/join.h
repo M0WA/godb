@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 typedef enum _DBJoinType {
 	DBJOIN_TYPE_INVALID = 0,
 
@@ -14,13 +16,19 @@ typedef enum _DBJoinType {
 struct _DBTableDef;
 struct _DBColumnDef;
 struct _StringBuf;
+struct _UpdateStmt;
+struct _SelectStmt;
+
+typedef struct _JoinStmt {
+	DBJoinType type;
+	const struct _DBColumnDef *left;
+	const struct _DBColumnDef *right;
+} JoinStmt;
 
 typedef struct _JoinClause {
-	DBJoinType type;
-	const struct _DBTableDef  *left;
-	const struct _DBColumnDef *leftcol;
-	const struct _DBTableDef  *right;
-	const struct _DBColumnDef *rightcol;
+	struct _JoinStmt **joins;
+	size_t njoins;
 } JoinClause;
 
 int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf);
+int join_append(struct _JoinClause *join, struct _JoinStmt *stmt);

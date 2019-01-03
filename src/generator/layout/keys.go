@@ -33,6 +33,5 @@ type ForeignKey struct {
 	Column string
 	RefColumn string
 	RefTable string
-	
-	MySQL MySQLForeignKey 
+	RefDatabase string
 }

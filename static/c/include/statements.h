@@ -24,8 +24,7 @@ typedef struct _SelectStmt {
 	const struct _DBTableDef *def;
 	struct _WhereClause where;
 	struct _GroupByClause groupby;
-	struct _JoinClause *joins;
-	size_t njoins;
+	struct _JoinClause joins;
 	size_t limit[2];
 } SelectStmt;
 
@@ -36,8 +35,7 @@ typedef struct _DeleteStmt {
 
 typedef struct _UpdateStmt {
 	const struct _DBTable *dbtbl;
-	struct _JoinClause *joins;
-	size_t njoins;
+	struct _JoinClause joins;
 	struct _WhereClause where;
 } UpdateStmt;
 
