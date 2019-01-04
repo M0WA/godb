@@ -56,7 +56,9 @@ Statements:<br><br>
 <tr><td>Update</td><td>yes</td></tr>
 <tr><td>Delete</td><td>yes</td></tr>
 <tr><td>Upsert</td><td>yes</td></tr>
-<tr><td>Joins</td><td>TBD</td></tr>
+<tr><td>Index</td><td>yes</td></tr>
+<tr><td>Join/ForeignKey</td><td>yes</td></tr>
+<tr><td>UniqueKey</td><td>yes</td></tr>
 <tr><td>Group/Sum</td><td>TBD</td></tr>
 </table>
 </td><td>
@@ -226,11 +228,16 @@ the following is a full-featured example database structure
 	          - columns:
 	              - ID
 	              - testint
+	        indexkeys:
+	          - column: testfloat
+	          - column: teststr
 
 
 ### C <a name="CLib"></a>
 
-connect to mysql database:
+The following section shows code snippets for certain tasks.
+
+#### connect to a database:
 
 	// initialize library
 	init_dblib();
@@ -260,8 +267,8 @@ connect to mysql database:
 	// connect to database
 	if( connect_db(dbh,&creds) ) {
 		LOG_FATAL(1,"connect_db() failed"); }
-	
-	// -> do some work here <-
+
+#### disconnect to a database:
 	
 	// disconnect from database
 	if ( disconnect_db(dbh) ) {
@@ -273,6 +280,55 @@ connect to mysql database:
 	
 	// shutdown library
 	exit_dblib();
+
+#### creating a table structure and set values on it
+
+	//
+	// initialize structure named "tbl"
+	// representing table "table1" in database "database1"
+	//
+	INIT_TABLE(db1,table1,tbl);
+	
+	// set the values of our table		
+	sprintf(db1_table1_set_teststr(tbl,row),"test"); 
+	*(db1_table1_set_testint(tbl,row)) = 10;
+	*(db1_table1_set_testfloat(tbl,row)) = 10.10;	
+	
+	// set a datetime type variable
+	time_t testdate = time(0);
+	memset(db1_table1_set_testdate(tbl,row),0,sizeof(struct tm));
+	gmtime_r(&testdate,db1_table1_set_testdate(tbl,row)); 
+	
+	// destroy the "tbl" when done
+	destroy_dbtable(&tbl.dbtbl);
+	
+	//
+	// initialize structure that can contain multiple rows
+	// (used in bulk inserts)
+	//
+	size_t initRows = 2;
+	INIT_TABLE_ROWS(db1,table1,tbl2,initRows);
+	
+	// set the values in different rows 
+	*(db1_table1_set_testint(tbl2,0)) = 10; 
+	*(db1_table1_set_testint(tbl2,1)) = 10;
+		
+	// destroy the "tbl2" when done
+	destroy_dbtable(&tbl2.dbtbl);
+
+#### insert a row into a table
+
+	// create and initialize a structure named "tbl" or 
+	// "tbl2" for bulk inserts as seen above
+	// then prepare the insert statement
+	InsertStmt s;
+	create_insert_stmt(&s,&tbl.dbtbl);
+	
+	// execute the insert statement on a database connection "dbh"
+	if( insert_db(dbh,&s)) {
+		//error
+		return 1;
+	}	
 
 ### Golang <a name="Golang"></a>
 
