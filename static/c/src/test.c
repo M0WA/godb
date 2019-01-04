@@ -210,7 +210,7 @@ static void test_delete() {
 	if( where_append(&stmt.where,(WhereStmt*)&cond) ) {
 		LOG_FATAL(1,"where_append() failed"); }
 
-	DESTROY_STMT(&stmt);
+	destroy_delete_stmt(&stmt);
 }
 
 static void test(const DBConfig *conf,const DBCredentials *creds) {

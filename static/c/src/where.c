@@ -109,14 +109,13 @@ static int where_comp_op(WhereCompOperator op,struct _StringBuf *sql) {
 	}
 }
 
-static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
+static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier spec,const char *delimiter,struct _StringBuf *sql, size_t *serial) {
 	if(cond->cnt > 1 && cond->cond != WHERE_EQUAL && cond->cond != WHERE_NOT_EQUAL) {
 		LOG_WARN("only equal/not equal allow for range types in where clause");
 		return 1; }
 
-	if(stringbuf_append(sql,"(")) {
-		return 1;}
-	if(stringbuf_append(sql,cond->def->name)) {
+	const char *del = delimiter ? delimiter : "";
+	if( stringbuf_appendf(sql,"(%s%s%s.%s%s%s",del,cond->def->table,del,del,cond->def->name,del) ) {
 		return 1;}
 	if(cond->cnt > 1) {
 		switch(cond->cond) {
@@ -191,19 +190,19 @@ static int where_cond_string(const struct _WhereCondition *cond,WhereSpecifier s
 	return 0;
 }
 
-static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
+static int where_comp_string(const struct _WhereComposite *comp,WhereSpecifier spec,const char *delimiter,struct _StringBuf *sql, size_t *serial) {
 	for(size_t i = 0; i < comp->cnt; i++) {
 		if(i) {
 			if( where_comp_op(comp->where[i]->comp,sql) ) {
 				return 1; }
 		}
-		if( where_string(comp->where[i],spec,sql,serial) ) {
+		if( where_string(comp->where[i],spec,delimiter,sql,serial) ) {
 			return 1; }
 	}
 	return 0;
 }
 
-int where_string(const struct _WhereClause *clause,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial) {
+int where_string(const struct _WhereClause *clause, WhereSpecifier spec, const char *delimiter, struct _StringBuf *sql, size_t *serial) {
 	size_t tmpserial = 1;
 	size_t *realserial = serial ? serial : &tmpserial;
 	if(clause->cnt == 0) {
@@ -216,14 +215,14 @@ int where_string(const struct _WhereClause *clause,WhereSpecifier spec,struct _S
 
 		switch(clause->stmts[i]->cond.type) {
 		case WHERE_COND:
-			if( where_cond_string(&clause->stmts[i]->cond,spec,sql,realserial) ) {
+			if( where_cond_string(&clause->stmts[i]->cond,spec,delimiter,sql,realserial) ) {
 				LOG_WARN("invalid where condition");
 				return 1;
 			}
 			break;
 		case WHERE_COMP:
 			for(size_t j = 0; j < clause->stmts[i]->comp.cnt; j++) {
-				if( where_comp_string(&clause->stmts[i]->comp,spec,sql,realserial) ) {
+				if( where_comp_string(&clause->stmts[i]->comp,spec,delimiter,sql,realserial) ) {
 					LOG_WARN("invalid where composite");
 					return 1;
 				}
@@ -246,14 +245,4 @@ int where_generic_value_specifier(const struct _DBColumnDef *def,const void *val
 	if(stringbuf_append(sql,buf)) {
 		return 1; }
 	return 0;
-}
-
-int create_where_condition(struct _WhereCondition *w, WhereCondOperator condOp,const struct _DBColumnDef *wherecol,const void** values,size_t valcnt) {
-	memset(w,0,sizeof(struct _WhereCondition));
-	w->cond = WHERE_EQUAL;
-	w->type = WHERE_COND;
-	w->def = wherecol;
-	w->values = values;
-	w->cnt = valcnt;
-	return 1;
 }

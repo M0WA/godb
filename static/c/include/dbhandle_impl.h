@@ -33,6 +33,7 @@ struct _PostgresHandle {
 typedef struct _DBIHandle {
 	dbi_conn conn;
 	dbi_result result;
+	const char *delimiter;
 } DBIHandle;
 #endif
 

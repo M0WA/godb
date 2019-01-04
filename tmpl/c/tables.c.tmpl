@@ -114,7 +114,7 @@ int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $col.Name }}(const {{ $td.PtrType $
 	w->cond = WHERE_EQUAL;
 	w->type = WHERE_COND;
 	w->def = wherecol;
-	w->values = vals;
+	w->values = (const void**)vals;
 	w->cnt = 1;
 	return 0;
 }

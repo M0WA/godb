@@ -7,12 +7,12 @@
 #include "dbhandle_impl.h"
 #include "values.h"
 
-int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const struct _UpsertStmt *const s, struct _StringBuf *sql) {
+int dbi_upsert_stmt_string(const struct _DBHandle *dbh,const struct _UpsertStmt *const s, const char *delimiter, struct _StringBuf *sql) {
 	switch(dbh->config.Dbi.Type) {
 	case DBI_TYPE_MYSQL:
-		return mysql_upsert_stmt_string(s,values_generic_value_specifier,sql);
+		return mysql_upsert_stmt_string(s,values_generic_value_specifier,delimiter,sql);
 	case DBI_TYPE_POSTGRES:
-		return postgres_upsert_stmt_string(s,values_generic_value_specifier,sql);
+		return postgres_upsert_stmt_string(s,values_generic_value_specifier,delimiter,sql);
 	default:
 		return 1;
 	}

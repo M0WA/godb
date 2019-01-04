@@ -30,5 +30,6 @@ typedef struct _JoinClause {
 	size_t njoins;
 } JoinClause;
 
-int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf);
+int join_clause_string(const struct _JoinClause *join,const char *delimiter,struct _StringBuf *buf);
 int join_append(struct _JoinClause *join, struct _JoinStmt *stmt);
+void join_destroy(struct _JoinClause *join);

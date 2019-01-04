@@ -57,6 +57,5 @@ void where_destroy(struct _WhereClause *c);
 void where_destroy_free(struct _WhereClause *c, WhereConditionFreeFunc cond);
 int where_comp_append(struct _WhereComposite *comp,struct _WhereClause *clause);
 int where_append(struct _WhereClause *clause,union _WhereStmt *stmt);
-int where_string(const struct _WhereClause *c,WhereSpecifier spec,struct _StringBuf *sql, size_t *serial);
+int where_string(const struct _WhereClause *c,WhereSpecifier spec, const char *delimiter,struct _StringBuf *sql, size_t *serial);
 int where_generic_value_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t* serial);
-int create_where_condition(struct _WhereCondition *w, WhereCondOperator condOp,const struct _DBColumnDef *wherecol,const void** values,size_t valcnt);

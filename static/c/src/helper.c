@@ -2,64 +2,46 @@
 
 #include "column.h"
 #include "table.h"
+#include "stringbuf.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-char* comma_concat_colnames_setonly(const struct _DBTable *tbl) {
-	const struct _DBColumnDef *const cols = tbl->def->cols;
-	size_t ncols = tbl->def->ncols;
+int comma_concat_colnames_setonly(struct _StringBuf *buf,const struct _DBTable *tbl,const char *delimiter) {
+	const char *del = delimiter ? delimiter : "";
+	size_t p = 0;
 
-	size_t string_size = 0;
-	char* buf = 0;
-	for(size_t i = 0; i < ncols; i++) {
-		string_size += strlen(cols[i].name);
-		string_size++; //comma
-	}
-	string_size++; //zero-terminate
-
-	buf = malloc(string_size);
-	if(!buf) {
-		return 0; }
-	buf[0] = 0;
-
-	size_t printedCols = 0;
-	for(size_t i = 0; i < ncols; i++) {
+	for(size_t i = 0; i < tbl->def->ncols; i++) {
 		if(!tbl->rows.isset[0][i]) {
 			continue; }
-		if(printedCols != 0) {
-			strcat(buf,","); }
-		strcat(buf,cols[i].name);
-		printedCols++;
+		if( stringbuf_appendf(buf,"%s%s%s%s",(p ? "," : ""),del,tbl->def->cols[i].name,del) ) {
+			return 1;
+		}
+		p++;
 	}
-	return buf;
-
+	return 0;
 }
 
-char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols) {
-	size_t string_size = 0;
-	char* buf = 0;
+int comma_concat_colnames_select(struct _StringBuf *buf,const struct _DBColumnDef *const cols,size_t ncols,const char *delimiter) {
+	const char *del = delimiter ? delimiter : "";
 	for(size_t i = 0; i < ncols; i++) {
-		string_size += strlen(cols[i].name);
-		string_size++; //comma
+		if( stringbuf_appendf(buf,"%s%s%s%s.%s%s%s",(i ? "," : ""),del,cols[i].table,del,del,cols[i].name,del) ) {
+			return 1;
+		}
 	}
-	string_size++; //zero-terminate
+	return 0;
+}
 
-	buf = malloc(string_size);
-	if(!buf) {
-		return 0; }
-	buf[0] = 0;
-
-	size_t printedCols = 0;
+int comma_concat_colnames_insert(struct _StringBuf *buf,const struct _DBColumnDef *const cols,size_t ncols,const char *delimiter) {
+	const char *del = delimiter ? delimiter : "";
 	for(size_t i = 0; i < ncols; i++) {
-		if(printedCols != 0) {
-			strcat(buf,","); }
-		strcat(buf,cols[i].name);
-		printedCols++;
+		if( stringbuf_appendf(buf,"%s%s%s%s",(i ? "," : ""),del,cols[i].name,del) ) {
+			return 1;
+		}
 	}
-	return buf;
+	return 0;
 }
 
 int append_string(const char *src, char** dest) {

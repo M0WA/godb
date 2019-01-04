@@ -98,24 +98,25 @@ func postgreColSpec(l layout.Layouter, db string, tbl string, col string)string 
 			dft = " DEFAULT " + *c.DefaultValue
 		}
 	}
-	return col + " " + postgreColumnDataType(t,c) + nn + dft
+	return "\"" + col + "\" " + postgreColumnDataType(t,c) + nn + dft
 }
 
 func postgreFKSpec(l layout.Layouter, db string, tbl string, fk layout.ForeignKey)string {
-	return "\\c " + db + "\nALTER TABLE " + tbl +" ADD CONSTRAINT FK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + strings.ToUpper(fk.Column) + " FOREIGN KEY (" + fk.Column + ") REFERENCES " + fk.RefTable + " (" + fk.RefColumn + ")"
+	return "\\c " + db + "\nALTER TABLE " + tbl +" ADD CONSTRAINT FK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + strings.ToUpper(fk.Column) + " FOREIGN KEY (\"" + fk.Column + "\") REFERENCES \"" + fk.RefTable + "\" (\"" + fk.RefColumn + "\")"
 }
 
 func postgreUKSpec(l layout.Layouter, db string, tbl string, uk layout.UniqueKey)string {
-	cols := ""
+	cols := "\""
 	name := ""
 	for i,k := range uk.Columns {
 		if i != 0 {
-			cols += ","
+			cols += "\",\""
 			name += "_"
 		}
 		cols += k
 		name += strings.ToUpper(k)
 	}
+	cols += "\""
 	return "CONSTRAINT UK_" + strings.ToUpper(db) + "_" + strings.ToUpper(tbl) + "_" + name + " UNIQUE(" + cols + ")"
 }
 
@@ -124,7 +125,11 @@ func postgreIndexSpec(l layout.Layouter, db string, tbl string, k layout.IndexKe
 	if k.Postgre.Type != "" {
 		s = " USING " + k.Postgre.Type + " "
 	}
-	return s + "(" + k.Column + " " + k.Postgre.Sort + ")"
+	return s + "(\"" + k.Column + "\" " + k.Postgre.Sort + ")"
+}
+
+func postgrePKSpec(l layout.Layouter, db string, table string, pk layout.PrimaryKey)string {
+	  return "CONSTRAINT PK_" + strings.ToUpper(db) + "_" + strings.ToUpper(table) + " PRIMARY KEY(\"" + pk.Column + "\")"
 }
 
 func (*PostgreTmpl)Funcs()template.FuncMap {
@@ -134,7 +139,7 @@ func (*PostgreTmpl)Funcs()template.FuncMap {
 		"TableOpts": postgreTableOpts,
 		"ColSpec": postgreColSpec,
 		"IndexSpec": postgreIndexSpec,
-		"PKSpec": PKSpec,
+		"PKSpec": postgrePKSpec,
 		"FKSpec": postgreFKSpec,
 		"UKSpec": postgreUKSpec,
 	}

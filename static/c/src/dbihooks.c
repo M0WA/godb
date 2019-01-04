@@ -16,6 +16,9 @@
 
 static dbi_inst dbiinst;
 
+static const char *mysql_delimiter = "`";
+static const char *postgres_delimiter = "\"";
+
 int dbi_initlib_hook() {
 	dbi_initialize_r(NULL, &dbiinst);
 	return 0;
@@ -31,9 +34,11 @@ int dbi_create_hook(struct _DBHandle *dbh) {
 	switch(dbh->config.Dbi.Type) {
 	case DBI_TYPE_MYSQL:
 		dbh->dbi.conn = dbi_conn_new_r("mysql", dbiinst);
+		dbh->dbi.delimiter = mysql_delimiter;
 		break;
 	case DBI_TYPE_POSTGRES:
 		dbh->dbi.conn = dbi_conn_new_r("pgsql", dbiinst);
+		dbh->dbi.delimiter = postgres_delimiter;
 		break;
 	default:
 		LOG_WARN("invalid dbi type");
@@ -82,7 +87,7 @@ int dbi_insert_hook(struct _DBHandle *dbh,const struct _InsertStmt *const s) {
 	if(dbh->config.Dbi.Type == DBI_TYPE_POSTGRES) {
 		spec = postgres_raw_value_specifier; }
 
-	if( insert_stmt_string(s,spec,&stmtbuf) ) {
+	if( insert_stmt_string(s,spec,dbh->dbi.delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_INSERT_EXIT; }
 
@@ -107,7 +112,7 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,where_generic_value_specifier,dbh->dbi.delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_SELECT_EXIT; }
 
@@ -214,7 +219,7 @@ int dbi_delete_hook(struct _DBHandle *dbh,const struct _DeleteStmt *const s) {
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,where_generic_value_specifier,dbh->dbi.delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_DELETE_EXIT; }
 
@@ -241,7 +246,7 @@ int dbi_update_hook(struct _DBHandle *dbh,const struct _UpdateStmt *const s) {
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,dbh->dbi.delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_UPDATE_EXIT; }
 
@@ -267,7 +272,7 @@ int dbi_upsert_hook(struct _DBHandle *dbh,const struct _UpsertStmt *const s) {
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if(dbi_upsert_stmt_string(dbh,s,&stmtbuf)) {
+	if(dbi_upsert_stmt_string(dbh,s,dbh->dbi.delimiter,&stmtbuf)) {
 		rc = 1;
 		goto DBI_UPSERT_EXIT;
 	}

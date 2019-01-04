@@ -69,7 +69,7 @@ static void test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh
 	if(rc != 0 || rowcount != 1 ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }	
 
-	DESTROY_STMT( (&stmt) );
+	destroy_select_stmt(&stmt);
 	destroy_selectresult(&res);
 }
 
@@ -133,7 +133,7 @@ static void test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) 
 	if(rc != 0 || rowcount != 4 ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }	
 
-	DESTROY_STMT( (&stmt) );
+	destroy_select_stmt(&stmt);
 	destroy_selectresult(&res);
 }
 {{ end }}
@@ -164,7 +164,7 @@ static void test_table_update_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	if(update_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while update"); }
 
-	DESTROY_STMT(&stmt);
+	destroy_update_stmt(&stmt);
 	destroy_dbtable(&tbl.dbtbl);
 }
 
@@ -190,7 +190,7 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 	if(delete_db(dbh,&stmt)) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while delete"); }
 
-	DESTROY_STMT(&stmt);
+	destroy_delete_stmt(&stmt);
 }
 
 static void test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(SelectResult *res) {
@@ -256,7 +256,7 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh, int 
 	if(rc != 0 || (check && rowcount != 4) ) {
 		LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while fetch: rows: %lu, rc: %d",rowcount,rc); }
 
-	DESTROY_STMT( (&stmt) );
+	destroy_select_stmt(&stmt);
 	destroy_selectresult(&res);
 }
 

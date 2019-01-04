@@ -100,17 +100,16 @@ static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf 
 	return 0;
 }
 
-int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, struct _StringBuf *sql) {
+int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, const char *delimiter, struct _StringBuf *sql) {
 	char fmt[] = "INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s";
-	char *colnames = 0;
 	int rc = 0;
 
-	StringBuf values,updatekeys;
+	StringBuf values,updatekeys,colnames;
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&updatekeys,SQL_VALUE_ALLOC_BLOCK);
+	stringbuf_init(&colnames,SQL_VALUE_ALLOC_BLOCK);
 
-	colnames = comma_concat_colnames_setonly(s->dbtbl);
-	if(!colnames) {
+	if(comma_concat_colnames_setonly(&colnames,s->dbtbl,delimiter)) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT;	}
 
@@ -122,18 +121,16 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
-	size_t sqlsize = 1 + stringbuf_strlen(&values) + strlen(fmt) + strlen(colnames) + strlen(s->dbtbl->def->name) + stringbuf_strlen(&updatekeys);
-	if( stringbuf_resize(sql,sqlsize) ) {
+	if( stringbuf_appendf(sql,fmt,
+			s->dbtbl->def->name,stringbuf_get(&colnames),
+			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
+			(stringbuf_get(&updatekeys) ? stringbuf_get(&updatekeys) : "")) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
-	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->dbtbl->def->name,colnames,
-			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
-			(stringbuf_get(&updatekeys) ? stringbuf_get(&updatekeys) : ""));
 	LOGF_DEBUG("statement: %s",stringbuf_get(sql));
 
 MYSQL_UPSERT_STMT_STRING_EXIT:
-	if(colnames) {
-		free(colnames); }
+	stringbuf_destroy(&colnames);
 	stringbuf_destroy(&updatekeys);
 	stringbuf_destroy(&values);
 	return rc;

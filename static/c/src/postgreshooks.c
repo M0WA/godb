@@ -14,6 +14,8 @@
 
 #include <string.h>
 
+static const char *postgres_delimiter = "\"";
+
 int postgres_initlib_hook() {
 	if(PQisthreadsafe() == 0) {
 		LOG_FATAL(1,"please use a thread-safe version of pq library"); }
@@ -92,7 +94,7 @@ static int postgres_insert_raw(struct _DBHandle *dbh,struct _InsertStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( insert_stmt_string(s,postgres_raw_value_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,postgres_raw_value_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_RAW_EXIT; }
 
@@ -120,7 +122,7 @@ static int postgres_insert_prepared(struct _DBHandle *dbh,struct _InsertStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( insert_stmt_string(s,postgres_values_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,postgres_values_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_INSERT_PREPARED_EXIT; }
 
@@ -159,7 +161,7 @@ static int postgres_delete_raw(struct _DBHandle *dbh,struct _DeleteStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,where_generic_value_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_DELETE_RAW_EXIT; }
 
@@ -187,7 +189,7 @@ static int postgres_delete_prepared(struct _DBHandle *dbh,struct _DeleteStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( delete_stmt_string(s,postgres_where_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,postgres_where_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_DELETE_PREPARED_EXIT; }
 
@@ -224,7 +226,7 @@ static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,where_generic_value_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_SELECT_RAW_EXIT; }
 
@@ -259,7 +261,7 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( select_stmt_string(s,postgres_where_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,postgres_where_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 
@@ -328,7 +330,7 @@ static int postgres_update_raw(struct _DBHandle *dbh,struct _UpdateStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_RAW_EXIT; }
 
@@ -364,7 +366,7 @@ static int postgres_update_prepared(struct _DBHandle *dbh,struct _UpdateStmt con
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
-	if( update_stmt_string(s,postgres_values_specifier,postgres_where_specifier,&stmtbuf) ) {
+	if( update_stmt_string(s,postgres_values_specifier,postgres_where_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_UPDATE_PREPARED_EXIT; }
 
@@ -398,7 +400,7 @@ static int postgres_upsert_raw(struct _DBHandle *dbh,struct _UpsertStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if(postgres_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf)) {
+	if(postgres_upsert_stmt_string(s, values_generic_value_specifier,postgres_delimiter, &stmtbuf)) {
 		rc = 1;
 		goto POSTGRES_UPSERT_RAW_EXIT; }
 

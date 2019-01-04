@@ -8,8 +8,9 @@
 
 #include <string.h>
 
-static int join_stmt_string(const struct _JoinStmt *join,struct _StringBuf *buf) {
-	const char fmt[] = "%s JOIN %s ON %s.%s = %s.%s";
+static int join_stmt_string(const struct _JoinStmt *join,const char *delimiter,struct _StringBuf *buf) {
+	const char *del = delimiter ? delimiter : "";
+	const char fmt[] = "%s JOIN %s%s%s ON %s%s%s.%s%s%s = %s%s%s.%s%s%s";
 	const char *left = "LEFT", *right = "RIGHT", *inner = "INNER", *outer = "OUTER";
 	const char *typestr = 0;
 
@@ -30,15 +31,18 @@ static int join_stmt_string(const struct _JoinStmt *join,struct _StringBuf *buf)
 		return 1;
 	}
 
-	if( stringbuf_appendf(buf,fmt,typestr,join->right->table,join->right->table,join->right->name,join->left->table,join->left->name) ) {
+	if( stringbuf_appendf(buf,fmt,typestr,
+			del,join->right->table,del,
+			del,join->right->table,del,del,join->right->name,
+			del,del,join->left->table,del,del,join->left->name,del) ) {
 		return 1;
 	}
 	return 0;
 }
 
-int join_clause_string(const struct _JoinClause *join,struct _StringBuf *buf) {
+int join_clause_string(const struct _JoinClause *join,const char *delimiter,struct _StringBuf *buf) {
 	for(size_t i = 0; i < join->njoins; i++) {
-		if( join_stmt_string(join->joins[i],buf) ) {
+		if( join_stmt_string(join->joins[i],delimiter,buf) ) {
 			return 1;
 		}
 	}
@@ -57,4 +61,17 @@ int join_append(struct _JoinClause *join, struct _JoinStmt *stmt) {
 	join->joins[join->njoins] = stmt;
 	join->njoins++;
 	return 0;
+}
+
+void join_destroy(struct _JoinClause *join) {
+	if(join->joins) {
+		for(size_t i = 0; i < join->njoins; i++) {
+			if(join->joins[i]) {
+				free(join->joins[i]);
+			}
+		}
+		free(join->joins);
+		join->joins = 0;
+		join->njoins = 0;
+	}
 }

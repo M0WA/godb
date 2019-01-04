@@ -60,12 +60,17 @@ CREATE USER $DBUSER WITH ENCRYPTED PASSWORD '$DBPASS'; \
 GRANT ALL ON DATABASE complexdb1 TO $DBUSER; \
 GRANT ALL ON TABLE complextable1 TO $DBUSER; \
 GRANT ALL ON TABLE complextable2 TO $DBUSER; \
-GRANT ALL ON SEQUENCE complextable1_id_seq TO $DBUSER; \
-GRANT ALL ON SEQUENCE complextable2_id_seq TO $DBUSER; \
-INSERT INTO complextable1 (ID,testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
-INSERT INTO complextable2 (ID,testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
-INSERT INTO complextable3 (ID,testint,teststr,testfloat,testdate,testuniq) VALUES(10,10,'test',10.10,NOW(),'10'); \
-INSERT INTO complextable3 (ID,testint,teststr,testfloat,testdate,testuniq) VALUES(DEFAULT,10,'test',10.10,NOW(),'11'); \
+GRANT ALL ON TABLE complextable3 TO $DBUSER; \
+GRANT ALL PRIVILEGES ON TABLE complextable1 TO $DBUSER; \
+GRANT ALL PRIVILEGES ON TABLE complextable2 TO $DBUSER; \
+GRANT ALL PRIVILEGES ON TABLE complextable3 TO $DBUSER; \
+GRANT ALL ON SEQUENCE \"complextable1_ID_seq\" TO $DBUSER; \
+GRANT ALL ON SEQUENCE \"complextable2_ID_seq\" TO $DBUSER; \
+GRANT ALL ON SEQUENCE \"complextable3_ID_seq\" TO $DBUSER; \
+INSERT INTO complextable1 (\"ID\",testint,teststr,testfloat,testdate) VALUES(10,10,'test',10.10,NOW()); \
+INSERT INTO complextable2 (\"ID\",testint,teststr,testfloat,testdate,testfk) VALUES(10,10,'test',10.10,NOW(),10); \
+INSERT INTO complextable3 (\"ID\",testint,teststr,testfloat,testdate,testuniq) VALUES(10,10,'test',10.10,NOW(),'10'); \
+INSERT INTO complextable3 (\"ID\",testint,teststr,testfloat,testdate,testuniq) VALUES(DEFAULT,10,'test',10.10,NOW(),'11'); \
 "
 	( echo "DROP DATABASE IF EXISTS complexdb1; " && cat $SQLDIR/postgre/* && echo "$SQLSTMT" ) | sudo -u postgres psql -U postgres -d postgres
 }

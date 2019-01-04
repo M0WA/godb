@@ -16,6 +16,8 @@
 #include "values.h"
 #include "stringbuf.h"
 
+static const char *mysql_delimiter = "`";
+
 int mysql_initlib_hook() {
 	if (!mysql_thread_safe()) {
 		LOG_FATAL(1,"please use a thread-safe version of mysqlclient library");	}
@@ -101,7 +103,7 @@ static int mysql_insert_raw(struct _DBHandle *dbh,const struct _InsertStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( insert_stmt_string(s,values_generic_value_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,values_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_INSERT_RAW_EXIT; }
 
@@ -129,7 +131,7 @@ static int mysql_insert_prepared(struct _DBHandle *dbh,const struct _InsertStmt 
 			goto MYSQL_INSERT_PREPARED_EXIT; }
 	}
 
-	if( insert_stmt_string(s,mysql_values_specifier,&stmtbuf) ) {
+	if( insert_stmt_string(s,mysql_values_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_INSERT_PREPARED_EXIT; }
 
@@ -186,7 +188,7 @@ static int mysql_delete_raw(struct _DBHandle *dbh,const struct _DeleteStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( delete_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,where_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_DELETE_RAW_EXIT; }
 
@@ -213,7 +215,7 @@ static int mysql_delete_prepared(struct _DBHandle *dbh,const struct _DeleteStmt 
 		rc = 1;
 		goto MYSQL_DELETE_PREPARED_EXIT; }
 
-	if( delete_stmt_string(s,mysql_where_specifier,&stmtbuf) ) {
+	if( delete_stmt_string(s,mysql_where_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_DELETE_PREPARED_EXIT; }
 
@@ -259,7 +261,7 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,where_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT; }
 
@@ -296,7 +298,7 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
 
-	if( select_stmt_string(s,mysql_where_specifier,&stmtbuf) ) {
+	if( select_stmt_string(s,mysql_where_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
 
@@ -424,7 +426,7 @@ static int mysql_update_raw(struct _DBHandle *dbh,const struct _UpdateStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,&stmtbuf) ) {
+	if( update_stmt_string(s,values_generic_value_specifier,where_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_RAW_EXIT; }
 
@@ -443,7 +445,7 @@ static int mysql_update_prepared(struct _DBHandle *dbh,const struct _UpdateStmt 
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,&stmtbuf) ) {
+	if( update_stmt_string(s,mysql_values_specifier,mysql_where_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPDATE_PREPARED_EXIT; }
 
@@ -500,7 +502,7 @@ static int mysql_upsert_raw(struct _DBHandle *dbh,const struct _UpsertStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( mysql_upsert_stmt_string(s, values_generic_value_specifier, &stmtbuf) ) {
+	if( mysql_upsert_stmt_string(s, values_generic_value_specifier,mysql_delimiter, &stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_RAW_EXIT;
 	}
@@ -530,7 +532,7 @@ static int mysql_upsert_prepared(struct _DBHandle *dbh,const struct _UpsertStmt 
 			goto MYSQL_UPSERT_PREPARED_EXIT; }
 	}
 
-	if( mysql_upsert_stmt_string(s, mysql_values_specifier, &stmtbuf) ) {
+	if( mysql_upsert_stmt_string(s, mysql_values_specifier,mysql_delimiter, &stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_PREPARED_EXIT;
 	}

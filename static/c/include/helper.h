@@ -5,6 +5,7 @@
 struct _DBColumnDef;
 struct _DBTable;
 struct _WhereClause;
+struct _StringBuf;
 
 #define ARRAY_RESIZE(arr,idx,type) ({ \
 	int rc = 0; \
@@ -22,7 +23,8 @@ struct _WhereClause;
 	rc; \
 })
 
-char* comma_concat_colnames(const struct _DBColumnDef *const cols,size_t ncols);
-char* comma_concat_colnames_setonly(const struct _DBTable *tbl);
+int comma_concat_colnames_select(struct _StringBuf *buf,const struct _DBColumnDef *const cols,size_t ncol,const char *delimiter);
+int comma_concat_colnames_insert(struct _StringBuf *buf,const struct _DBColumnDef *const cols,size_t ncol,const char *delimiter);
+int comma_concat_colnames_setonly(struct _StringBuf *buf,const struct _DBTable *tbl,const char *delimiter);
 int append_string(const char *src, char** dest);
 void get_limit(const size_t limits[], char *limit);
