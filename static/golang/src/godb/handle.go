@@ -23,7 +23,25 @@ type DBHandle interface {
 	*/
 	Disconnect()error
 	
-	Handle()*C.DBHandle
+	/*
+		Insert inserts one row into a table
+	*/
+	Insert(InsertStmt)error
+	
+	/*
+		Update updates rows in a table
+	*/
+	Update(UpdateStmt)error
+	
+	/*
+		Upsert updates/inserts rows in a table
+	*/
+	Upsert(UpsertStmt)error
+	
+	/*
+		Delete deletes rows from a table
+	*/
+	Delete(DeleteStmt)error
 }
 
 type DBHandleImpl struct {
@@ -36,7 +54,7 @@ type DBHandleImpl struct {
 */
 func NewDBHandle(conf DBConfig)(DBHandle,error) {
 	dbh := new(DBHandleImpl)
-	if dbh.dbh = C.create_dbhandle(conf.ToNative()); dbh.dbh == nil {
+	if dbh.dbh = C.create_dbhandle(conf.CDBConfig()); dbh.dbh == nil {
 		return nil,errors.New("could not create db handle")
 	}
 	return dbh,nil
@@ -64,6 +82,42 @@ func (dbh *DBHandleImpl)Disconnect()error {
 	return nil
 }
 
-func (dbh *DBHandleImpl)Handle()*C.DBHandle {
-	return dbh.dbh
+/*
+	Insert implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Insert(s InsertStmt)error {
+	if C.insert_db(dbh.dbh,s.CInsertStmt()) != 0 {
+		return errors.New("could not insert into table")
+	}
+	return nil
+}
+
+/*
+	Update implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Update(s UpdateStmt)error {
+	if C.update_db(dbh.dbh,s.CUpdateStmt()) != 0 {
+		return errors.New("could not update table")
+	}
+	return nil
+}
+
+/*
+	Upsert implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Upsert(s UpsertStmt)error {
+	if C.upsert_db(dbh.dbh,s.CUpsertStmt()) != 0 {
+		return errors.New("could not upsert into table")
+	}
+	return nil
+}
+
+/*
+	Delete implements DBHandle interface
+*/
+func (dbh *DBHandleImpl)Delete(s DeleteStmt)error {
+	if C.delete_db(dbh.dbh,s.CDeleteStmt()) != 0 {
+		return errors.New("could not delete rows from table")
+	}
+	return nil
 }

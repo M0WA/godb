@@ -49,3 +49,5 @@ typedef struct _DBConfig {
 #endif
 	};
 } DBConfig;
+
+void dump_dbconfig(const struct _DBConfig *conf);

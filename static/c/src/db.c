@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int initialized = 0;
+
 static int init_db_credentials(struct _DBHandle *dbh,const struct _DBCredentials *cred) {
 	if(!cred->Host || strlen(cred->Host) > (MAX_DB_HOST - 1) ) {
 		LOG_ERROR("hostname too long");
@@ -49,17 +51,21 @@ static int init_db_credentials(struct _DBHandle *dbh,const struct _DBCredentials
 }
 
 int init_dblib() {
-	LOG_DEBUG("initialize database library");
+	int rc = 0;
+	if(!initialized) {
+		LOG_DEBUG("initialize database library");
 #ifndef _DISABLE_MYSQL
-	mysql_initlib_hook();
+		rc &= mysql_initlib_hook();
 #endif
 #ifndef _DISABLE_POSTGRES
-	postgres_initlib_hook();
+		rc &= postgres_initlib_hook();
 #endif
 #ifndef _DISABLE_DBI
-	dbi_initlib_hook();
+		rc &= dbi_initlib_hook();
 #endif
-	return 0;
+		initialized = 1;
+	}
+	return rc;
 }
 
 int exit_dblib() {
@@ -78,9 +84,12 @@ int exit_dblib() {
 }
 
 DBHandle *create_dbhandle(const struct _DBConfig *conf) {
+	if(!initialized && init_dblib()) {
+		return 0; }
+
 	DBHandle *dbh = malloc(sizeof(DBHandle));
-	if(!dbh) {
-		LOG_ERROR("could not malloc database handle");
+	if(!dbh && !conf) {
+		LOG_ERROR("could not malloc database handle or null config");
 		return 0;
 	}
 	memset(dbh,0,sizeof(DBHandle));
@@ -107,6 +116,7 @@ DBHandle *create_dbhandle(const struct _DBConfig *conf) {
 		LOG_ERROR("invalid database type");
 		return 0;
 	}
+
 	if( !dbh->hooks.create || dbh->hooks.create(dbh) ) {
 		free(dbh);
 		LOG_ERROR("could not initialize db handle");
@@ -151,37 +161,6 @@ int destroy_dbhandle(struct _DBHandle *dbh) {
 	return 0;
 }
 
-/*
-int insert_stmt(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
-	if(!dbh || !dbh->hooks.insert || !stmt) {
-		LOG_ERROR("null database handle/hook/stmt");
-		return 1;
-	}
-	return dbh->hooks.insert(dbh,stmt);
-}
-
-int insert_dbtable(struct _DBHandle *dbh,const struct _DBTable *tbl) {
-	if(!dbh || !tbl) {
-		LOG_ERROR("null database handle/dbtable");
-		return 1;
-	}
-	void*** buf = malloc(sizeof(void**) * nrows);
-	if(!buf) {
-		return 1; }
-	for(size_t i = 0; i < nrows; i++) {
-		buf[i] = tbl[i]->valbuf;
-	}
-	int rc = insert_db(dbh,tbl[0]->def,(const void *const*const*const)buf,nrows);
-	free(buf);
-	struct _InsertStmt stmt = (struct _InsertStmt) {
-		.defs = def->cols,
-		.ncols = def->ncols,
-		.valbuf = values,
-		.nrows = nrows,
-	};
-	return rc;
-}
-*/
 int insert_db(struct _DBHandle *dbh,const struct _InsertStmt *const stmt) {
 	if(!dbh) {
 		LOG_ERROR("null database handle/table/values");
@@ -252,4 +231,30 @@ int fetch_db(struct _DBHandle *dbh,struct _SelectResult* res) {
 		return 1;
 	}
 	return dbh->hooks.fetch(dbh,res);
+}
+
+void dump_dbconfig(const struct _DBConfig *conf) {
+	switch(conf->Type) {
+	case DB_TYPE_MYSQL:
+		LOG_DEBUG("dbconfig type: MYSQL");
+		break;
+	case DB_TYPE_POSTGRES:
+		LOG_DEBUG("dbconfig type: POSTGRES");
+		break;
+	case DB_TYPE_DBI:
+		LOG_DEBUG("dbconfig type: DBI");
+		switch(conf->Dbi.Type) {
+		case DBI_TYPE_MYSQL:
+			LOG_DEBUG("dbconfig dbitype: MYSQL");
+			break;
+		case DBI_TYPE_POSTGRES:
+			LOG_DEBUG("dbconfig dbitype: POSTGRE");
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
 }

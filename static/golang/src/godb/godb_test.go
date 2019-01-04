@@ -55,8 +55,17 @@ func getDBConfigs(t *testing.T)map[DBType]ConfigCreds {
 	}
 	confs[POSTGRES] = ConfigCreds{ postgres, getPostgresCredentials() }
 
-	confs[DBI_MYSQL] = ConfigCreds{ mysql, getMySQLCredentials() }
-	confs[DBI_POSTGRES] = ConfigCreds{ postgres, getPostgresCredentials() }
+	dbimysqldbi,err := NewDBConfig(DBI_MYSQL)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	confs[DBI_MYSQL] = ConfigCreds{ dbimysqldbi, getMySQLCredentials() }
+
+	dbipostgres,err := NewDBConfig(DBI_POSTGRES)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	confs[DBI_POSTGRES] = ConfigCreds{ dbipostgres, getPostgresCredentials() }
 
 	return confs
 }

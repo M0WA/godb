@@ -66,12 +66,37 @@ int dbi_connect_hook(struct _DBHandle *dbh) {
 	if(connerr != 0) {
 		LOGF_WARN("dbi_conn_connect() failed: %d",connerr);
 		return 1;}
+
+	switch(dbh->config.Dbi.Type) {
+	case DBI_TYPE_MYSQL:
+		LOG_DEBUG("connection to dbi-mysql");
+		break;
+	case DBI_TYPE_POSTGRES:
+		LOG_DEBUG("connection to dbi-postgres");
+		break;
+	default:
+		LOG_DEBUG("connection to dbi-UNKNOWN");
+		break;
+	}
 	return 0;
 }
 
 int dbi_disconnect_hook(struct _DBHandle *dbh) {
 	if(!dbh) {
 		return 0; }
+
+	switch(dbh->config.Dbi.Type) {
+	case DBI_TYPE_MYSQL:
+		LOG_DEBUG("disconnect from dbi-mysql");
+		break;
+	case DBI_TYPE_POSTGRES:
+		LOG_DEBUG("disconnect from dbi-postgres");
+		break;
+	default:
+		LOG_DEBUG("disconnect from dbi-UNKNOWN");
+		break;
+	}
+
 	dbi_conn_close(dbh->dbi.conn);
 	dbh->dbi.conn = 0;
 	return 0;

@@ -7,6 +7,7 @@ package godb
 /*
 #include "table.h"
 #include "tables.h"
+#include "statements.h"
 */
 import "C"
 {{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
@@ -42,5 +43,25 @@ func (*{{ $tblimpl }})TableDef()DBTableDef {
 // {{ Title $col.Name }} implements {{ $tblif }} interface
 func (t *{{ $tblimpl }}){{ Title $col.Name }}()*{{ $td.DataType $col }} {
 	return nil
+}{{ end }}
+
+// CInsertStmt implements InsertStmt interface
+func (t *{{ $tblimpl }})CInsertStmt()*C.InsertStmt {
+	return nil
 }
-{{ end }}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+
+// CDeleteStmt implements DeleteStmt interface
+func (t *{{ $tblimpl }})CDeleteStmt()*C.DeleteStmt {
+	return nil
+}
+
+// CUpdateStmt implements UpdateStmt interface
+func (t *{{ $tblimpl }})CUpdateStmt()*C.UpdateStmt {
+	return nil
+}
+
+// CUpsertStmt implements UpsertStmt interface
+func (t *{{ $tblimpl }})CUpsertStmt()*C.UpsertStmt {
+	return nil
+}
+{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
