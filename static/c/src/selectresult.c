@@ -5,16 +5,15 @@
 #include "column.h"
 #include "logger.h"
 #include "selectresult.h"
+#include "stringbuf.h"
 
 #include <stdlib.h>
 #include <alloca.h>
 
-int dump_selectresult(const SelectResult *res, char** buf) {
-	*buf = 0;
+int dump_selectresult(const SelectResult *res, struct _StringBuf *buf) {
 	size_t bufsize = 0;
 	char *tmpbuf = 0;
-
-	if(append_string(" | ",buf)) {
+	if(stringbuf_append(buf," | ")) {
 		return 1; }
 	for(size_t i = 0; i < res->tbl.def->ncols; i++) {
 		size_t oldbufsize = bufsize;
@@ -26,10 +25,9 @@ int dump_selectresult(const SelectResult *res, char** buf) {
 			return 1; }
 		if( get_column_string(tmpbuf,bufsize,&(res->tbl.def->cols[i]),res->tbl.rows.buf[0][i]) ) {
 			return 1; }
-		if(append_string(tmpbuf,buf)) {
+		if(stringbuf_appendf(buf,"%s | ",tmpbuf)) {
 			return 1; }
-		if(append_string(" | ",buf)) {
-			return 1; }
+
 	}
 	return 0;
 }

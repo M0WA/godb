@@ -84,8 +84,9 @@ int values_generic_value_specifier(const struct _DBColumnDef *def,const void *va
 	return 0;
 }
 
-int update_values_string(const struct _DBTable *tbl,ValueSpecifier spec,struct _StringBuf *sql,size_t *serial) {
+int update_values_string(const struct _DBTable *tbl,ValueSpecifier spec,const char *delimiter,struct _StringBuf *sql,size_t *serial) {
 	const struct _DBColumnDef *def = tbl->def->cols;
+	const char *del = delimiter ? delimiter : "";
 	size_t ncols = tbl->def->ncols;
 	size_t printed = 0;
 	for(size_t col = 0; col < ncols; col++) {
@@ -93,9 +94,7 @@ int update_values_string(const struct _DBTable *tbl,ValueSpecifier spec,struct _
 			continue;}
 		if(printed && stringbuf_append(sql,",")) {
 			return 1;}
-		if(stringbuf_append(sql,def[col].name)) {
-			return 1;}
-		if(stringbuf_append(sql,"=")) {
+		if(stringbuf_appendf(sql,"%s%s%s = ",del,def[col].name,del)) {
 			return 1;}
 		if(spec(&(def[col]),tbl->rows.buf[0][col],sql,serial)) {
 			return 1;}

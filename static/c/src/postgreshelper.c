@@ -34,8 +34,6 @@ int postgres_time_to_tm(const char *val, struct tm *t) {
 }
 
 static int postgres_upsert_leftjoin_string(const UpsertStmt *const s, const char *prefix_values, const char *alias_upsert, const char *delimiter, struct _StringBuf *sql) {
-
-	//LEFT JOIN new_values ON new_values.testuniq = upsert.testuniq
 	const char *del = delimiter ? delimiter : "";
 	if(stringbuf_append(sql," (")) {
 		return 1; }

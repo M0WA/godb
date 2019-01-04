@@ -125,12 +125,12 @@ int delete_stmt_string(const DeleteStmt *const s, WhereSpecifier wherespec, cons
 		rc = 1;
 		goto DELETE_STMT_STRING_EXIT; }
 
-	size_t wheresize = stringbuf_strlen(&where);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + strlen(s->def->name) + 1;
-	if(stringbuf_resize(sql,sqlsize)) {
+	if(stringbuf_appendf(sql,fmt,
+			s->def->name,
+			( stringbuf_get(&where) ? " WHERE " : ""),
+			( stringbuf_get(&where) ?  stringbuf_get(&where) : "")) ) {
 		rc = 1;
 		goto DELETE_STMT_STRING_EXIT; }
-	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->def->name,( stringbuf_get(&where) ? " WHERE " : ""),( stringbuf_get(&where) ?  stringbuf_get(&where) : ""));
 	LOGF_DEBUG("statement: %s",stringbuf_get(sql));
 
 DELETE_STMT_STRING_EXIT:
@@ -147,7 +147,7 @@ int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereS
 	stringbuf_init(&where,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&values,SQL_VALUE_ALLOC_BLOCK);
 
-	if( update_values_string(s->dbtbl, valspec, &values, &serial) ) {
+	if( update_values_string(s->dbtbl, valspec, delimiter, &values, &serial) ) {
 		rc = 1;
 		goto UPDATE_STMT_STRING_EXIT;	}
 
@@ -155,15 +155,12 @@ int update_stmt_string(const UpdateStmt *const s, ValueSpecifier valspec, WhereS
 		rc = 1;
 		goto UPDATE_STMT_STRING_EXIT; }
 
-	size_t wheresize = stringbuf_strlen(&where);
-	size_t valuesize = stringbuf_strlen(&values);
-	size_t sqlsize = strlen(fmt) + wheresize + strlen(" WHERE ") + valuesize + strlen(s->dbtbl->def->name) + 1;
-	if(stringbuf_resize(sql,sqlsize)) {
+	if(stringbuf_appendf(sql,fmt,s->dbtbl->def->name,
+			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
+			(stringbuf_get(&where) ? " WHERE " : ""),
+			(stringbuf_get(&where) ? stringbuf_get(&where) : "") )) {
 		rc = 1;
 		goto UPDATE_STMT_STRING_EXIT; }
-	snprintf(stringbuf_buf(sql),sqlsize,fmt,s->dbtbl->def->name,
-			(stringbuf_get(&values) ? stringbuf_get(&values) : ""),
-			(stringbuf_get(&where) ? " WHERE " : ""),(stringbuf_get(&where) ? stringbuf_get(&where) : ""));
 	LOGF_DEBUG("statement: %s",stringbuf_get(sql));
 
 UPDATE_STMT_STRING_EXIT:

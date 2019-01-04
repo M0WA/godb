@@ -53,11 +53,12 @@ static void test_table_upsert_check_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
 	while( (rc = fetch_db(dbh,&res)) > 0){
-		char *buf = 0;
+		StringBuf buf;
+		stringbuf_init(&buf,512);
 		dump_selectresult(&res,&buf);
-		if(buf) {
-			LOGF_DEBUG("%s",buf);
-			free(buf); }
+		if(stringbuf_get(&buf)) {
+			LOGF_DEBUG("%s",stringbuf_get(&buf)); }
+		stringbuf_destroy(&buf);
 		const double *tf = (const double *)res.tbl.rows.buf[0][4];
 		if(*tf != 12.12) {
 			double tmpd = *tf;
@@ -121,11 +122,12 @@ static void test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) 
 	int rc = 0;
 	size_t rowcount = 0;
 	while( (rc = fetch_db(dbh,&res)) > 0){
-		char *buf = 0;
+		StringBuf buf;
+		stringbuf_init(&buf,512);
 		dump_selectresult(&res,&buf);
-		if(buf) {
-			LOGF_DEBUG("%s",buf);
-			free(buf); }
+		if(stringbuf_get(&buf)) {
+			LOGF_DEBUG("%s",stringbuf_get(&buf)); }
+		stringbuf_destroy(&buf);
 		rowcount++;
 	}
 		
@@ -241,11 +243,12 @@ static void test_table_select_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh, int 
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while select"); }
 
 	while( (rc = fetch_db(dbh,&res)) > 0){
-		char *buf = 0;
+		StringBuf buf;
+		stringbuf_init(&buf,512);
 		dump_selectresult(&res,&buf);
-		if(buf) {
-			LOGF_DEBUG("%s",buf);
-			free(buf); }
+		if(stringbuf_get(&buf)) {
+			LOGF_DEBUG("%s",stringbuf_get(&buf)); }
+		stringbuf_destroy(&buf);
 		if(check) {
 			test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(&res);
 		}
@@ -420,7 +423,8 @@ static void test_table_{{ $db.Name }}_{{ $tbl.Name }}() {
 	StringBuf buf;
 	stringbuf_init(&buf,512);	
 	dump_dbtabledef(tbl.dbtbl.def,&buf);	
-	LOGF_DEBUG("%s",stringbuf_get(&buf));	
+	if(stringbuf_get(&buf)) {
+		LOGF_DEBUG("%s",stringbuf_get(&buf)); }	
 	stringbuf_destroy(&buf);
 	
 	test_table_def_{{ $db.Name }}_{{ $tbl.Name }}(tbl.dbtbl.def);

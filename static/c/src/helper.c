@@ -44,29 +44,6 @@ int comma_concat_colnames_insert(struct _StringBuf *buf,const struct _DBColumnDe
 	return 0;
 }
 
-int append_string(const char *src, char** dest) {
-	if(!src || !dest) {
-		return 1; }
-
-	size_t newsize = 1;
-	if(!*dest) {
-		newsize += strlen(src);
-		*dest = malloc(sizeof(char) * newsize);
-		if(!*dest) {
-			return 1; }
-		*(dest[0]) = 0;
-	} else {
-		char *tmp = 0;
-		newsize += strlen(src) + strlen(*dest);
-		tmp = realloc((*dest),sizeof(char) * newsize);
-		if(!tmp) {
-			return 1; }
-		*dest = tmp;
-	}
-	strcat(*dest,src);
-	return 0;
-}
-
 void get_limit(const size_t limits[], char *limit) {
 	limit[0] = 0;
 	if(limits[0] > 0) {

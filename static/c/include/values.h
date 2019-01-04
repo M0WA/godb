@@ -10,5 +10,5 @@ typedef int (*ValueSpecifier)(const struct _DBColumnDef *def,const void* value,s
 
 int upsert_values_row_string(const struct _DBTable *tbl,ValueSpecifier spec,struct _StringBuf *sql,size_t *serial);
 int insert_values_row_string(const struct _DBTable *tbl,ValueSpecifier spec,struct _StringBuf *sql,size_t *serial);
-int update_values_string(const struct _DBTable *tbl,ValueSpecifier spec,struct _StringBuf *sql,size_t *serial);
+int update_values_string(const struct _DBTable *tbl,ValueSpecifier spec,const char *delimiter,struct _StringBuf *sql,size_t *serial);
 int values_generic_value_specifier(const struct _DBColumnDef *def,const void *value,struct _StringBuf *sql,size_t *serial);

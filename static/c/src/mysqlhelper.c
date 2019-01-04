@@ -70,16 +70,15 @@ int mysql_string_to_tm(const char *val, struct tm *t) {
 	return 0;
 }
 
-static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf *sql) {
+static int mysql_upsert_key_string(const UpsertStmt *const s, const char *delimiter, struct _StringBuf *sql) {
+	const char *del = delimiter ? delimiter : "";
 	if(!s->dbtbl->def->primarykey) {
 		LOG_WARN("no primary key found");
 		return 1;
 	}
-	if( stringbuf_append(sql,s->dbtbl->def->primarykey->name) ||
-	    stringbuf_append(sql," = LAST_INSERT_ID(") ||
-		stringbuf_append(sql,s->dbtbl->def->primarykey->name) ||
-		stringbuf_append(sql,")")
-	){
+	if( stringbuf_appendf(sql,"%s%s%s=LAST_INSERT_ID(%s%s%s)",
+			del,s->dbtbl->def->primarykey->name,del,
+			del,s->dbtbl->def->primarykey->name,del ) ) {
 		return 1;
 	}
 	for(size_t col = 0; col < s->dbtbl->def->ncols; col++) {
@@ -87,13 +86,9 @@ static int mysql_upsert_key_string(const UpsertStmt *const s, struct _StringBuf 
 			continue; }
 		if(!s->dbtbl->rows.isset[0][col]) {
 			continue; }
-		if(stringbuf_append(sql,",")) {
-			return 1; }
-		if ( stringbuf_append(sql,s->dbtbl->def->cols[col].name) ||
-			stringbuf_append(sql," = VALUES(") ||
-			stringbuf_append(sql,s->dbtbl->def->cols[col].name) ||
-			stringbuf_append(sql,")")
-		){
+		if( stringbuf_appendf(sql,",%s%s%s=VALUES(%s%s%s)",
+				del,s->dbtbl->def->cols[col].name,del,
+				del,s->dbtbl->def->cols[col].name,del ) ) {
 			return 1;
 		}
 	}
@@ -117,7 +112,7 @@ int mysql_upsert_stmt_string(const UpsertStmt *const s, ValueSpecifier valspec, 
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 
-	if( mysql_upsert_key_string(s, &updatekeys) ) {
+	if( mysql_upsert_key_string(s, delimiter, &updatekeys) ) {
 		rc = 1;
 		goto MYSQL_UPSERT_STMT_STRING_EXIT; }
 

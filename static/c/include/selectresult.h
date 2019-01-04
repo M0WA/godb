@@ -4,6 +4,7 @@
 
 struct _DBColumnDef;
 struct _DBTableDef;
+struct _StringBuf;
 
 #include "table.h"
 
@@ -13,4 +14,4 @@ typedef struct _SelectResult {
 
 int destroy_selectresult(SelectResult *res);
 int create_selectresult(const struct _DBTableDef *def, struct _SelectResult *res);
-int dump_selectresult(const SelectResult *res, char** buf);
+int dump_selectresult(const SelectResult *res, struct _StringBuf *buf);
