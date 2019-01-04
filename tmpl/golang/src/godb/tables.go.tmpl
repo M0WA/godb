@@ -10,7 +10,12 @@ package godb
 #include "statements.h"
 */
 import "C"
-{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
+
+import (
+	"runtime"
+)
+{{ $td.Imports }}
+{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
 /* ==============================================================
    table {{ $db.Name }}.{{ $tbl.Name }}
    ============================================================== */
@@ -47,21 +52,48 @@ func (t *{{ $tblimpl }}){{ Title $col.Name }}()*{{ $td.DataType $col }} {
 
 // CInsertStmt implements InsertStmt interface
 func (t *{{ $tblimpl }})CInsertStmt()*C.InsertStmt {
-	return nil
+	stmt := &C.InsertStmt{} 
+	if C.create_insert_stmt(stmt,t.CTable()) != 0 {
+		return nil
+	}
+	return stmt
 }
 
 // CDeleteStmt implements DeleteStmt interface
-func (t *{{ $tblimpl }})CDeleteStmt()*C.DeleteStmt {
-	return nil
+func (*{{ $tblimpl }})CDeleteStmt()*C.DeleteStmt {
+	stmt := &C.DeleteStmt{} 
+	if C.create_delete_stmt(stmt,C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef()) != 0 {
+		return nil 
+	}
+	runtime.SetFinalizer(stmt, C.destroy_delete_stmt)
+	return stmt
 }
 
 // CUpdateStmt implements UpdateStmt interface
 func (t *{{ $tblimpl }})CUpdateStmt()*C.UpdateStmt {
-	return nil
+	stmt := &C.UpdateStmt{} 
+	if C.create_update_stmt(stmt,t.CTable()) != 0 {
+		return nil
+	}
+	runtime.SetFinalizer(stmt, C.destroy_update_stmt)
+	return stmt
 }
 
 // CUpsertStmt implements UpsertStmt interface
 func (t *{{ $tblimpl }})CUpsertStmt()*C.UpsertStmt {
-	return nil
+	stmt := &C.UpsertStmt{} 
+	if C.create_upsert_stmt(stmt,t.CTable()) != 0 {
+		return nil
+	}
+	return stmt
+}
+
+func (*{{ $tblimpl }})CSelectStmt()*C.SelectStmt {
+	stmt := &C.SelectStmt{} 
+	if C.create_select_stmt(stmt,C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef()) != 0 {
+		return nil
+	}
+	runtime.SetFinalizer(stmt, C.destroy_select_stmt)
+	return stmt
 }
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
