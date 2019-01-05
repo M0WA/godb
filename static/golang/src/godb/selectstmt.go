@@ -1,11 +1,22 @@
 package godb
 
 /*
-#include "statements.h"
-#include "where.h"
+#include <stdlib.h>
 
-static void free_insert_where(SelectStmt *s) {
-	where_destroy(&s->where);
+#include "statements.h"
+
+static SelectStmt* alloc_select_stmt() {
+	SelectStmt *s = malloc(sizeof(SelectStmt));
+	if(!s) {
+		return NULL;
+	}
+	return s;
+}
+
+static void free_select_stmt(SelectStmt* s) {
+	if(s) {
+		free(s);
+	}
 }
 */
 import "C"
@@ -20,26 +31,31 @@ type SelectStmt interface {
 }
 
 type SelectStmtImpl struct {
-	s C.SelectStmt
+	s *C.SelectStmt
 	def DBTableDef
 }
 
-func freeInsertStmt(s *SelectStmtImpl) {
-	C.free_insert_where(&s.s)
+func freeSelectStmt(s *SelectStmtImpl) {
+	C.destroy_select_stmt(s.s)
+	C.free_select_stmt(s.s)
 }
 
 func NewSelectStmt(def DBTableDef)SelectStmt {
 	t := new(SelectStmtImpl)
-	if int(C.create_select_stmt(&t.s,def.CTableDef())) != 0 {
+	t.s = C.alloc_select_stmt()
+	if t.s == nil {
+		return nil
+	}
+	if int(C.create_select_stmt(t.s,def.CTableDef())) != 0 {
 		return nil
 	}
 	t.def = def
-	runtime.SetFinalizer(t, freeInsertStmt)
+	runtime.SetFinalizer(t, freeSelectStmt)
 	return t
 }
 
 func (s *SelectStmtImpl)CSelectStmt()*C.SelectStmt {
-	return &s.s
+	return s.s
 }
 
 func (s *SelectStmtImpl)TableDef()DBTableDef {

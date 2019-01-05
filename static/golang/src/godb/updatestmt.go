@@ -1,11 +1,22 @@
 package godb
 
 /*
-#include "statements.h"
-#include "where.h"
+#include <stdlib.h>
 
-static void free_update_where(UpdateStmt *s) {
-	where_destroy(&s->where);
+#include "statements.h"
+
+static UpdateStmt* alloc_update_stmt() {
+	UpdateStmt *s = malloc(sizeof(UpdateStmt));
+	if(!s) {
+		return NULL;
+	}
+	return s;
+}
+
+static void free_update_stmt(UpdateStmt* s) {
+	if(s) {
+		free(s);
+	}
 }
 */
 import "C"
@@ -19,16 +30,21 @@ type UpdateStmt interface {
 }
 
 type UpdateStmtImpl struct {
-	s C.UpdateStmt
+	s *C.UpdateStmt
 }
 
 func freeUpdateStmt(s *UpdateStmtImpl) {
-	C.free_update_where(&s.s)
+	C.destroy_update_stmt(s.s)
+	C.free_update_stmt(s.s)
 }
 
 func NewUpdateStmt(tbl DBTable)UpdateStmt {
 	t := new(UpdateStmtImpl)
-	if int(C.create_update_stmt(&t.s,tbl.CTable())) != 0 {
+	t.s = C.alloc_update_stmt()
+	if t.s == nil {
+		return nil
+	}
+	if int(C.create_update_stmt(t.s,tbl.CTable())) != 0 {
 		return nil
 	}
 	runtime.SetFinalizer(t, freeUpdateStmt)
@@ -36,5 +52,5 @@ func NewUpdateStmt(tbl DBTable)UpdateStmt {
 }
 
 func (s *UpdateStmtImpl)CUpdateStmt()*C.UpdateStmt {
-	return &s.s
+	return s.s
 }

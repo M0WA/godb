@@ -70,6 +70,17 @@ func getDBConfigs(t *testing.T)map[DBType]ConfigCreds {
 	return confs
 }
 
+func testInsert(t *testing.T,dbh DBHandle) {
+	tbl := NewComplexdb1_Complextable1(1)
+	s := tbl.InsertStmt()
+	
+	tbl.SetTestfloat(10.10,0)
+	
+	if dbh.Insert(s) != nil {
+		t.Fatal("error while insert");
+	}
+}
+
 func TestGoDB(t *testing.T) {
 	SetLogDebug()
 	//SetLogFunc()
@@ -78,10 +89,10 @@ func TestGoDB(t *testing.T) {
 	
 	for _,cc := range confs {
 		dbh := getConnection(t,cc.creds,cc.conf)
-		
+		testInsert(t,dbh)
 		/*
 		tests := []testTable {
-			new(complextable1Test),
+			new(Complextable1Test),
 			new(complextable2Test),
 			new(complextable3Test),
 		}

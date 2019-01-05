@@ -5,95 +5,135 @@ package godb
    ============================================================== */
 
 /*
+#include <stdlib.h>
+
 #include "table.h"
 #include "tables.h"
 #include "statements.h"
+{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
+static {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}() {
+	{{ $db.Name }}_{{ $tbl.Name }} *t = malloc(sizeof({{ $db.Name }}_{{ $tbl.Name }}));
+	if(!t) {
+		return NULL;
+	}
+	return t;
+}
+
+static void free_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* t) {
+	if(t) {
+		free(t);
+	}
+}
+
+static DBTable *get_dbtable_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }}* t) {
+	return &t->dbtbl;
+}
+{{ end }}{{ end }}
 */
 import "C"
 
+//static imports
 import (
 	"runtime"
 )
-{{ $td.Imports }}
-{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
+
+//dynamic imports
+{{ $td.Imports }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $tblif := printf "%s_%s" (Title $db.Name) (Title $tbl.Name) }}{{ $tblimpl := printf "%s_%s_Impl" (Title $db.Name) (Title $tbl.Name) }}
 /* ==============================================================
    table {{ $db.Name }}.{{ $tbl.Name }}
    ============================================================== */
 type {{ $tblif }} interface { {{ range $col := $tbl.Columns }}
-	// {{ Title $col.Name }} returns pointer to value of column {{ $col.Name }}
-	{{ Title $col.Name }}()*{{ $td.DataType $col }}{{ end }}
+	// Get{{ Title $col.Name }}/Set{{ Title $col.Name }} gets/sets the value of the column {{ $col.Name }}
+	Get{{ Title $col.Name }}(row uint32)*{{ $td.DataType $col }}
+	Set{{ Title $col.Name }}(val {{ $td.DataType $col }},row uint32)
+	{{ end }}		
+	// Table returns a DBTable interface
+	Table()DBTable
+	
+	// Table returns a DBTableDef interface
+	TableDef()DBTableDef
+	
+	// InsertStmt returns an InsertStmt interface
+	InsertStmt()InsertStmt
+	
+	// DeleteStmt returns a DeleteStmt interface
+	DeleteStmt()DeleteStmt
+	
+	// UpdateStmt returns a UpdateStmt interface
+	UpdateStmt()UpdateStmt
+	
+	// UpsertStmt returns a UpsertStmt interface
+	UpsertStmt()UpsertStmt
+	
+	// SelectStmt returns a SelectStmt interface
+	SelectStmt()SelectStmt
 }
 
-type {{ $tblimpl }} struct { 
-	dbtbl DBTable
+type {{ $tblimpl }} struct {
+	tbl *C.{{ $db.Name }}_{{ $tbl.Name }}
+}
+
+func free_{{ $tblimpl }}(t *{{ $tblimpl }}) {
+	if t != nil && t.tbl != nil {
+		C.free_{{ $db.Name }}_{{ $tbl.Name }}(t.tbl)
+	}
 }
 
 // New{{ $tblif }} creates a new instance of a {{ $tblif }} interface
 func New{{ $tblif }}(rows uint32){{ $tblif }} {
 	t := new({{ $tblimpl }})
-	t.dbtbl = NewDBTable(t.TableDef(),rows)
+	t.tbl = C.alloc_{{ $db.Name }}_{{ $tbl.Name }}()
+	if t.tbl == nil {
+		return nil
+	}
+	if C.create_{{ $db.Name }}_{{ $tbl.Name }}(t.tbl,C.ulong(rows)) != 0 {
+		return nil
+	}
+	runtime.SetFinalizer(t, free_{{ $tblimpl }})
 	return t
 }
 
-// CTable implements DBTable interface
-func (t *{{ $tblimpl }})CTable()*C.DBTable {
-	return t.dbtbl.CTable()
+// Table returns DBTable interface
+func (t *{{ $tblimpl }})Table()DBTable {
+	return NewDBTableFromCDBTable(t.TableDef(),C.get_dbtable_{{ $db.Name }}_{{ $tbl.Name }}(t.tbl))
 }
 
 // TableDef implements DBTable interface
 func (*{{ $tblimpl }})TableDef()DBTableDef {	
 	return NewDBTableDef(C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef())
-}
+} 
 {{ range $col := $tbl.Columns }}
-// {{ Title $col.Name }} implements {{ $tblif }} interface
-func (t *{{ $tblimpl }}){{ Title $col.Name }}()*{{ $td.DataType $col }} {
+// Get{{ Title $col.Name }} gets value of the column
+func (t *{{ $tblimpl }})Get{{ Title $col.Name }}(row uint32)*{{ $td.DataType $col }} {
 	return nil
-}{{ end }}
-
-// CInsertStmt implements InsertStmt interface
-func (t *{{ $tblimpl }})CInsertStmt()*C.InsertStmt {
-	stmt := &C.InsertStmt{} 
-	if C.create_insert_stmt(stmt,t.CTable()) != 0 {
-		return nil
-	}
-	return stmt
 }
 
-// CDeleteStmt implements DeleteStmt interface
-func (*{{ $tblimpl }})CDeleteStmt()*C.DeleteStmt {
-	stmt := &C.DeleteStmt{} 
-	if C.create_delete_stmt(stmt,C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef()) != 0 {
-		return nil 
-	}
-	runtime.SetFinalizer(stmt, C.destroy_delete_stmt)
-	return stmt
+// Set{{ Title $col.Name }} sets value of the column
+func (t *{{ $tblimpl }})Set{{ Title $col.Name }}(val {{ $td.DataType $col }},row uint32) {
+}
+{{ end }}
+// InsertStmt returns InsertStmt interface
+func (t *{{ $tblimpl }})InsertStmt()InsertStmt {
+	return NewInsertStmt(t.Table())
 }
 
-// CUpdateStmt implements UpdateStmt interface
-func (t *{{ $tblimpl }})CUpdateStmt()*C.UpdateStmt {
-	stmt := &C.UpdateStmt{} 
-	if C.create_update_stmt(stmt,t.CTable()) != 0 {
-		return nil
-	}
-	runtime.SetFinalizer(stmt, C.destroy_update_stmt)
-	return stmt
+// DeleteStmt returns DeleteStmt interface
+func (t *{{ $tblimpl }})DeleteStmt()DeleteStmt {
+	return NewDeleteStmt(t.TableDef())
 }
 
-// CUpsertStmt implements UpsertStmt interface
-func (t *{{ $tblimpl }})CUpsertStmt()*C.UpsertStmt {
-	stmt := &C.UpsertStmt{} 
-	if C.create_upsert_stmt(stmt,t.CTable()) != 0 {
-		return nil
-	}
-	return stmt
+// UpdateStmt returns UpdateStmt interface
+func (t *{{ $tblimpl }})UpdateStmt()UpdateStmt {
+	return NewUpdateStmt(t.Table())
 }
 
-func (*{{ $tblimpl }})CSelectStmt()*C.SelectStmt {
-	stmt := &C.SelectStmt{} 
-	if C.create_select_stmt(stmt,C.{{ $db.Name }}_{{ $tbl.Name }}_tbldef()) != 0 {
-		return nil
-	}
-	runtime.SetFinalizer(stmt, C.destroy_select_stmt)
-	return stmt
+// UpsertStmt returns UpsertStmt interface
+func (t *{{ $tblimpl }})UpsertStmt()UpsertStmt {
+	return NewUpsertStmt(t.Table())
+}
+
+// UpsertStmt returns UpsertStmt interface
+func (t *{{ $tblimpl }})SelectStmt()SelectStmt {
+	return NewSelectStmt(t.TableDef())
 }
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
