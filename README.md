@@ -235,9 +235,14 @@ the following is a full-featured example database structure
 
 ### C <a name="CLib"></a>
 
-The following section shows code snippets for certain tasks.
+The C library is the core implementation for all/most other languages.
+Except for the init_dblib() function, GoDB is thread-safe. Multiple
+database connections can be created and shared in between threads as
+long as the access to a single database connection (struct DBHandle)
+is syncronized by you. Best practise would be to use one database connection
+per thread.
 
-#### connect to a database:
+#### Connect to a database
 
 	// initialize library
 	init_dblib();
@@ -268,7 +273,7 @@ The following section shows code snippets for certain tasks.
 	if( connect_db(dbh,&creds) ) {
 		LOG_FATAL(1,"connect_db() failed"); }
 
-#### disconnect to a database:
+#### Disconnect from a database
 	
 	// disconnect from database
 	if ( disconnect_db(dbh) ) {
@@ -281,7 +286,7 @@ The following section shows code snippets for certain tasks.
 	// shutdown library
 	exit_dblib();
 
-#### creating a table structure and set values on it
+#### Creating a table structure and set values on it
 
 	//
 	// initialize structure named "tbl"
@@ -316,7 +321,7 @@ The following section shows code snippets for certain tasks.
 	// destroy the "tbl2" when done
 	destroy_dbtable(&tbl2.dbtbl);
 
-#### insert a row into a table
+#### Insert a row into a table
 
 	// create and initialize a structure named "tbl" or 
 	// "tbl2" for bulk inserts as seen above
@@ -330,15 +335,73 @@ The following section shows code snippets for certain tasks.
 		return 1;
 	}	
 
+#### Creating a Where Clause
+
+A where clause is represented by the WhereClause datatype and consist of one or more
+WhereComposite and WhereCondition datatypes.
+
+The following statement datatypes support where clauses:
+* SelectStmt
+* DeleteStmt
+* UpdateStmt
+
+To append a WhereCondition to a WhereClause use the where_append() function:
+
+	DBColumnDef *coldef = ...; //i.e. some int column
+	uint32 my_value = 32, my_value2 = 23;
+	size_t value_count = 2;
+	
+	// pointers to values must be valid until
+	// statement is used
+	const void (*values)[] = { &my_value, &my_value2	};
+
+	WhereCondition cond;
+	memset(&cond,0,sizeof(WhereCondition));
+	cond.cond = WHERE_EQUAL;
+	cond.type = WHERE_COND;
+	cond.def = coldef;
+	cond.values = values;
+	cond.cnt = value_count;
+
+	SelectStmt s;
+	...
+	
+	if( where_append(&s.where,(union _WhereStmt *)&cond) ) {
+		return -1;
+	}
+	
+Resulting where clause would be:
+
+	WHERE colname = 32 OR colname = 23
+
+WhereComposite datatypes combine multiple WhereCondition/WhereComposite using AND/OR,
+therefore act like parathesis for more complex where clauses.
+
+This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
+
+	WhereCondition1 := ( colname = 32 OR colname = 23 )
+	WhereCondition2 := ( othercol = 'string' )
+	WhereCondition3 := ( somecol = 10.10 )
+	WhereComposite1 := ( WhereCondition... OR WhereCondition... )
+	WhereComposite2 := ( WhereCondition1 AND WhereCondition2 OR WhereComposite1 )
+	WhereClause     := ( WhereComposite2 AND WhereCondition3 )
+
 ### Golang <a name="Golang"></a>
 
-create database connection
+The golang API is a thin layer on top of the c-api explained above.
+It wraps the c library and also adds generated datatypes and functions
+according to the database structure.
+
+#### Connect to a database
+
+The getConnection() function returns a connected DBHandle interface on success which can be used for later operations.
+It's the correspondance of a database connection.
 
 	func getCredentials()(DBCredentials) {
 		creds := NewDBCredentials()
 		creds.SetHost("localhost")
 		creds.SetPort(3306)
-		creds.SetName("complexdb1")
+		creds.SetName("db1")
 		creds.SetUser("myuser")
 		creds.SetPass("mypass")
 		return creds
