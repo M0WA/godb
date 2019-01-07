@@ -12,6 +12,7 @@
 struct _DBColumnDef;
 struct _WhereCondition;
 struct _SelectStmt;
+struct _SelectResult;
 enum _DBJoinType;
 {{ $td := . }}{{ $layouter := .LL }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 /* ********************** table {{ $db.Name }}.{{ $tbl.Name }} ************************* */
@@ -31,6 +32,7 @@ void {{ $db.Name }}_{{ $tbl.Name }}_unset_{{ $col.Name }}({{ $db.Name }}_{{ $tbl
 void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
 {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
+int {{ $db.Name }}_{{ $tbl.Name }}_result_idx_{{ $col.Name }}(struct _SelectResult *res,size_t *idx);
 {{ end }}{{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
 int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $idx.Column }}(const {{ $td.PtrType $col }} *vals,size_t valcnt,struct _WhereCondition *w);{{ end }}
 {{ range $foreign := $tbl.ForeignKeys }}

@@ -6,10 +6,27 @@ package godb
 
 /*
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 
 #include "table.h"
 #include "tables.h"
 #include "statements.h"
+
+void set_col_tm(const struct tm* t1, struct tm* t2) {
+	memcpy(t2,t1,sizeof(struct tm));
+}
+
+void set_col_char(const char* t1, char* t2) {
+	strcpy(t2,t1);
+}
+
+static void tables_free_string(char *str) {
+	if(str) {
+		free(str);
+	}
+}
+
 {{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 static {{ $db.Name }}_{{ $tbl.Name }}* alloc_{{ $db.Name }}_{{ $tbl.Name }}() {
 	{{ $db.Name }}_{{ $tbl.Name }} *t = malloc(sizeof({{ $db.Name }}_{{ $tbl.Name }}));
@@ -105,11 +122,35 @@ func (*{{ $tblimpl }})TableDef()DBTableDef {
 {{ range $col := $tbl.Columns }}
 // Get{{ Title $col.Name }} gets value of the column
 func (t *{{ $tblimpl }})Get{{ Title $col.Name }}(row uint32)*{{ $td.DataType $col }} {
-	return nil
+	v := C.{{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(t.tbl,C.ulong(row))
+	if v == nil {
+		return nil
+	}
+{{ if eq $col.DataType "string" }}
+	str := C.GoString(v)
+	return &str {{ else if eq $col.DataType "datetime" }}
+	timestamp := C.mktime(v)
+	tm := time.Unix(int64(timestamp), 0)
+	return &tm {{ else if eq $col.DataType "float" }}
+	f := {{ $td.DataType $col }}(*v)
+	return &f {{ else if eq $col.DataType "int" }}
+	i := {{ $td.DataType $col }}(*v)
+	return &i {{ end }}
+
 }
 
 // Set{{ Title $col.Name }} sets value of the column
-func (t *{{ $tblimpl }})Set{{ Title $col.Name }}(val {{ $td.DataType $col }},row uint32) {
+func (t *{{ $tblimpl }})Set{{ Title $col.Name }}(v {{ $td.DataType $col }},row uint32) { {{ if eq $col.DataType "datetime" }}
+	tmp := C.long(v.Unix())
+	tm := new(C.struct_tm)
+	tm = C.gmtime_r(&tmp, tm)
+	C.set_col_tm(tm, C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.tbl,C.ulong(row))){{ else if eq $col.DataType "string" }}
+	tmp := C.CString(v)
+	defer C.tables_free_string(tmp)
+	C.set_col_char(tmp, C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.tbl,C.ulong(row))) {{ else }}
+	tmp := {{ $td.CGoType $col }}(v)
+	p := C.{{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}(t.tbl,C.ulong(row))
+	*p = tmp{{ end }}
 }
 {{ end }}
 // InsertStmt returns InsertStmt interface

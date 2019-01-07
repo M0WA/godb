@@ -3,11 +3,10 @@ package layout
 import (
 	"errors"
 	"io"
-	"fmt"
 	"io/ioutil"
-	"crypto/sha512"
 	"gopkg.in/yaml.v1"
-	"encoding/hex"
+//	"encoding/hex"
+//	"crypto/sha512"
 )
 
 type Layout struct {
@@ -19,12 +18,14 @@ func (*Layout)TypeStrings()map[int]string {
 	return typeStrings;
 }
 
-func (l *Layout)setCheckSum() {
+/*
+func (l *Layout)SetCheckSum() {
 	d,_ := yaml.Marshal(l)
 	c := sha512.New()
 	c.Write([]byte(d))
 	l.CheckSum = hex.EncodeToString(c.Sum(nil))
 }
+*/
 
 func NewLayout(r io.Reader)(*Layout,error) {
 	l := new(Layout)
@@ -42,6 +43,6 @@ func NewLayout(r io.Reader)(*Layout,error) {
 	if len(l.Databases) == 0 {
 		return nil, errors.New("no databases found")
 	}
-	l.setCheckSum()
+	//l.SetCheckSum()
 	return l,nil
 }

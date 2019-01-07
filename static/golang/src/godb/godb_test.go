@@ -2,6 +2,7 @@ package godb
 
 import (
     "testing"
+    "time"
 )
 
 func getMySQLCredentials()(DBCredentials) {
@@ -74,7 +75,10 @@ func testInsert(t *testing.T,dbh DBHandle) {
 	tbl := NewComplexdb1_Complextable1(1)
 	s := tbl.InsertStmt()
 	
+	tbl.SetTestint(33,0)
+	tbl.SetTeststr("test",0)
 	tbl.SetTestfloat(10.10,0)
+	tbl.SetTestdate(time.Now(),0)
 	
 	if dbh.Insert(s) != nil {
 		t.Fatal("error while insert");

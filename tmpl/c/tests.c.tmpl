@@ -130,6 +130,13 @@ static void test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) 
 			LOGF_DEBUG("%s",stringbuf_get(&buf)); }
 		stringbuf_destroy(&buf);
 		rowcount++;
+		
+		size_t idx = 0;
+		if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_testfk(&res, &idx) ) {
+			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testfk in result set");
+		} else if( {{ $db.Name }}_complextable2_result_idx_teststr(&res, &idx) ) {
+			LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column teststr in result set");
+		}
 	}
 		
 	LOGF_DEBUG("fetched %lu rows",rowcount);	
@@ -197,17 +204,35 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 }
 
 static void test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(SelectResult *res) {
+	size_t idxID = 0, idxStr = 0, idxInt = 0, idxFloat = 0;
+	if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_ID(res, &idxID) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column ID in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_teststr(res, &idxStr) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column teststr in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_testint(res, &idxInt) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testint in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_testfloat(res, &idxFloat) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testfloat in result set");
+	}
 	for(size_t col = 0; col < res->tbl.def->ncols; col++) {
-		if( strcasecmp(res->tbl.def->cols[col].name,"ID") == 0 ) {			
+		if( strcasecmp(res->tbl.def->cols[col].name,"ID") == 0 ) {
+			if( idxID != col ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID idx for select result"); }
 			if( (*(unsigned long long*)res->tbl.rows.buf[0][col]) == 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID in select result");	}
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"testint") == 0 ) {
+			if( idxInt != col ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint idx for select result"); }
 			if( (*(long long*)res->tbl.rows.buf[0][col]) != 10 ) {
 				LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint in select result: %ld",*((long long*)res->tbl.rows.buf[0][col])); }
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"testfloat") == 0 ) {
+			if( idxFloat != col ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat idx for select result"); }
 			if( (*(double*)res->tbl.rows.buf[0][col]) != 10.10 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat in select result"); }
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"teststr") == 0 ) {
+			if( idxStr != col ) {
+				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr idx for select result"); }
 			if( strcmp((const char*)res->tbl.rows.buf[0][col],"test") != 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr in select result"); }
 		}

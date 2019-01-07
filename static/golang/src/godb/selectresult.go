@@ -39,13 +39,10 @@ func freeSelectResult(t *SelectResultImpl) {
 	C.free_selectresult(t.res)
 }
 
-func NewSelectResult(stmt SelectStmt)SelectResult {
+func NewSelectResult(res *C.SelectResult)SelectResult {
 	r := new(SelectResultImpl)
 	r.res = C.alloc_selectresult()
 	if r.res == nil {
-		return nil
-	}
-	if int(C.create_selectresult(stmt.TableDef().CTableDef(),r.res)) != 0 {
 		return nil
 	}
 	runtime.SetFinalizer(r, freeSelectResult)

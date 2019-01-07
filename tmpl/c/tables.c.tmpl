@@ -14,6 +14,7 @@
 #include "keys.h"
 #include "where.h"
 #include "join.h"
+#include "selectresult.h"
 {{ $td := . }}{{ $layout := .L }}{{ $layouter := .LL }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}
 // {{ $db.Name }}.{{ $tbl.Name }}: column definitions
 const struct _DBColumnDef {{ $db.Name }}_{{ $tbl.Name }}_coldefs[] = { {{ range $col := $tbl.Columns }}
@@ -106,6 +107,19 @@ void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $t
 
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row) {
 	return t->dbtbl.rows.isset[row][{{  $colidx }}] ? (const {{ $td.PtrType $col }})t->dbtbl.rows.buf[row][{{  $colidx }}] : 0;
+} 
+
+int {{ $db.Name }}_{{ $tbl.Name }}_result_idx_{{ $col.Name }}(struct _SelectResult *res, size_t *idx) {
+	for(size_t i = 0; i < res->tbl.def->ncols; i++) {
+		if( strcmp(res->tbl.def->cols[i].database,"{{ $db.Name }}") == 0 &&
+			strcmp(res->tbl.def->cols[i].table,"{{ $tbl.Name }}") == 0 &&
+			strcmp(res->tbl.def->cols[i].name,"{{ $col.Name }}") == 0
+		) {
+			*idx = i;
+			return 0;
+		}
+	}
+	return 1;
 } {{ end }}{{/* columns */}}
 {{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
 int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $col.Name }}(const {{ $td.PtrType $col }} *vals,size_t valcnt,struct _WhereCondition *w) {
@@ -118,8 +132,7 @@ int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $col.Name }}(const {{ $td.PtrType $
 	w->cnt = 1;
 	return 0;
 }
-{{ end }}{{/* indexkeys */}}{{ range $i,$foreign := $tbl.ForeignKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $foreign.Column }}
-{{ $foreigncol := $layouter.Column $foreign.RefDatabase $foreign.RefTable $foreign.RefColumn }}
+{{ end }}{{/* indexkeys */}}{{ range $i,$foreign := $tbl.ForeignKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $foreign.Column }}{{ $foreigncol := $layouter.Column $foreign.RefDatabase $foreign.RefTable $foreign.RefColumn }}
 int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt *s,enum _DBJoinType type) {
 	struct _JoinStmt *j = malloc(sizeof(struct _JoinStmt));
 	if(!j) {
@@ -131,8 +144,7 @@ int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt
 		return 1; }
 	return 0;
 } 
-{{ end }}{{/* foreignkeys */}}
-{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+{{ end }}{{/* foreignkeys */}}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 const struct _DBTableDef* get_table_def_by_name(const char* dbname, const char* tblname) {
 	if(0) {
 		return 0;
