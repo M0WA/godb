@@ -261,7 +261,7 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
+	if( select_stmt_string(s,res,where_generic_value_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT; }
 
@@ -275,11 +275,6 @@ static int mysql_select_raw(struct _DBHandle *dbh,const struct _SelectStmt *cons
 		LOGF_WARN("mysql_use_result(): %s", mysql_error(dbh->mysql.conn));
 		rc = 1;
 		goto MYSQL_SELECT_RAW_EXIT;	}
-
-	if( create_selectresult(s->def,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		goto MYSQL_SELECT_RAW_EXIT;}
 
 MYSQL_SELECT_RAW_EXIT:
 	stringbuf_destroy(&stmtbuf);
@@ -298,7 +293,7 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
 
-	if( select_stmt_string(s,mysql_where_specifier,mysql_delimiter,&stmtbuf) ) {
+	if( select_stmt_string(s,res,mysql_where_specifier,mysql_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
 
@@ -320,11 +315,6 @@ static int mysql_select_prepared(struct _DBHandle *dbh,const struct _SelectStmt 
 		LOGF_WARN("mysql_stmt_execute(): %s", mysql_stmt_error(dbh->mysql.stmt));
 		rc = 1;
 		goto MYSQL_SELECT_PREPARED_EXIT; }
-
-	if( create_selectresult(s->def,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		goto MYSQL_SELECT_PREPARED_EXIT;}
 
 MYSQL_SELECT_PREPARED_EXIT:
 	stringbuf_destroy(&stmtbuf);

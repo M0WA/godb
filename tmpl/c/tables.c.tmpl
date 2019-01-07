@@ -133,3 +133,12 @@ int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt
 } 
 {{ end }}{{/* foreignkeys */}}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+const struct _DBTableDef* get_table_def_by_name(const char* dbname, const char* tblname) {
+	if(0) {
+		return 0;
+	} {{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }} else if(strcmp(dbname,"{{ $db.Name }}") == 0 && strcmp(tblname,"{{ $tbl.Name }}") == 0) {
+		return {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
+	} {{ end }}{{/* tables */}}{{ end }}
+	
+	return 0;
+}

@@ -100,7 +100,8 @@ static void test_table_foreignkey_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) 
 	const DBTableDef *tbldef = {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
 
 	SelectStmt stmt;
-	create_select_stmt(&stmt,tbldef);
+	if( create_select_stmt(&stmt,tbldef) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: error while forkein key check"); }
 	
 	const char test[] = "test";
 	const char **values = (const char*[]){test};

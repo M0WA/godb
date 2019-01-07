@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "table.h"
 #include "statements.h"
+#include "selectresult.h"
 
 #ifndef _DISABLE_MYSQL
 	#include "mysqlhooks.h"
@@ -216,6 +217,10 @@ int select_db(struct _DBHandle *dbh,const struct _SelectStmt *const stmt, struct
 	}
 	if(!dbh->hooks.select) {
 		LOG_ERROR("invalid database handle");
+		return 1;
+	}
+	if(create_selectresult(stmt, res)) {
+		LOG_ERROR("cannot create select result");
 		return 1;
 	}
 	return dbh->hooks.select(dbh,stmt,res);

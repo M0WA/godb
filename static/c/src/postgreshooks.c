@@ -226,7 +226,7 @@ static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*co
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,postgres_delimiter,&stmtbuf) ) {
+	if( select_stmt_string(s,res,where_generic_value_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_SELECT_RAW_EXIT; }
 
@@ -237,12 +237,6 @@ static int postgres_select_raw(struct _DBHandle *dbh,struct _SelectStmt const*co
 		PQclear(dbh->postgres.res);
 		goto POSTGRES_SELECT_RAW_EXIT; }
 	dbh->postgres.resrow = 0;
-
-	if( create_selectresult(s->def,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		PQclear(dbh->postgres.res);
-		goto POSTGRES_SELECT_RAW_EXIT;}
 
 POSTGRES_SELECT_RAW_EXIT:
 	stringbuf_destroy(&stmtbuf);
@@ -261,7 +255,7 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 	PostgresParamWrapper param;
 	memset(&param,0,sizeof(PostgresParamWrapper));
 
-	if( select_stmt_string(s,postgres_where_specifier,postgres_delimiter,&stmtbuf) ) {
+	if( select_stmt_string(s,res,postgres_where_specifier,postgres_delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 
@@ -276,12 +270,6 @@ static int postgres_select_prepared(struct _DBHandle *dbh,struct _SelectStmt con
 		PQclear(dbh->postgres.res);
 		goto POSTGRES_SELECT_PREPARED_EXIT; }
 	dbh->postgres.resrow = 0;
-
-	if( create_selectresult(s->def,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		PQclear(dbh->postgres.res);
-		goto POSTGRES_SELECT_PREPARED_EXIT;}
 
 POSTGRES_SELECT_PREPARED_EXIT:
 	stringbuf_destroy(&stmtbuf);

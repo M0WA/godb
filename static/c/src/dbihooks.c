@@ -137,7 +137,7 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 	StringBuf stmtbuf;
 	stringbuf_init(&stmtbuf,SQL_STMT_ALLOC_BLOCK);
 
-	if( select_stmt_string(s,where_generic_value_specifier,dbh->dbi.delimiter,&stmtbuf) ) {
+	if( select_stmt_string(s,res,where_generic_value_specifier,dbh->dbi.delimiter,&stmtbuf) ) {
 		rc = 1;
 		goto DBI_SELECT_EXIT; }
 
@@ -148,11 +148,6 @@ int dbi_select_hook(struct _DBHandle *dbh,const struct _SelectStmt *const s,stru
 		dbi_conn_error(dbh->dbi.conn, &errmsg);
 		LOGF_WARN("error while dbi_conn_query(): %s",(errmsg ? errmsg :""));
 		goto DBI_SELECT_EXIT; }
-
-	if( create_selectresult(s->def,res) ) {
-		LOG_WARN("create_selectresult(): could not create select stmt");
-		rc = 1;
-		goto DBI_SELECT_EXIT;}
 
 DBI_SELECT_EXIT:
 	stringbuf_destroy(&stmtbuf);

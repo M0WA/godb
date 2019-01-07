@@ -36,3 +36,5 @@ int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $idx.Column }}(const {{ $td.PtrType
 {{ range $foreign := $tbl.ForeignKeys }}
 int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt *s,enum _DBJoinType type);{{ end }}
 {{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
+
+const struct _DBTableDef* get_table_def_by_name(const char* dbname, const char* tblname);

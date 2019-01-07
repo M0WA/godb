@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "stringbuf.h"
 #include "dblimits.h"
+#include "selectresult.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,7 +21,7 @@ int create_insert_stmt(struct _InsertStmt *s,const struct _DBTable *dbtbl) {
 
 int create_select_stmt(struct _SelectStmt *s,const struct _DBTableDef *def) {
 	memset(s,0,sizeof(struct _SelectStmt));
-	s->def = def;
+	s->from = def;
 	return 0;
 }
 
@@ -71,7 +72,7 @@ INSERT_STMT_STRING_EXIT:
 	return rc;
 }
 
-int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, const char *delimiter, struct _StringBuf *sql) {
+int select_stmt_string(const SelectStmt *const s, const SelectResult *const res, WhereSpecifier wherespec, const char *delimiter, struct _StringBuf *sql) {
 	const char *del = delimiter ? delimiter : "";
 	const char fmt[] = "SELECT %s FROM %s %s %s %s %s";
 	char limit[32] = {0};
@@ -82,7 +83,7 @@ int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, cons
 	stringbuf_init(&join,SQL_VALUE_ALLOC_BLOCK);
 	stringbuf_init(&colnames,SQL_VALUE_ALLOC_BLOCK);
 
-	if(comma_concat_colnames_select(&colnames,s->def->cols,s->def->ncols,del)) {
+	if(comma_concat_colnames_select(&colnames,res->def->cols,res->def->ncols,del)) {
 		rc = 1;
 		goto SELECT_STMT_STRING_EXIT; }
 
@@ -97,7 +98,7 @@ int select_stmt_string(const SelectStmt *const s, WhereSpecifier wherespec, cons
 	get_limit(s->limit, limit);
 
 	if( stringbuf_appendf(sql,fmt,
-			stringbuf_get(&colnames), s->def->name, s->def->name,
+			stringbuf_get(&colnames), s->from->name, s->from->name,
 			(stringbuf_get(&join) ? stringbuf_get(&join) : ""),
 			(stringbuf_get(&where) ? " WHERE " : ""),
 			(stringbuf_get(&where) ? stringbuf_get(&where) : ""),

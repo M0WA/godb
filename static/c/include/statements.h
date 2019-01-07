@@ -11,6 +11,7 @@
 
 struct _UniqKey;
 struct _StringBuf;
+struct _SelectResult;
 
 typedef struct _InsertStmt {
 	const struct _DBTable *dbtbl;
@@ -19,7 +20,8 @@ typedef struct _InsertStmt {
 } InsertStmt;
 
 typedef struct _SelectStmt {
-	const struct _DBTableDef *def;
+	const struct _DBTableDef *from;
+	struct _DBTableDef select;
 	struct _WhereClause where;
 	struct _GroupByClause groupby;
 	struct _JoinClause joins;
@@ -53,5 +55,5 @@ void destroy_update_stmt(struct _UpdateStmt *s);
 
 int update_stmt_string(const UpdateStmt *const, ValueSpecifier val, WhereSpecifier where, const char *delimiter, struct _StringBuf *sql);
 int delete_stmt_string(const DeleteStmt *const, WhereSpecifier where, const char *delimiter, struct _StringBuf *sql);
-int select_stmt_string(const SelectStmt *const, WhereSpecifier where, const char *delimiter, struct _StringBuf *sql);
+int select_stmt_string(const SelectStmt *const, const struct _SelectResult *const, WhereSpecifier where, const char *delimiter, struct _StringBuf *sql);
 int insert_stmt_string(const InsertStmt *const, ValueSpecifier val, const char *delimiter, struct _StringBuf *sql);
