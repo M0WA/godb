@@ -391,7 +391,7 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 
 #### Select rows from table
 
-	// fetch table definition for table to select from
+	// get table definition for table to select from
 	const DBTableDef *tbldef = exampledb_exampletbl_tbldef();
 	
 	// initialize select statement from table definition
@@ -451,6 +451,27 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 	// do not forget to destroy the select result
 	destroy_selectresult(&res);
+
+#### Deleting rows from table
+
+	DeleteStmt stmt;
+	if( create_delete_stmt(&stmt,exampledb1_exampletable1_tbldef()) ) {
+		return 1;
+	}
+	
+	//prepare where condition as needed (see: Creating a Where Clause)
+	struct _WhereCondition cond;
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		return 1;
+	}
+	
+	// execute delete statement
+	if(delete_db(dbh,&stmt))  {
+		return 1;
+	}
+	
+	// do not forget to destroy the delete statement
+	destroy_delete_stmt(&stmt);
 
 ### Golang <a name="Golang"></a>
 
