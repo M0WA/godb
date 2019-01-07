@@ -31,7 +31,10 @@ const struct _DBColumnDef {{ $db.Name }}_{{ $tbl.Name }}_coldefs[] = { {{ range 
 }; 
 
 // {{ $db.Name }}.{{ $tbl.Name }}: column indices {{ range $i,$col := $tbl.Columns }}
-const size_t {{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }} = {{ $i }};{{ end }}
+const size_t {{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }} = {{ $i }};
+const DBColumnDef* {{ $db.Name }}_{{ $tbl.Name }}_coldef_{{ $col.Name }}(){
+	return &{{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $i }}];
+}{{ end }}
 {{ end }}{{ end }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $nuniq := len $tbl.UniqueKeys }}{{ $nforeign := len $tbl.ForeignKeys }}{{ $nindex := len $tbl.IndexKeys }}{{ if gt $nforeign 0 }} 
 // {{ $db.Name }}.{{ $tbl.Name }}: foreign keys
 const struct _ForeignKey {{ $db.Name }}_{{ $tbl.Name }}_foreigns[] = { {{ range $iforeign,$foreign := $tbl.ForeignKeys }}

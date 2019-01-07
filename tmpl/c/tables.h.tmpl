@@ -27,6 +27,7 @@ int create_{{ $db.Name }}_{{ $tbl.Name }}({{ $db.Name }}_{{ $tbl.Name }} *tbl,si
 // {{ $db.Name }}.{{ $tbl.Name }}: returns table definition
 const struct _DBTableDef* {{ $db.Name }}_{{ $tbl.Name }}_tbldef();
 {{ range $col := $tbl.Columns }}
+const struct _DBColumnDef* {{ $db.Name }}_{{ $tbl.Name }}_coldef_{{ $col.Name }}();
 // {{ $db.Name }}.{{ $tbl.Name }}: getter/setter column {{ $col.Name }}
 void {{ $db.Name }}_{{ $tbl.Name }}_unset_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
 void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);

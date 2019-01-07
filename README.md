@@ -152,7 +152,7 @@ Most of the API documentation example refer to this structure.
 
 	---
 	databases:
-	  - name: exampledb
+	  - name: exampledb1
 	    tables:
 	      - name: exampletable1
 	        mysql:
@@ -259,30 +259,30 @@ per thread.
 	// create a database handle
 	DBHandle *dbh = create_dbhandle(&config);
 	if ( !dbh ) {
-		LOG_FATAL(1,"create_dbhandle() failed"); }
+		return 1; }
 	
 	// set credentials
 	DBCredentials creds = () {
 		.host = "localhost",
 		.port = 3306,
-		.name = "complexdb1",
+		.name = "exampledb1",
 		.user = "myuser",
 		.pass = "mypass",
 	};
 	
 	// connect to database
 	if( connect_db(dbh,&creds) ) {
-		LOG_FATAL(1,"connect_db() failed"); }
+		return 1; }
 
 #### Disconnect from a database
 	
 	// disconnect from database
 	if ( disconnect_db(dbh) ) {
-		LOG_FATAL(1,"disconnect_db() failed"); }
+		return 1; }
 	
 	// destroy the database handle
 	if( destroy_dbhandle(dbh) ) {
-		LOG_FATAL(1,"destroy_dbhandle() failed"); }
+		return 1; }
 	
 	// shutdown library
 	exit_dblib();
@@ -293,31 +293,31 @@ per thread.
 	// initialize structure named "tbl"
 	// representing table "table1" in database "database1"
 	//
-	INIT_TABLE(db1,table1,tbl);
+	INIT_TABLE(exampledb1,exampletable1,tbl);
 	
 	// set the values of our table		
-	sprintf(db1_table1_set_teststr(tbl,row),"test"); 
-	*(db1_table1_set_testint(tbl,row)) = 10;
-	*(db1_table1_set_testfloat(tbl,row)) = 10.10;	
+	sprintf(exampledb1_exampletable1_set_teststr(tbl,row),"test"); 
+	*(exampledb1_exampletable1_set_testint(tbl,row)) = 10;
+	*(exampledb1_exampletable1_set_testfloat(tbl,row)) = 10.10;	
 	
 	// set a datetime type variable
 	time_t testdate = time(0);
-	memset(db1_table1_set_testdate(tbl,row),0,sizeof(struct tm));
-	gmtime_r(&testdate,db1_table1_set_testdate(tbl,row)); 
+	memset(exampledb1_exampletable1_set_testdate(tbl,row),0,sizeof(struct tm));
+	gmtime_r(&testdate,exampledb1_exampletable1_set_testdate(tbl,row)); 
 	
 	// destroy the "tbl" when done
 	destroy_dbtable(&tbl.dbtbl);
 	
 	//
-	// initialize structure that can contain multiple rows
+	// initialize structure tbl2 that can contain multiple rows
 	// (used in bulk inserts)
 	//
 	size_t initRows = 2;
-	INIT_TABLE_ROWS(db1,table1,tbl2,initRows);
+	INIT_TABLE_ROWS(exampledb1,exampletable1,tbl2,initRows);
 	
 	// set the values in different rows 
-	*(db1_table1_set_testint(tbl2,0)) = 10; 
-	*(db1_table1_set_testint(tbl2,1)) = 10;
+	*(exampledb1_exampletable1_set_testint(tbl2,0)) = 10; 
+	*(exampledb1_exampletable1_set_testint(tbl2,1)) = 10;
 		
 	// destroy the "tbl2" when done
 	destroy_dbtable(&tbl2.dbtbl);
@@ -348,7 +348,8 @@ The following statement datatypes support where clauses:
 
 To append a WhereCondition to a WhereClause use the where_append() function:
 
-	DBColumnDef *coldef = ...; //i.e. some int column
+	//get column definition, i.e. column testint 
+	const DBColumnDef *coldef = exampledb1_exampletable1_coldef_testint();
 	uint32 my_value = 32, my_value2 = 23;
 	size_t value_count = 2;
 		
