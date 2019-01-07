@@ -59,6 +59,9 @@ void destroy_dbtable(struct _DBTable *tbl) {
 }
 
 const void* get_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col) {
+	if(!tbl->rows.isset[row][col]) {
+		return NULL;
+	}
 	return tbl->rows.buf[row][col];
 }
 
@@ -66,7 +69,7 @@ void* set_dbtable_columnbuf(struct _DBTable *tbl, size_t row, size_t col) {
 	if(!tbl->rows.buf[row][col]) {
 		tbl->rows.buf[row][col] = malloc(get_column_bufsize(&tbl->def->cols[col]));
 		if(!tbl->rows.buf[row][col]) {
-			return 0;
+			return NULL;
 		}
 	}
 	tbl->rows.isset[row][col] = 1;

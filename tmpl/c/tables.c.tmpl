@@ -32,8 +32,7 @@ const struct _DBColumnDef {{ $db.Name }}_{{ $tbl.Name }}_coldefs[] = { {{ range 
 
 // {{ $db.Name }}.{{ $tbl.Name }}: column indices {{ range $i,$col := $tbl.Columns }}
 const size_t {{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }} = {{ $i }};{{ end }}
-{{ end }}{{ end }}
-{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $nuniq := len $tbl.UniqueKeys }}{{ $nforeign := len $tbl.ForeignKeys }}{{ $nindex := len $tbl.IndexKeys }}{{ if gt $nforeign 0 }} 
+{{ end }}{{ end }}{{ range $db := .L.Databases }}{{ range $tbl := $db.Tables }}{{ $nuniq := len $tbl.UniqueKeys }}{{ $nforeign := len $tbl.ForeignKeys }}{{ $nindex := len $tbl.IndexKeys }}{{ if gt $nforeign 0 }} 
 // {{ $db.Name }}.{{ $tbl.Name }}: foreign keys
 const struct _ForeignKey {{ $db.Name }}_{{ $tbl.Name }}_foreigns[] = { {{ range $iforeign,$foreign := $tbl.ForeignKeys }}
 	(struct _ForeignKey){ 
@@ -120,8 +119,17 @@ int {{ $db.Name }}_{{ $tbl.Name }}_result_idx_{{ $col.Name }}(struct _SelectResu
 		}
 	}
 	return 1;
-} {{ end }}{{/* columns */}}
-{{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
+}
+
+int {{ $db.Name }}_{{ $tbl.Name }}_result_{{ $col.Name }}(struct _SelectResult *res, const {{ $td.PtrType $col }}* val) {
+	size_t col = 0;
+	if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_{{ $col.Name }}(res, &col) ) {
+		return 1;
+	}
+	*val = (const {{ $td.PtrType $col }})get_dbtable_columnbuf(&res->tbl, 0, col);
+	return 0;
+} 
+{{ end }}{{/* columns */}}{{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
 int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $col.Name }}(const {{ $td.PtrType $col }} *vals,size_t valcnt,struct _WhereCondition *w) {
 	const struct _DBColumnDef *wherecol = &{{ $db.Name }}_{{ $tbl.Name }}_coldefs[{{ $db.Name }}_{{ $tbl.Name }}_colidx_{{ $col.Name }}];
 	memset(w,0,sizeof(struct _WhereCondition));

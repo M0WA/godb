@@ -206,34 +206,53 @@ static void test_table_delete_{{ $db.Name }}_{{ $tbl.Name }}(DBHandle *dbh) {
 static void test_table_check_selectresult_{{ $db.Name }}_{{ $tbl.Name }}(SelectResult *res) {
 	size_t idxID = 0, idxStr = 0, idxInt = 0, idxFloat = 0;
 	if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_ID(res, &idxID) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column ID in result set");
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column idx ID in result set");
 	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_teststr(res, &idxStr) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column teststr in result set");
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column idx teststr in result set");
 	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_testint(res, &idxInt) ) {
-		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testint in result set");
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column idx testint in result set");
 	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_idx_testfloat(res, &idxFloat) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column idx testfloat in result set");
+	}
+	
+	const unsigned long long *tID = 0;
+	const long *tTestInt = 0;
+	const char *tTestStr = 0;
+	const double *tTestDouble = 0;
+	if( {{ $db.Name }}_{{ $tbl.Name }}_result_ID(res, &tID) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column ID in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_testint(res, &tTestInt) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testint in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_teststr(res, &tTestStr) ) {
+		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column teststr in result set");
+	} else if( {{ $db.Name }}_{{ $tbl.Name }}_result_testfloat(res, &tTestDouble) ) {
 		LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: missing column testfloat in result set");
 	}
+	
 	for(size_t col = 0; col < res->tbl.def->ncols; col++) {
 		if( strcasecmp(res->tbl.def->cols[col].name,"ID") == 0 ) {
 			if( idxID != col ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID idx for select result"); }
-			if( (*(unsigned long long*)res->tbl.rows.buf[0][col]) == 0 ) {
+			unsigned long long* tmpID = (unsigned long long*)res->tbl.rows.buf[0][col];
+			if( *tmpID != *tID || *tID == 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid ID in select result");	}
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"testint") == 0 ) {
 			if( idxInt != col ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint idx for select result"); }
-			if( (*(long long*)res->tbl.rows.buf[0][col]) != 10 ) {
+			long long* tmpInt = (long long*)res->tbl.rows.buf[0][col];
+			if( *tmpInt != *tTestInt || *tTestInt != 10 ) {
 				LOGF_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testint in select result: %ld",*((long long*)res->tbl.rows.buf[0][col])); }
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"testfloat") == 0 ) {
 			if( idxFloat != col ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat idx for select result"); }
-			if( (*(double*)res->tbl.rows.buf[0][col]) != 10.10 ) {
+			double* tmpDouble = (double*)res->tbl.rows.buf[0][col];
+			if( *tmpDouble != *tTestDouble || *tTestDouble != 10.10 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid testfloat in select result"); }
 		} else if( strcasecmp(res->tbl.def->cols[col].name,"teststr") == 0 ) {
 			if( idxStr != col ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr idx for select result"); }
-			if( strcmp((const char*)res->tbl.rows.buf[0][col],"test") != 0 ) {
+			const char* tmpStr = (const char*)res->tbl.rows.buf[0][col];
+			if( strcmp(tTestStr,"test") != 0 || strcmp(tmpStr,tTestStr) != 0 ) {
 				LOG_FATAL(1,"{{ $db.Name }}.{{ $tbl.Name }}: invalid teststr in select result"); }
 		}
 	}

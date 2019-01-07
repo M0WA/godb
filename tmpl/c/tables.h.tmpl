@@ -33,10 +33,10 @@ void {{ $db.Name }}_{{ $tbl.Name }}_setnull_{{ $col.Name }}({{ $db.Name }}_{{ $t
 {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_set_{{ $col.Name }}({{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
 const {{ $td.PtrType $col }} {{ $db.Name }}_{{ $tbl.Name }}_get_{{ $col.Name }}(const {{ $db.Name }}_{{ $tbl.Name }} *t,size_t row);
 int {{ $db.Name }}_{{ $tbl.Name }}_result_idx_{{ $col.Name }}(struct _SelectResult *res,size_t *idx);
+int {{ $db.Name }}_{{ $tbl.Name }}_result_{{ $col.Name }}(struct _SelectResult *res, const {{ $td.PtrType $col }}* val);
 {{ end }}{{ range $idx := $tbl.IndexKeys }}{{ $col := $layouter.Column $db.Name $tbl.Name $idx.Column }}
 int {{ $db.Name }}_{{ $tbl.Name }}_by_idx_{{ $idx.Column }}(const {{ $td.PtrType $col }} *vals,size_t valcnt,struct _WhereCondition *w);{{ end }}
 {{ range $foreign := $tbl.ForeignKeys }}
-int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt *s,enum _DBJoinType type);{{ end }}
-{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
-
+int {{ $db.Name }}_{{ $tbl.Name }}_join_{{ $foreign.Column }}(struct _SelectStmt *s,enum _DBJoinType type);
+{{ end }}{{ end }}{{/* tables */}}{{ end }}{{/* databases */}}
 const struct _DBTableDef* get_table_def_by_name(const char* dbname, const char* tblname);

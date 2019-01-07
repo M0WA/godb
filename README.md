@@ -147,13 +147,14 @@ or language specific APIs.
 
 ### YAML Format <a name="YamlFormat"></a>
 
-the following is a full-featured example database structure
+The following is a full-featured example database structure of a database named exampledb with two tables exampletable1 and exampletable2.
+Most of the API documentation example refer to this structure.
 
 	---
 	databases:
-	  - name: complexdb1
+	  - name: exampledb
 	    tables:
-	      - name: complextable1
+	      - name: exampletable1
 	        mysql:
 	           engine: innodb
 	           rowformat: dynamic
@@ -182,7 +183,7 @@ the following is a full-featured example database structure
 	            datatype: float
 	            notnull: true
 	            defaultvalue: 0.0 
-	      - name: complextable2
+	      - name: exampletable2
 	        mysql:
 	           engine: innodb
 	           rowformat: dynamic
@@ -350,11 +351,11 @@ To append a WhereCondition to a WhereClause use the where_append() function:
 	DBColumnDef *coldef = ...; //i.e. some int column
 	uint32 my_value = 32, my_value2 = 23;
 	size_t value_count = 2;
-	
+		
 	// pointers to values must be valid until
 	// statement is used
 	const void (*values)[] = { &my_value, &my_value2	};
-
+	
 	WhereCondition cond;
 	memset(&cond,0,sizeof(WhereCondition));
 	cond.cond = WHERE_EQUAL;
@@ -362,7 +363,7 @@ To append a WhereCondition to a WhereClause use the where_append() function:
 	cond.def = coldef;
 	cond.values = values;
 	cond.cnt = value_count;
-
+	
 	SelectStmt s;
 	...
 	
@@ -385,6 +386,70 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	WhereComposite1 := ( WhereCondition... OR WhereCondition... )
 	WhereComposite2 := ( WhereCondition1 AND WhereCondition2 OR WhereComposite1 )
 	WhereClause     := ( WhereComposite2 AND WhereCondition3 )
+
+
+#### Select rows from table
+
+	// fetch table definition for table to select from
+	const DBTableDef *tbldef = exampledb_exampletbl_tbldef();
+	
+	// initialize select statement from table definition
+	SelectStmt stmt;
+	create_select_stmt(&stmt,tbldef);
+	
+	// optionally create one or more where conditions (see Creating a Where Clause)
+	WhereCondition cond;
+	...
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		return 1; 
+	}
+	
+	// initialize select result
+	SelectResult res;
+	memset(&res,0,sizeof(SelectResult));
+	
+	// actually select some rows
+	if( select_db(dbh,&stmt,&res) ) {
+		return 1; 
+	}
+	
+	// do something with the result
+	// see: Fetching a result set row by row 
+		
+	// do not forget to destroy stmt + result
+	// once you are done	
+	destroy_select_stmt(&stmt);
+	destroy_selectresult(&res);
+
+#### Fetching a result set row by row
+
+	SelectResult res; //obtained by a select stmt (see: Select rows from table)
+	
+	// fetching results from database
+	while( (rc = fetch_db(dbh,&res)) > 0){		
+		const unsigned long long *tID = 0;
+		const long *tTestInt = 0;
+		const char *tTestStr = 0;
+		const double *tTestDouble = 0;
+		
+		//each exampledb_exampletbl_result_XXX call takes the result
+		//and sets the second argument to the value of the column XXX
+		
+		if( exampledb_exampletbl_result_ID(res, &tID) ) {
+			return 1;
+		} else if( exampledb_exampletbl_result_testint(res, &tTestInt) ) {
+			return 1;
+		} else if( exampledb_exampletbl_result_teststr(res, &tTestStr) ) {
+			return 1;
+		} else if( exampledb_exampletbl_result_testfloat(res, &tTestDouble) ) {
+			return 1;
+		}
+		
+		// do something with the values
+	}
+	
+	// do not forget to destroy the select result
+	destroy_selectresult(&res);
 
 ### Golang <a name="Golang"></a>
 
@@ -424,6 +489,27 @@ It's the correspondance of a database connection.
 			return nil
 		}
 		return dbh
+	}
+
+#### Disconnect from a database
+
+	var dbh DBHandle = ... //see: Connect to a database
+	if err := dbh.Disconnect(); err != nil {
+		return err
+	}
+
+#### Insert row into a table
+
+	tbl := NewExampledb_Exampletbl(1)
+	s := tbl.InsertStmt()
+		
+	tbl.SetTestint(33,0)
+	tbl.SetTeststr("test",0)
+	tbl.SetTestfloat(10.10,0)
+	tbl.SetTestdate(time.Now(),0)
+		
+	if dbh.Insert(s) != nil {
+		t.Fatal("error while insert");
 	}
 
 ## FAQ <a name="FAQ"></a>
