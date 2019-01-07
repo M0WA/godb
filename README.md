@@ -20,8 +20,8 @@ For more information visit the GoDB [homepage](https://go-db.net) and the offica
     2. [C](#CLib)
     3. [Golang](#Golang)
 5. [FAQ](#FAQ)
-    1. [I found a bug, missing a feature or have a patch](#bugs)
-    2. [Missing brand-specific features](#brandfeatures)
+    1. [I found a bug, missing a feature or have a patch](#Bugs)
+    2. [Missing brand-specific features](#BrandFeatures)
 
 
 ## Features <a name="Features"></a>
@@ -119,7 +119,7 @@ test library for memory leaks/memory access errors etc:
 The GoDB framework consists of 2 components. A code generator responsible for generating SQL and language code
 for your database structure. The second component is one or more language specific library to access data.
 
-### Code Generator <a name="Code Generator"></a>
+### Code Generator <a name="CodeGenerator"></a>
 
 The code generator is written in Golang and follows it's standard build rules:
 
@@ -540,10 +540,9 @@ It's the correspondance of a database connection.
 
 ## FAQ <a name="FAQ"></a>
 
-### I found a bug, missing a feature or have a patch <a name="bugs"></a>
+### I found a bug, missing a feature or have a patch <a name="Bugs"></a>
 Please file either a bugreport, feature- or pull-request on the offical [github](https://github.com/M0WA/GoDB) page.
 
-### GoDB cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="brandfeatures"></a>
+### GoDB cannot make use of the brand-specific featureset xyz, why should I use it then? <a name="BrandFeatures"></a>
 The advantages of the GoDB framework are that you gain complete database brand independency for your code as well as an increased security.
-There is use cases where the performance of a brand-specific feature is more relevant than brand independency. In such a case, GoDB is not what
-you are looking for.
+There is use cases where the performance of a brand-specific feature is more relevant than brand independency. In such a case, GoDB is not what you are looking for.
