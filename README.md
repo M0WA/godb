@@ -328,7 +328,9 @@ per thread.
 	// "tbl2" for bulk inserts as seen above
 	// then prepare the insert statement
 	InsertStmt s;
-	create_insert_stmt(&s,&tbl.dbtbl);
+	if( create_insert_stmt(&s,&tbl.dbtbl) ) {
+		return 1;
+	}
 	
 	// execute the insert statement on a database connection "dbh"
 	if( insert_db(dbh,&s)) {
@@ -396,7 +398,9 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 	// initialize select statement from table definition
 	SelectStmt stmt;
-	create_select_stmt(&stmt,tbldef);
+	if( create_select_stmt(&stmt,tbldef) ) {
+		return 1;
+	}
 	
 	// optionally create one or more where conditions (see Creating a Where Clause)
 	WhereCondition cond;
