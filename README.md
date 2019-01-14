@@ -337,6 +337,9 @@ per thread.
 		//error
 		return 1;
 	}	
+	
+	// destroy the "tbl" when done
+	destroy_dbtable(&tbl.dbtbl);
 
 #### Creating a Where Clause
 
@@ -420,7 +423,7 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 	// do something with the result
 	// see: Fetching a result set row by row 
-		
+	
 	// do not forget to destroy stmt + result
 	// once you are done	
 	destroy_select_stmt(&stmt);
@@ -476,6 +479,41 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 	// do not forget to destroy the delete statement
 	destroy_delete_stmt(&stmt);
+	
+#### Upserting rows in a table (insert ... on duplicate key update)
+
+	INIT_TABLE(exampledb1,exampletable1,tbl);
+	
+	(*exampledb1_exampletable1_set_testfloat(&tbl,0)) = 12.12;
+	
+	size_t tmp = (serial == 11 ? 9 : serial - 1);
+	snprintf((exampledb1_exampletable1_set_testuniq(&tbl,0)),10,"%zu",tmp);
+	
+	UpsertStmt stmt;
+	create_upsert_stmt(&stmt,&tbl.dbtbl);
+	
+	if(upsert_db(dbh,&stmt)) {
+		return 1; }
+	
+	// destroy the "tbl" when done
+	destroy_dbtable(&tbl.dbtbl);
+
+#### Updating rows in a table
+	
+	UpdateStmt stmt;
+	create_update_stmt(&stmt,&tbl.dbtbl);
+	
+	if( where_append(&stmt.where,(union _WhereStmt *)&cond) ) {
+		return 1; }
+	
+	if(update_db(dbh,&stmt)) {
+		return 1; }
+	
+	// do not forget to destroy the update statement
+	destroy_update_stmt(&stmt);
+	
+	// destroy the "tbl" when done
+	destroy_dbtable(&tbl.dbtbl);
 
 ### Golang <a name="Golang"></a>
 
