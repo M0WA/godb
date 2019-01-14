@@ -527,7 +527,7 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	const char **values = (const char*[]){test};
 	
 	// generate wherecondition by column 'teststr'
-	struct _WhereCondition w;	
+	WhereCondition w;	
 	if( exampledb1_exampletable1_by_idx_teststr(values,1,&w) ) {
 		return 1; }
 	if( where_append(&stmt.where,(union _WhereStmt*)&w) ) {
@@ -537,7 +537,17 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	if( exampledb1_exampletable1_join_testfk(&stmt,DBJOIN_TYPE_LEFT) ) {
 		return 1; }
 		
-	//see Fetching a result set row by row of how to continue
+	if( select_db(dbh,&stmt,&res) ) {
+		return 1; 
+	}
+	
+	// do something with the result
+	// see: Fetching a result set row by row 
+	
+	// do not forget to destroy stmt + result
+	// once you are done	
+	destroy_select_stmt(&stmt);
+	destroy_selectresult(&res);
 
 ### Golang <a name="Golang"></a>
 
