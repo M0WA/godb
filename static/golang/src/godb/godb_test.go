@@ -72,16 +72,30 @@ func getDBConfigs(t *testing.T)map[DBType]ConfigCreds {
 }
 
 func testInsert(t *testing.T,dbh DBHandle) {
-	tbl := NewComplexdb1_Complextable1(1)
-	s := tbl.InsertStmt()
-	
+	tbl := NewComplexdb1_Complextable3(1)
 	tbl.SetTestint(33,0)
 	tbl.SetTeststr("test",0)
 	tbl.SetTestfloat(10.10,0)
 	tbl.SetTestdate(time.Now(),0)
+	tbl.SetTestuniq("testuniq",0)
 	
+	s := tbl.InsertStmt()
 	if dbh.Insert(s) != nil {
 		t.Fatal("error while insert");
+	}
+}
+
+func testUpsert(t *testing.T,dbh DBHandle) {
+	tbl := NewComplexdb1_Complextable3(1)
+	tbl.SetTestint(33,0)
+	tbl.SetTeststr("test",0)
+	tbl.SetTestfloat(12.12,0)
+	tbl.SetTestdate(time.Now(),0)
+	tbl.SetTestuniq("testuniq",0)
+	
+	s := tbl.UpsertStmt()
+	if dbh.Upsert(s) != nil {
+		t.Fatal("error while upsert");
 	}
 }
 
@@ -94,6 +108,7 @@ func TestGoDB(t *testing.T) {
 	for _,cc := range confs {
 		dbh := getConnection(t,cc.creds,cc.conf)
 		testInsert(t,dbh)
+		testUpsert(t,dbh)
 		/*
 		tests := []testTable {
 			new(Complextable1Test),

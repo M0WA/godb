@@ -514,6 +514,30 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 	// destroy the "tbl" when done
 	destroy_dbtable(&tbl.dbtbl);
+	
+#### Selecting table by indexed column and joining another table by foreignkey
+	
+	const DBTableDef *tbldef = exampledb1_exampletable1_tbldef();
+	
+	SelectStmt stmt;
+	if( create_select_stmt(&stmt,tbldef) ) {
+		return 1; }
+	
+	const char test[] = "test";
+	const char **values = (const char*[]){test};
+	
+	// generate wherecondition by column 'teststr'
+	struct _WhereCondition w;	
+	if( exampledb1_exampletable1_by_idx_teststr(values,1,&w) ) {
+		return 1; }
+	if( where_append(&stmt.where,(union _WhereStmt*)&w) ) {
+		return 1; }
+	
+	// join another table by the foreign key column testfk
+	if( exampledb1_exampletable1_join_testfk(&stmt,DBJOIN_TYPE_LEFT) ) {
+		return 1; }
+		
+	//see Fetching a result set row by row of how to continue
 
 ### Golang <a name="Golang"></a>
 
@@ -573,9 +597,23 @@ It's the correspondance of a database connection.
 	tbl.SetTestdate(time.Now(),0)
 		
 	if dbh.Insert(s) != nil {
-		t.Fatal("error while insert");
+		return;
 	}
 
+#### Upserting rows in a table (insert ... on duplicate update)
+
+	tbl := NewExampledb_Exampletbl(1)
+	tbl.SetTestint(33,0)
+	tbl.SetTeststr("test",0)
+	tbl.SetTestfloat(12.12,0)
+	tbl.SetTestdate(time.Now(),0)
+	tbl.SetTestuniq("testuniq",0)
+	
+	s := tbl.UpsertStmt()
+	if dbh.Upsert(s) != nil {
+		return;
+	}
+	
 ## FAQ <a name="FAQ"></a>
 
 ### I found a bug, missing a feature or have a patch <a name="Bugs"></a>
