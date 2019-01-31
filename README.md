@@ -517,11 +517,14 @@ This is how WhereComposite/WhereCondition and WhereClause datatypes relate:
 	
 #### Selecting table by indexed column and joining another table by foreignkey
 	
-	const DBTableDef *tbldef = exampledb1_exampletable1_tbldef();
+	// get table definition for table to select from
+	const DBTableDef *tbldef = exampledb_exampletbl_tbldef();
 	
+	// initialize select statement from table definition
 	SelectStmt stmt;
 	if( create_select_stmt(&stmt,tbldef) ) {
-		return 1; }
+		return 1;
+	}
 	
 	const char test[] = "test";
 	const char **values = (const char*[]){test};
