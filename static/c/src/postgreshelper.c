@@ -19,7 +19,11 @@ int postgres_raw_value_specifier(const struct _DBColumnDef *def,const void *valu
 	if(def->autoincrement) {
 		return stringbuf_append(sql,"DEFAULT");
 	} else {
-		return values_generic_value_specifier(def,value,sql,serial);
+		int rc = values_generic_value_specifier(def,value,sql,serial);
+		if(!rc && def->type == COL_TYPE_DATETIME) {
+			return stringbuf_append(sql,"::timestamp");
+		}
+		return rc;
 	}
 	return 1;
 }
@@ -181,7 +185,7 @@ WHERE NOT EXISTS \
 	if( postgres_upsert_select_column_string(s, alias_upsert, prefix_values, delimiter, &colnames_select) ) {
 		rc = 1;
 		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
-	if( upsert_values_row_string(s->dbtbl, valspec, &values, 0) ) {
+	if( upsert_values_row_string(s->dbtbl, postgres_raw_value_specifier, &values, 0) ) {
 		rc = 1;
 		goto POSTGRES_UPSERT_STMT_STRING_EXIT; }
 	if( postgres_upsert_set_string(s, prefix_update_subselect, valspec, delimiter, &updateset) ) {
