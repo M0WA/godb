@@ -99,6 +99,13 @@ func testUpsert(t *testing.T,dbh DBHandle) {
 	}
 }
 
+func testDelete(t *testing.T,dbh DBHandle) {
+	//TODO: add way to access table def without instanciating an DBTable object
+	//def  := NewComplexdb1_Complextable3(1).TableDef()
+	//TODO: add possibility to add where columns
+	//stmt := NewDeleteStmt(def)	
+}
+
 func TestGoDB(t *testing.T) {
 	SetLogDebug()
 	//SetLogFunc()
@@ -107,6 +114,7 @@ func TestGoDB(t *testing.T) {
 	
 	for _,cc := range confs {
 		dbh := getConnection(t,cc.creds,cc.conf)
+		testDelete(t,dbh)
 		testInsert(t,dbh)
 		testUpsert(t,dbh)
 		/*

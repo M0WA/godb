@@ -71,7 +71,6 @@ Statements:<br><br>
 * Minimal Memory + CPU Footprint
 * Open Source
 * Type Safety
-* Business Support Available
 
 ## Usage <a name="Usage"></a>
 
